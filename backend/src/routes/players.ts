@@ -98,7 +98,14 @@ router.get("/", async (req, res) => {
       const pattern = `%${(q as string).trim()}%`;
       conditions.push(ilike(players.name, pattern) as any);
     }
-    if (position) conditions.push(eq(players.position, position as string) as any);
+    if (position) {
+      const posArr = (position as string).split(",");
+      if (posArr.length > 1) {
+        conditions.push(inArray(players.position, posArr) as any);
+      } else {
+        conditions.push(eq(players.position, position as string) as any);
+      }
+    }
     if (nationality) conditions.push(eq(players.nationality, nationality as string) as any);
     if (teamId) conditions.push(eq(players.teamId, Number(teamId)) as any);
     if (foot) conditions.push(eq(players.preferredFoot, foot as string) as any);
@@ -130,16 +137,14 @@ router.get("/", async (req, res) => {
     // Build sort order for SQL
     let orderByClause: string;
     switch (sortBy) {
-      case "name_asc":    orderByClause = "p.name ASC"; break;
-      case "name_desc":   orderByClause = "p.name DESC"; break;
-      case "age_asc":     orderByClause = "p.date_of_birth DESC"; break;
-      case "age_desc":    orderByClause = "p.date_of_birth ASC"; break;
-      case "value_asc":   orderByClause = "p.market_value_m ASC NULLS LAST"; break;
-      case "value_desc":  orderByClause = "p.market_value_m DESC NULLS LAST"; break;
-      case "goals_desc":  orderByClause = "COALESCE(ps.goals, 0) DESC"; break;
-      case "assists_desc":orderByClause = "COALESCE(ps.assists, 0) DESC"; break;
-      case "rating_asc":  orderByClause = "COALESCE(ps.sofascore_rating, 0) ASC"; break;
-      default:            orderByClause = "COALESCE(ps.sofascore_rating, 0) DESC"; break;
+      case "name_asc": orderByClause = "p.name ASC"; break;
+      case "name_desc": orderByClause = "p.name DESC"; break;
+      case "age_asc": orderByClause = "p.date_of_birth DESC"; break;
+      case "age_desc": orderByClause = "p.date_of_birth ASC"; break;
+      case "value_asc": orderByClause = "p.market_value_m ASC NULLS LAST"; break;
+      case "value_desc": orderByClause = "p.market_value_m DESC NULLS LAST"; break;
+      case "rating_asc": orderByClause = "COALESCE(ps.sofascore_rating, 0) ASC"; break;
+      default: orderByClause = "COALESCE(ps.sofascore_rating, 0) DESC"; break;
     }
 
     // We need a raw SQL query to sort by stats fields
@@ -151,13 +156,22 @@ router.get("/", async (req, res) => {
       const vals: any[] = [];
       let idx = 1;
 
-      if (q)          { whereClauses.push(`p.name ILIKE $${idx++}`); vals.push(`%${(q as string).trim()}%`); }
-      if (position)   { whereClauses.push(`p.position = $${idx++}`); vals.push(position); }
-      if (nationality){ whereClauses.push(`p.nationality = $${idx++}`); vals.push(nationality); }
-      if (teamId)     { whereClauses.push(`p.team_id = $${idx++}`); vals.push(Number(teamId)); }
-      if (foot)       { whereClauses.push(`p.preferred_foot = $${idx++}`); vals.push(foot); }
-      if (valueMin)   { whereClauses.push(`p.market_value_m >= $${idx++}`); vals.push(Number(valueMin)); }
-      if (valueMax)   { whereClauses.push(`p.market_value_m <= $${idx++}`); vals.push(Number(valueMax)); }
+      if (q) { whereClauses.push(`p.name ILIKE $${idx++}`); vals.push(`%${(q as string).trim()}%`); }
+      if (position) {
+        const posArr = (position as string).split(",");
+        if (posArr.length > 1) {
+          whereClauses.push(`p.position = ANY($${idx++})`);
+          vals.push(posArr);
+        } else {
+          whereClauses.push(`p.position = $${idx++}`);
+          vals.push(position);
+        }
+      }
+      if (nationality) { whereClauses.push(`p.nationality = $${idx++}`); vals.push(nationality); }
+      if (teamId) { whereClauses.push(`p.team_id = $${idx++}`); vals.push(Number(teamId)); }
+      if (foot) { whereClauses.push(`p.preferred_foot = $${idx++}`); vals.push(foot); }
+      if (valueMin) { whereClauses.push(`p.market_value_m >= $${idx++}`); vals.push(Number(valueMin)); }
+      if (valueMax) { whereClauses.push(`p.market_value_m <= $${idx++}`); vals.push(Number(valueMax)); }
 
       // Age
       if (ageMin) {
@@ -177,10 +191,10 @@ router.get("/", async (req, res) => {
       const sidVal = sid ?? 0;
 
       const rawQuery = `
-        SELECT DISTINCT ON (p.id)
+        SELECT
           p.id, p.name, p.position, p.nationality, p.date_of_birth AS "dateOfBirth",
           p.photo_url AS "photoUrl", p.market_value_m AS "marketValueM",
-          p.preferred_foot AS "preferredFoot", p.height_cm AS "heightCm",
+           p.preferred_foot AS "preferredFoot", p.height_cm AS "heightCm",
           p.weight_kg AS "weightKg", p.debut_year AS "debutYear",
           p.team_id AS "teamId",
           t.name AS "teamName", t.logo_url AS "teamLogoUrl",
@@ -193,7 +207,7 @@ router.get("/", async (req, res) => {
         LEFT JOIN teams t ON t.id = p.team_id
         LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
         ${whereStr}
-        ORDER BY p.id, ${orderByClause}
+        ORDER BY ${orderByClause}, p.id ASC
         LIMIT $${idx++} OFFSET $${idx++}
       `;
       vals.push(Number(limit), offset);

@@ -80,7 +80,7 @@
   }
 
   .btn-primary {
-    @apply bg-green text-base font-semibold;
+    @apply bg-green text-mainBg font-black uppercase tracking-widest;
   }
 
   .btn-primary:hover {
@@ -93,7 +93,7 @@
   }
 
   .btn-blue {
-    @apply bg-blue text-white;
+    @apply bg-blue text-primary;
   }
 
   .btn-blue:hover {
@@ -102,7 +102,7 @@
   }
 
   .btn-purple {
-    @apply bg-purple text-white;
+    @apply bg-purple text-primary;
   }
 
   .btn-purple:hover {

@@ -8,9 +8,11 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from 
 interface Props {
   players: any[];
   loading?: boolean;
+  sortBy?: string;
+  onSort?: (sort: string) => void;
 }
 
-export default function PlayerTable({ players, loading }: Props) {
+export default function PlayerTable({ players, loading, sortBy, onSort }: Props) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -23,10 +25,24 @@ export default function PlayerTable({ players, loading }: Props) {
 
   if (players.length === 0) return null;
 
+  const sortDescriptor: any = sortBy ? {
+    column: sortBy.split("_")[0],
+    direction: sortBy.split("_")[1] === "asc" ? "ascending" : "descending"
+  } : undefined;
+
+  const handleSortChange = (descriptor: any) => {
+    if (onSort) {
+      const order = descriptor.direction === "ascending" ? "asc" : "desc";
+      onSort(`${descriptor.column}_${order}`);
+    }
+  };
+
   return (
     <Table 
       aria-label="Tabla de explorador"
       removeWrapper
+      sortDescriptor={sortDescriptor}
+      onSortChange={handleSortChange}
       classNames={{
         base: "overflow-x-auto rounded-2xl border border-white/[0.05] bg-card/30 backdrop-blur-sm",
         table: "w-full border-collapse",
@@ -37,12 +53,12 @@ export default function PlayerTable({ players, loading }: Props) {
       }}
     >
       <TableHeader>
-        <TableColumn>Abonado / Jugador</TableColumn>
-        <TableColumn>Posición</TableColumn>
-        <TableColumn>Nacionalidad</TableColumn>
-        <TableColumn>Club</TableColumn>
-        <TableColumn align="end" className="text-right">Valor</TableColumn>
-        <TableColumn align="end" className="text-right">Rating</TableColumn>
+        <TableColumn key="name" allowsSorting>Abonado / Jugador</TableColumn>
+        <TableColumn key="position">Posición</TableColumn>
+        <TableColumn key="nationality">Nacionalidad</TableColumn>
+        <TableColumn key="team">Club</TableColumn>
+        <TableColumn key="value" align="end" className="text-right" allowsSorting>Valor</TableColumn>
+        <TableColumn key="rating" align="end" className="text-right" allowsSorting>Rating</TableColumn>
       </TableHeader>
       <TableBody items={players}>
         {(p) => {
@@ -53,10 +69,10 @@ export default function PlayerTable({ players, loading }: Props) {
             <TableRow key={p.id} className="cursor-default">
               <TableCell>
                 <Link href={`/players/${p.id}`} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-input border border-white/[0.05] overflow-hidden flex items-center justify-center shrink-0">
+                  <div className="w-11 h-11 rounded-lg bg-input border border-white/[0.05] overflow-hidden flex items-center justify-center shrink-0 shadow-sm transition-all group-hover:border-green/20">
                     {p.photoUrl
-                      ? <Image src={p.photoUrl} alt={p.name} width={40} height={40} className="object-cover" unoptimized />
-                      : <User size={18} className="text-muted" />}
+                      ? <Image src={p.photoUrl} alt={p.name} width={44} height={44} className="object-cover transition-transform group-hover:scale-110" unoptimized />
+                      : <User size={20} className="text-muted" />}
                   </div>
                   <div>
                     <p className="text-base font-bold text-primary transition-colors hover:text-green">{p.name}</p>

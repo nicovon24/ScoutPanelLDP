@@ -71,8 +71,9 @@ export default function PlayerCardV2({ player }: { player: Player }) {
     <Card
       as={Link}
       href={`/players/${player.id}`}
+      disableAnimation
       classNames={{
-        base: "w-full group bg-[#0d0d0d] border border-white/5 rounded-[20px] overflow-hidden hover:border-green/40 transition-all duration-500 hover:shadow-[0_10px_40px_rgba(0,224,148,0.12)] hover:-translate-y-1"
+        base: "w-full group bg-[#0d0d0d] border border-white/5 rounded-[20px] overflow-hidden hover:border-green/40 transition-all duration-500 hover:shadow-[0_10px_40px_rgba(0,224,148,0.12)] hover:-translate-y-1 active:scale-100"
       }}
     >
       {/* Glow Effect on Hover */}
@@ -102,12 +103,15 @@ export default function PlayerCardV2({ player }: { player: Player }) {
         </div>
 
         {/* MID: Avatar & Main Info */}
-        <div className="flex items-center gap-4 mb-5">
-          <div className="relative w-16 h-16 rounded-full bg-black border-2 border-white/5 overflow-hidden flex-shrink-0 transition-colors duration-500 shadow-inner">
+        <div className="flex items-center gap-5 mb-5">
+          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-card-2 to-black border-2 border-white/10 overflow-hidden flex-shrink-0 transition-all duration-500 shadow-[0_8px_30px_rgb(0,0,0,0.5)]  group-hover:shadow-[0_8px_30px_rgba(0,224,148,0.15)]">
             {player.photoUrl ? (
               <Image src={player.photoUrl} alt={player.name} fill className="object-cover transform group-hover:scale-110 transition-transform duration-700" unoptimized />
             ) : (
-              <span className="w-full h-full flex items-center justify-center text-xl font-bold text-primary/30">{player.name[0]}</span>
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-white/[0.05] to-transparent">
+                <span className="text-2xl font-black text-primary/40 group-hover:text-green/50 transition-colors uppercase">{player.name[0]}</span>
+                <div className="w-6 h-0.5 bg-green/20 mt-1 rounded-full group-hover:bg-green/40 transition-colors" />
+              </div>
             )}
           </div>
 
@@ -186,21 +190,41 @@ export default function PlayerCardV2({ player }: { player: Player }) {
 
           {/* Rating Section */}
           {rating != null && (
-            <div className="flex items-center gap-3 mt-1">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm bg-black/40 border ${ratingColor}`}>
-                {rating.toFixed(1)}
-              </div>
-              <div className="flex-1 flex flex-col gap-1.5">
-                <span className="text-2xs text-primary/40 uppercase font-bold tracking-widest">Season Rating</span>
-                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-1000 ease-out"
-                    style={{
-                      width: `${(rating / 10) * 100}%`,
-                      backgroundColor: rating >= 7.5 ? "#00E094" : rating >= 7.0 ? "#FACC15" : "#A1A1AA"
-                    }}
-                  />
+            <div className="flex flex-col gap-2 mt-1">
+              <div className="flex justify-between items-end">
+                <div className="flex flex-col">
+                  <span className="text-2xs text-primary/40 uppercase font-black tracking-[0.15em]">Desempeño</span>
+                  <span className="text-secondary font-bold text-[11px]">Temporada 2026</span>
                 </div>
+                <div className={`px-2.5 py-1 rounded-lg font-black text-md bg-black/60 border ${ratingColor} shadow-lg`}>
+                  {rating.toFixed(1)}
+                </div>
+              </div>
+
+              <div className="relative h-3 bg-white/[0.03] border border-white/5 rounded-full overflow-hidden">
+                {/* Reference Markers */}
+                <div className="absolute inset-0 flex justify-between px-[15%] pointer-events-none">
+                  <div className="w-[1px] h-full bg-white/[0.05]" />
+                  <div className="w-[1px] h-full bg-white/[0.05]" />
+                  <div className="w-[1px] h-full bg-white/[0.05]" />
+                </div>
+
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(0,224,148,0.2)]"
+                  style={{
+                    width: `${(rating / 10) * 100}%`,
+                    background: rating >= 7.5
+                      ? "linear-gradient(90deg, #00C47F 0%, #00E094 100%)"
+                      : rating >= 7.0
+                        ? "linear-gradient(90deg, #E8A838 0%, #FACC15 100%)"
+                        : "linear-gradient(90deg, #717171 0%, #A1A1AA 100%)"
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-[9px] font-black text-muted uppercase tracking-tighter opacity-50 px-1">
+                <span>Pobre</span>
+                <span>Promedio</span>
+                <span>Elite</span>
               </div>
             </div>
           )}

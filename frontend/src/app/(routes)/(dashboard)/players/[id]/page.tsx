@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, Star, BarChart2, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Select, SelectItem } from "@nextui-org/react";
 import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -46,11 +47,11 @@ function DonutCircle({ value, label, color = "#00E094" }: { value: number; label
             strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
             style={{ transition: "stroke-dasharray 0.6s ease" }} />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-primary">
+        <span className="absolute inset-0 flex items-center justify-center text-base font-black text-primary">
           {pct.toFixed(0)}%
         </span>
       </div>
-      <span className="text-2xs text-secondary text-center leading-tight max-w-[64px]">{label}</span>
+      <span className="text-2xs text-secondary text-center font-bold leading-tight max-w-[64px]">{label}</span>
     </div>
   );
 }
@@ -70,11 +71,11 @@ function StatBarRow({
   const display = raw == null || isNaN(raw) ? "—" : isPercent ? `${raw.toFixed(1)}%` : fmt(raw, String(value).includes(".") ? 2 : 0);
 
   return (
-    <div className="flex items-center gap-3 py-[7px] border-b border-border/60 last:border-0">
-      <span className="text-base text-secondary flex-1 min-w-0">{label}</span>
-      <span className="text-base font-bold text-primary w-[56px] text-right flex-shrink-0">{display}</span>
-      <div className="w-[160px] flex-shrink-0 h-[5px] rounded-full bg-[#1E1E1E]">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
+    <div className="flex items-center gap-3 py-[7px] border-b border-border/40 last:border-0">
+      <span className="text-base text-secondary font-medium flex-1 min-w-0">{label}</span>
+      <span className="text-base font-black text-primary w-[56px] text-right flex-shrink-0">{display}</span>
+      <div className="w-[160px] flex-shrink-0 h-[5px] rounded-full bg-input">
+        <div className="h-full rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(255,255,255,0.05)]" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
     </div>
   );
@@ -102,13 +103,13 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
   const isATT = ["CF", "SS", "LW", "RW"].includes(pos);
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-4">
+    <div className="card shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
+      <div className="flex items-center justify-between mb-6">
         <p className="section-title mb-0">Estadísticas completas</p>
-        <span className="text-2xs text-muted font-medium bg-input px-2 py-0.5 rounded uppercase">{player.position}</span>
+        <span className="text-2xs text-secondary font-black bg-white/5 border border-white/10 px-2.5 py-1 rounded-md uppercase tracking-widest">{player.position}</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
 
         {/* GK Specific Section */}
         {isGK && (
@@ -119,7 +120,7 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
           </StatSection>
         )}
 
-        {/* Attack Section - Primary for Attackers, shown for others too if relevant */}
+        {/* Attack Section */}
         {(isATT || !isGK) && (
           <StatSection title="Ataque">
             <StatBarRow label="Goles" value={stat.goals} maxValue={30} color="#00E094" />
@@ -129,7 +130,7 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
           </StatSection>
         )}
 
-        {/* Passing / Creation Section - Primary for Midfielders */}
+        {/* Passing / Creation Section */}
         <StatSection title="Pases y Creación">
           <StatBarRow label="Asistencias" value={stat.assists} maxValue={20} color="#00E094" />
           <StatBarRow label="xA por partido" value={stat.xaPerGame} maxValue={1} color="#00E094" />
@@ -137,7 +138,7 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
           <StatBarRow label="Precisión de pases %" value={stat.passAccuracyPct} maxValue={100} color="#0C65D4" isPercent />
         </StatSection>
 
-        {/* Defense Section - Primary for Defenders and CDMs */}
+        {/* Defense Section */}
         <StatSection title="Defensa">
           <StatBarRow label="Tackles" value={stat.tackles} maxValue={80} color="#00E094" />
           <StatBarRow label="Intercepciones" value={stat.interceptions} maxValue={50} color="#00E094" />
@@ -293,25 +294,37 @@ export default function PlayerDetailPage() {
               <div className="flex items-center gap-3 flex-shrink-0">
                 {/* Season selector */}
                 {allStats.length > 1 && (
-                  <div className="flex items-center gap-2 bg-input/60 border border-border rounded-lg pl-3 pr-1 h-9">
-                    <span className="text-2xs font-black text-muted uppercase tracking-widest">Temporada</span>
-                    <select
-                      value={selSeasonId ?? ""}
-                      onChange={(e) => setSelSeason(Number(e.target.value))}
-                      className="bg-transparent text-base font-bold text-primary outline-none cursor-pointer pr-6 appearance-none"
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                        backgroundRepeat: "no-repeat",
-                        backgroundPosition: "right center"
-                      }}
-                    >
-                      {allStats.map((s: any) => (
-                        <option key={s.seasonId} value={s.seasonId} className="bg-card">
-                          {s.season?.name ?? s.seasonId}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    selectedKeys={selSeasonId ? [String(selSeasonId)] : []}
+                    onChange={(e) => { 
+                      if (e.target.value) setSelSeason(Number(e.target.value));
+                    }}
+                    aria-label="Seleccionar Temporada"
+                    className="w-52"
+                    variant="flat"
+                    scrollShadowProps={{ isEnabled: false }}
+                    classNames={{
+                      trigger: "bg-input/60 border border-border rounded-lg px-3 h-9 min-h-[36px] data-[hover=true]:bg-input/80 transition-all",
+                      value: "text-base font-bold text-primary",
+                      popoverContent: "bg-card border border-border min-w-[200px]"
+                    }}
+                    startContent={
+                      <span className="text-2xs font-black text-muted uppercase tracking-widest mr-2 shrink-0">Temporada</span>
+                    }
+                  >
+                    {allStats.map((s: any) => (
+                      <SelectItem 
+                        key={String(s.seasonId)} 
+                        textValue={s.season?.name || String(s.seasonId)}
+                        classNames={{
+                          base: "data-[hover=true]:bg-white/5",
+                          title: "text-base font-bold"
+                        }}
+                      >
+                        {s.season?.name || s.seasonId}
+                      </SelectItem>
+                    ))}
+                  </Select>
                 )}
 
                 <button
@@ -322,7 +335,7 @@ export default function PlayerDetailPage() {
                 </button>
                 <button
                   onClick={() => compare ? removeFromCompare(player.id) : addToCompare(player)}
-                  className={`btn text-base h-9 px-3 ${compare ? "bg-purple/15 text-purple border border-purple/35" : "btn-primary"}`}
+                  className={`btn text-mainBg h-9 px-3 ${compare ? "bg-purple/15 text-purple border border-purple/35" : "btn-primary"}`}
                 >
                   <BarChart2 size={13} />
                   {compare ? "En comparación" : "Comparar"}

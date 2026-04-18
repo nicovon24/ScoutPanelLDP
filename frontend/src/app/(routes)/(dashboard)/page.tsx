@@ -33,6 +33,7 @@ function HomeContent() {
     ageMin: "",
     ageMax: "",
     marketValueMax: "",
+    sortBy: "rating_desc",
   });
 
   // Debounced search
@@ -61,6 +62,7 @@ function HomeContent() {
     if (filters.ageMin) params.set("ageMin", filters.ageMin);
     if (filters.ageMax) params.set("ageMax", filters.ageMax);
     if (filters.marketValueMax) params.set("valueMax", filters.marketValueMax);
+    if (filters.sortBy) params.set("sortBy", filters.sortBy);
 
     try {
       const { data } = await api.get(`/players?${params}`);
@@ -119,12 +121,12 @@ function HomeContent() {
       </div>
 
       {/* ── Search & Quick Bar ── */}
-      <div className="flex items-center gap-4 bg-white/[0.02] border border-white/[0.05] p-5 rounded-2xl shadow-sm">
-        <div className="flex-1">
+      <div className="flex flex-wrap items-center gap-4 bg-white/[0.02] border border-white/[0.05] p-5 rounded-2xl shadow-sm">
+        <div className="w-full max-w-[320px]">
           <Input
             value={inputQ}
             onChange={(e) => { setInputQ(e.target.value); setPage(1); }}
-            placeholder="Buscar por nombre, apellido..."
+            placeholder="Buscar por jugador..."
             startContent={<Search size={16} className="text-muted flex-shrink-0" />}
             endContent={
               inputQ && (
@@ -141,13 +143,70 @@ function HomeContent() {
           />
         </div>
 
-        <div className="hidden lg:flex items-center gap-2">
-          <span className="text-xs font-black uppercase tracking-widest text-primary mr-2">Status:</span>
-          {["Libre", "A préstamo", "Contrato"].map(s => (
-            <AppButton key={s} size="sm" variant="secondary" className="h-[34px] px-3 border border-secondary text-secondary hover:border-green/30 hover:text-green">
-              {s}
-            </AppButton>
-          ))}
+        {/* Quick Position Multi-Select */}
+        <div className="w-full max-w-[280px] hidden sm:block">
+          <Select
+            selectionMode="multiple"
+            placeholder="Filtrar posiciones"
+            selectedKeys={filters.position ? new Set(filters.position.split(",")) : new Set()}
+            onSelectionChange={(keys: any) => {
+              const arr = Array.from(keys).join(",");
+              setFilters(prev => ({ ...prev, position: arr }));
+              setPage(1);
+            }}
+            variant="flat"
+            classNames={{
+              trigger: "h-12 bg-card border border-white/[0.05] rounded-xl data-[hover=true]:bg-white/[0.03] transition-all",
+              value: "text-base font-bold text-primary",
+              popoverContent: "bg-card border border-white/[0.05]"
+            }}
+            aria-label="Filtro rápido de posiciones"
+          >
+            {[
+              { id: "CF", n: "CF - Delantero" },
+              { id: "LW", n: "LW - Extremo Izq" },
+              { id: "RW", n: "RW - Extremo Der" },
+              { id: "CAM", n: "CAM - Ofensivo" },
+              { id: "CM", n: "CM - Medio" },
+              { id: "CDM", n: "CDM - Defensivo" },
+              { id: "CB", n: "CB - Central" },
+              { id: "LB", n: "LB - Lateral Izq" },
+              { id: "RB", n: "RB - Lateral Der" },
+              { id: "GK", n: "GK - Portero" }
+            ].map(p => (
+              <SelectItem key={p.id} textValue={p.id}>
+                {p.n}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
+
+        {/* Sort Selector */}
+        <div className="w-full max-w-[200px] hidden lg:block ml-auto">
+          <Select
+            labelPlacement="outside"
+            placeholder="Ordenar por"
+            selectedKeys={[filters.sortBy]}
+            onChange={(e) => { 
+              if (e.target.value) {
+                setFilters(prev => ({ ...prev, sortBy: e.target.value }));
+                setPage(1);
+              }
+            }}
+            variant="flat"
+            classNames={{
+              trigger: "h-12 bg-card border border-white/[0.05] rounded-xl data-[hover=true]:bg-white/[0.03] transition-all",
+              value: "text-base font-bold text-green",
+              popoverContent: "bg-card border border-white/[0.05]"
+            }}
+            aria-label="Ordenar por"
+          >
+            <SelectItem key="rating_desc" textValue="Rating (Mayor)">Rating (Mayor)</SelectItem>
+            <SelectItem key="value_desc" textValue="Valor (Mayor)">Valor (Mayor)</SelectItem>
+            <SelectItem key="value_asc" textValue="Valor (Menor)">Valor (Menor)</SelectItem>
+            <SelectItem key="age_asc" textValue="Edad (Menor)">Edad (Menor)</SelectItem>
+            <SelectItem key="age_desc" textValue="Edad (Mayor)">Edad (Mayor)</SelectItem>
+          </Select>
         </div>
       </div>
 
@@ -155,7 +214,15 @@ function HomeContent() {
       <div className="min-h-[400px]">
         {view === "grid"
           ? <PlayerGrid players={players} loading={loading} />
-          : <PlayerTable players={players} loading={loading} />
+          : <PlayerTable 
+              players={players} 
+              loading={loading} 
+              sortBy={filters.sortBy}
+              onSort={(sort) => {
+                setFilters(prev => ({ ...prev, sortBy: sort }));
+                setPage(1);
+              }}
+            />
         }
       </div>
 
@@ -203,7 +270,7 @@ function HomeContent() {
         filters={filters}
         setFilters={setFilters}
         onReset={() => {
-          setFilters({ q: "", position: "", teamId: "", foot: "", ageMin: "", ageMax: "", marketValueMax: "" });
+          setFilters({ q: "", position: "", teamId: "", foot: "", ageMin: "", ageMax: "", marketValueMax: "", sortBy: "rating_desc" });
           setInputQ("");
           setPage(1);
         }}
