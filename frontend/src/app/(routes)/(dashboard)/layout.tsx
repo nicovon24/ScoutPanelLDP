@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useScoutStore } from "@/store/useScoutStore";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
-import CompareBar from "@/components/ui/CompareBar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,7 +17,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 p-8 w-full">
           {children}
         </main>
-        <CompareBar />
       </div>
     </div>
   );

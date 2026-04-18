@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Loader2, Star, BarChart2, AlertTriangle, ArrowLeft } from "lucide-react";
 import { Select, SelectItem } from "@nextui-org/react";
 import Image from "next/image";
@@ -169,6 +169,7 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
 /* ── Main Page ───────────────────────────── */
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selSeasonId, setSelSeason] = useState<number | null>(null);
@@ -364,11 +365,14 @@ export default function PlayerDetailPage() {
                   <Star size={15} fill={fav ? "currentColor" : "none"} />
                 </button>
                 <button
-                  onClick={() => compare ? removeFromCompare(player.id) : addToCompare(player)}
-                  className={`btn text-mainBg h-9 px-3 ${compare ? "bg-purple/15 text-purple border border-purple/35" : "btn-primary"}`}
+                  onClick={() => {
+                    useScoutStore.setState({ compareList: [player] });
+                    router.push('/compare');
+                  }}
+                  className={`btn text-mainBg h-9 px-3 btn-primary`}
                 >
                   <BarChart2 size={13} />
-                  {compare ? "En comparación" : "Comparar"}
+                  Comparar
                 </button>
               </div>
             </div>
