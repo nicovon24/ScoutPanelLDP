@@ -8,6 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { sql } from "drizzle-orm";
 import * as schema from "./schema";
 import {
   teams, seasons, players, playerStats,
@@ -91,15 +92,20 @@ const BASE_STATS: Record<string, BaseStats> = {
 // MAIN
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log("🧹 Limpiando base de datos...");
-  // Borramos en orden inverso a las FK para que no explote
-  await db.delete(playerInjuries);
-  await db.delete(playerRatings);
-  await db.delete(playerStats);
-  await db.delete(players);
-  await db.delete(seasons);
-  await db.delete(teams);
-  // Nota: El usuario demo no hace falta borrarlo si tiene onConflictDoNothing
+  console.log("🧹 Limpiando base de datos y reseteando IDs...");
+  
+  // Truncate resetea los IDs a 1 y CASCADE se encarga del orden por nosotros
+  await db.execute(sql`
+    TRUNCATE TABLE 
+      player_injuries, 
+      player_ratings, 
+      player_stats, 
+      players, 
+      seasons, 
+      teams, 
+      users 
+    RESTART IDENTITY CASCADE
+  `);
   
   console.log("🌱 Iniciando seed V5...");
 

@@ -3,7 +3,6 @@ import cors from "cors";
 import playerRoutes from "./routes/players";
 import teamRoutes from "./routes/teams";
 import seasonRoutes from "./routes/seasons";
-// La DB ya carga el .env al importarse → no hace falta dotenv.config() acá
 
 const app = express();
 const port = process.env.PORT || 4000;

@@ -47,6 +47,46 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/players/compare - Comparación side-by-side
+router.get("/compare", async (req, res) => {
+  try {
+    const { ids, seasonId } = req.query;
+    if (!ids) return res.status(400).json({ error: "ids is required" });
+
+    const playerIds = (ids as string).split(",").map(Number);
+    let sid: number;
+
+    if (seasonId) {
+      sid = Number(seasonId);
+    } else {
+      // Si no hay seasonId, buscamos la temporada más reciente
+      const latestSeason = await db.query.seasons.findFirst({
+        orderBy: (seasons, { desc }) => [desc(seasons.year)],
+      });
+      if (!latestSeason) return res.status(404).json({ error: "No seasons found" });
+      sid = latestSeason.id;
+    }
+
+    const data = await db.query.players.findMany({
+      where: inArray(players.id, playerIds),
+      with: {
+        team: true,
+        stats: {
+          where: eq(playerStats.seasonId, sid)
+        },
+        ratings: {
+          where: eq(playerRatings.seasonId, sid)
+        }
+      }
+    });
+
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // GET /api/players/:id - Perfil completo
 router.get("/:id", async (req, res) => {
   try {
@@ -69,35 +109,6 @@ router.get("/:id", async (req, res) => {
     if (!player) return res.status(404).json({ error: "Player not found" });
 
     res.json(player);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// GET /api/players/compare - Comparación side-by-side
-router.get("/compare", async (req, res) => {
-  try {
-    const { ids, seasonId } = req.query;
-    if (!ids || !seasonId) return res.status(400).json({ error: "ids and seasonId are required" });
-
-    const playerIds = (ids as string).split(",").map(Number);
-    const sid = Number(seasonId);
-
-    const data = await db.query.players.findMany({
-      where: inArray(players.id, playerIds),
-      with: {
-        team: true,
-        stats: {
-          where: eq(playerStats.seasonId, sid)
-        },
-        ratings: {
-          where: eq(playerRatings.seasonId, sid)
-        }
-      }
-    });
-
-    res.json(data);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
