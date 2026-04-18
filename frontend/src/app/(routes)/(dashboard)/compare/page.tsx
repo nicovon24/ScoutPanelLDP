@@ -280,7 +280,7 @@ export default function ComparePage() {
     if (i > 0) currentCols.push('52px');
     currentCols.push('1fr');
   });
-  if (canAdd) currentCols.push('60px');
+  if (canAdd) currentCols.push('80px'); // Slightly wider add button slot
 
   return (
     <div className="max-w-[1500px] mx-auto pb-[80px] pt-[30px] px-[18px] animate-fade-in font-sans">
@@ -349,7 +349,7 @@ export default function ComparePage() {
               <div key={i} className="contents">
                 {i > 0 && <div className="flex items-center justify-center border-l border-r border-border bg-surface-2"><span className="text-[12px] font-black text-muted tracking-[0.08em]">VS</span></div>}
 
-                <div className={`relative flex flex-col items-center p-[26px_18px_20px] gap-0 text-center h-full ${!s ? 'z-20' : 'z-10'} transition-all duration-300`}>
+                <div className={`relative flex flex-col items-center p-[40px_24px_32px] gap-0 text-center h-full ${!s ? 'z-20' : 'z-10'} transition-all duration-300`}>
                   {s && !load && (
                     <div
                       className="absolute inset-0 pointer-events-none opacity-50 transition-all duration-700"
@@ -358,10 +358,10 @@ export default function ComparePage() {
                       }}
                     />
                   )}
-                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${C.hex}40 50%, transparent)` }} />
+                  <div className="absolute top-0 left-0 right-0 h-[4px]" style={{ background: `linear-gradient(90deg, transparent, ${C.hex}40 50%, transparent)` }} />
 
                   {s && !load && (
-                    <div className="absolute top-4 left-0 right-0 mx-auto w-fit h-[32px] px-3 z-20">
+                    <div className="absolute top-6 left-0 right-0 mx-auto w-fit h-[32px] px-3 z-20">
                       <button
                         onClick={() => handleClearSlot(i)}
                         className="flex items-center justify-center gap-2 text-white/40 hover:text-danger hover:bg-danger/10 px-3 py-1 rounded-full transition-all group"
@@ -373,10 +373,10 @@ export default function ComparePage() {
                   )}
 
                   {!s ? (
-                    <div className="flex flex-col items-center justify-center min-h-[190px] gap-2.5 w-full bg-transparent">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${C.glow} ${C.text}`}><Search size={20} strokeWidth={2.5} /></div>
-                      <div className="text-[11px] font-extrabold text-muted mb-2">{i === 0 ? 'Primer jugador' : i === 1 ? 'Segundo jugador' : 'Tercer jugador'}</div>
-                      <div className="w-[92%] z-50">
+                    <div className="flex flex-col items-center justify-center min-h-[220px] gap-3 w-full bg-transparent">
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center ${C.glow} ${C.text}`}><Search size={24} strokeWidth={2.5} /></div>
+                      <div className="text-[12px] font-extrabold text-muted mb-2 tracking-wide uppercase">{i === 0 ? 'Primer jugador' : i === 1 ? 'Segundo jugador' : 'Tercer jugador'}</div>
+                      <div className="w-[95%] z-50">
                         <PlayerSearch
                           onSelect={(p) => {
                             const n = [...slots];
@@ -389,16 +389,16 @@ export default function ComparePage() {
                       </div>
                     </div>
                   ) : load ? (
-                    <div className="flex flex-col items-center justify-center min-h-[190px] w-full"><Loader2 className={`animate-spin ${C.text}`} size={24} /></div>
+                    <div className="flex flex-col items-center justify-center min-h-[220px] w-full"><Loader2 className={`animate-spin ${C.text}`} size={28} /></div>
                   ) : data && (
-                    <div className="flex flex-col items-center z-10 w-full pt-1">
-                      <div className="relative mb-3">
-                        <div className="absolute -inset-1 rounded-full border-[2.5px] shadow-[0_0_16px]" style={{ borderColor: C.hex, boxShadow: `0 0 16px ${C.hex}22` }} />
-                        <div className="w-[72px] h-[72px] rounded-full bg-surface-3 flex items-center justify-center text-[24px] font-black text-secondary overflow-hidden relative z-10">
-                          {data.photoUrl ? <Image src={data.photoUrl} alt={data.name} width={72} height={72} className="object-cover w-full h-full" unoptimized /> : (data.name?.[0] || "?")}
+                    <div className="flex flex-col items-center z-10 w-full pt-2">
+                      <div className="relative mb-5">
+                        <div className="absolute -inset-1.5 rounded-full border-[3px] shadow-[0_0_20px]" style={{ borderColor: C.hex, boxShadow: `0 0 20px ${C.hex}33` }} />
+                        <div className="w-[88px] h-[88px] rounded-full bg-surface-3 flex items-center justify-center text-[28px] font-black text-secondary overflow-hidden relative z-10">
+                          {data.photoUrl ? <Image src={data.photoUrl} alt={data.name} width={88} height={88} className="object-cover w-full h-full" unoptimized /> : (data.name?.[0] || "?")}
                         </div>
                       </div>
-                      <Link href={`/players/${data.id}`} className="hover:opacity-80 transition-opacity"><p className={`text-[15px] font-black tracking-[-0.01em] leading-[1.2] mb-[7px]`}>{data.name}</p></Link>
+                      <Link href={`/players/${data.id}`} className="hover:opacity-80 transition-opacity"><p className={`text-[17px] font-black tracking-[-0.01em] leading-[1.2] mb-[8px]`}>{data.name}</p></Link>
 
                       <div className="flex items-center justify-center gap-[6px] mb-2">
                         <span className={`text-[9px] font-black tracking-[0.1em] uppercase px-[7px] py-[3px] rounded-[5px] bg-white/[0.04] ${C.text}`}>{data.position}</span>
@@ -458,11 +458,11 @@ export default function ComparePage() {
         ) : (
           <div className="animate-fade-in relative">
             {/* Legend Map */}
-            <div className="flex items-center justify-center gap-[24px] p-[11px] border-b border-border bg-surface-2/50 backdrop-blur-sm sticky top-0 z-30">
-              {validIndices.map(i => (
-                <div key={i} className="flex items-center gap-[6px] text-[11px] font-extrabold text-secondary">
-                  <div className="w-[9px] h-[9px] rounded-[3px]" style={{ background: COLORS[i].hex }} />
-                  {playersData[i]?.name.split(" ")[0]}
+            <div className="flex items-center justify-center gap-[24px] p-[14px] border-b border-border bg-surface-2/50 backdrop-blur-sm sticky top-0 z-30">
+              {slots.map((s, i) => (
+                <div key={i} className={`flex items-center gap-[6px] text-[11px] font-extrabold transition-opacity duration-300 ${s ? 'text-secondary opacity-100' : 'text-muted opacity-40'}`}>
+                  <div className="w-[10px] h-[10px] rounded-[3px]" style={{ background: COLORS[i].hex }} />
+                  {s ? playersData[i]?.name?.split(" ")[0] || "..." : `Slot ${i + 1}`}
                 </div>
               ))}
             </div>
@@ -513,44 +513,44 @@ export default function ComparePage() {
             ].map((sec, sIdx) => (
               <div key={sIdx}>
                 <div className="flex items-stretch bg-surface-2 border-t border-border">
-                  <div className="w-[180px] shrink-0 flex items-center justify-center p-[10px_0] border-r border-border text-[9.5px] font-black tracking-[0.16em] uppercase text-muted whitespace-nowrap">{sec.label}</div>
+                  <div className="w-[180px] shrink-0 flex items-center justify-center p-[12px_0] border-r border-border text-[9.5px] font-black tracking-[0.16em] uppercase text-muted whitespace-nowrap">{sec.label}</div>
                   <div className="flex-1 flex">
-                    {validIndices.map((vi) => <div key={vi} className="flex-1 border-r border-border last:border-0 py-2.5" />)}
+                    {slots.map((_, i) => <div key={i} className="flex-1 border-r border-border last:border-0 py-3" />)}
                   </div>
                 </div>
 
                 {sec.type === "radar" ? (
-                  <div className="border-t border-border bg-surface-2 p-[26px_28px_30px]">
-                    <div className="flex justify-center max-w-[360px] mx-auto">
+                  <div className="border-t border-border bg-surface-2 p-[32px_28px_40px]">
+                    <div className="flex justify-center max-w-[400px] mx-auto">
                       <RadarChartComponent
                         data={[
-                          { metric: "Goles", playerA: Math.min(100, num(getStat(validIndices[0]).goals) * 6), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).goals) * 6) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).goals) * 6) : undefined },
-                          { metric: "Asist.", playerA: Math.min(100, num(getStat(validIndices[0]).assists) * 10), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).assists) * 10) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).assists) * 10) : undefined },
-                          { metric: "xG", playerA: Math.min(100, num(getStat(validIndices[0]).xgPerGame) * 150), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).xgPerGame) * 150) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).xgPerGame) * 150) : undefined },
-                          { metric: "Pases%", playerA: Math.min(100, num(getStat(validIndices[0]).passAccuracyPct)), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).passAccuracyPct)) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).passAccuracyPct)) : undefined },
-                          { metric: "Tackles", playerA: Math.min(100, num(getStat(validIndices[0]).tackles) * 2), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).tackles) * 2) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).tackles) * 2) : undefined },
-                          { metric: "Recup.", playerA: Math.min(100, num(getStat(validIndices[0]).recoveries) * 1.5), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).recoveries) * 1.5) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).recoveries) * 1.5) : undefined },
-                          { metric: "Regates%", playerA: Math.min(100, num(getStat(validIndices[0]).dribbleSuccessRate)), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).dribbleSuccessRate)) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).dribbleSuccessRate)) : undefined },
-                          { metric: "Aéreos%", playerA: Math.min(100, num(getStat(validIndices[0]).aerialDuelsWonPct)), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).aerialDuelsWonPct)) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).aerialDuelsWonPct)) : undefined },
+                          { metric: "Goles", playerA: Math.min(100, num(getStat(0).goals) * 6), playerB: Math.min(100, num(getStat(1).goals) * 6), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).goals) * 6) : undefined },
+                          { metric: "Asist.", playerA: Math.min(100, num(getStat(0).assists) * 10), playerB: Math.min(100, num(getStat(1).assists) * 10), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).assists) * 10) : undefined },
+                          { metric: "xG", playerA: Math.min(100, num(getStat(0).xgPerGame) * 150), playerB: Math.min(100, num(getStat(1).xgPerGame) * 150), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).xgPerGame) * 150) : undefined },
+                          { metric: "Pases%", playerA: Math.min(100, num(getStat(0).passAccuracyPct)), playerB: Math.min(100, num(getStat(1).passAccuracyPct)), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).passAccuracyPct)) : undefined },
+                          { metric: "Tackles", playerA: Math.min(100, num(getStat(0).tackles) * 2), playerB: Math.min(100, num(getStat(1).tackles) * 2), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).tackles) * 2) : undefined },
+                          { metric: "Recup.", playerA: Math.min(100, num(getStat(0).recoveries) * 1.5), playerB: Math.min(100, num(getStat(1).recoveries) * 1.5), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).recoveries) * 1.5) : undefined },
+                          { metric: "Regates%", playerA: Math.min(100, num(getStat(0).dribbleSuccessRate)), playerB: Math.min(100, num(getStat(1).dribbleSuccessRate)), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).dribbleSuccessRate)) : undefined },
+                          { metric: "Aéreos%", playerA: Math.min(100, num(getStat(0).aerialDuelsWonPct)), playerB: Math.min(100, num(getStat(1).aerialDuelsWonPct)), playerC: slots.length > 2 ? Math.min(100, num(getStat(2).aerialDuelsWonPct)) : undefined },
                         ]}
-                        nameA={playersData[validIndices[0]]?.name}
-                        nameB={validIndices.length > 1 ? playersData[validIndices[1]]?.name : undefined}
-                        nameC={validIndices.length > 2 ? playersData[validIndices[2]]?.name : undefined}
-                        colorA={COLORS[validIndices[0]].hex}
-                        colorB={validIndices.length > 1 ? COLORS[validIndices[1]].hex : undefined}
-                        colorC={validIndices.length > 2 ? COLORS[validIndices[2]].hex : undefined}
+                        nameA={playersData[0]?.name}
+                        nameB={playersData[1]?.name}
+                        nameC={playersData[2]?.name}
+                        colorA={COLORS[0].hex}
+                        colorB={COLORS[1].hex}
+                        colorC={COLORS[2].hex}
                       />
                     </div>
                   </div>
                 ) : sec.type === "general" ? (
                   sec.rows?.map((r, rIdx) => (
-                    <GeneralRow key={rIdx} label={r.l} vals={validIndices.map(vi => r.fn?.(vi) || "—")} />
+                    <GeneralRow key={rIdx} label={r.l} vals={slots.map((_, vi) => r.fn?.(vi) || "—")} />
                   ))
                 ) : (
-                  sec.rows?.map((r, rIdx) => {
-                    const vals = validIndices.map(vi => fmtVal(getStat(vi)[r.k], r.d));
-                    const nums = validIndices.map(vi => num(getStat(vi)[r.k]));
-                    const activeCols = validIndices.map(vi => COLORS[vi].text);
+                  sec.rows?.map((r: any, rIdx) => {
+                    const vals = slots.map((_, vi) => fmtVal(getStat(vi)[r.k], r.d));
+                    const nums = slots.map((_, vi) => num(getStat(vi)[r.k]));
+                    const activeCols = slots.map((_, vi) => COLORS[vi].text);
                     return <CompRow key={rIdx} label={r.l} vals={vals} nums={nums} activeColors={activeCols} unit={r.u} higherIsBetter={!r.lower} />;
                   })
                 )}

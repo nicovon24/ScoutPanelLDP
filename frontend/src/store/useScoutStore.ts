@@ -37,6 +37,23 @@ interface ScoutState {
   setPageSize: (size: number) => void;
   sidebarExpanded: boolean;
   setSidebarExpanded: (expanded: boolean) => void;
+  // Búsqueda y Filtros Home
+  searchFilters: {
+    position: string;
+    teamId: string;
+    foot: string;
+    ageMin: string;
+    ageMax: string;
+    heightMin: string;
+    heightMax: string;
+    minRating: string;
+    marketValueMax: string;
+    sortBy: string;
+  };
+  setSearchFilters: (filters: Partial<ScoutState["searchFilters"]>) => void;
+  // Hydration state
+  _hasHydrated: boolean;
+  setHasHydrated: (h: boolean) => void;
 }
 
 
@@ -83,6 +100,27 @@ export const useScoutStore = create<ScoutState>()(
       setPageSize: (size) => set({ pageSize: size }),
       sidebarExpanded: false,
       setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
+      searchFilters: {
+        q: "",
+        position: "",
+        teamId: "",
+        foot: "",
+        ageMin: "",
+        ageMax: "",
+        heightMin: "",
+        heightMax: "",
+        minRating: "6.0",
+        marketValueMax: "",
+        sortBy: "rating_desc",
+      },
+      setSearchFilters: (filters) => set((s) => ({
+        searchFilters: {
+          ...(s.searchFilters || { q: "", position: "", teamId: "", foot: "", ageMin: "", ageMax: "", heightMin: "", heightMax: "", minRating: "6.0", marketValueMax: "", sortBy: "rating_desc" }),
+          ...filters
+        }
+      })),
+      _hasHydrated: false,
+      setHasHydrated: (h) => set({ _hasHydrated: h }),
     }),
     {
       name: "scout-store",
@@ -93,7 +131,11 @@ export const useScoutStore = create<ScoutState>()(
         user: s.user,
         pageSize: s.pageSize,
         sidebarExpanded: s.sidebarExpanded,
+        searchFilters: s.searchFilters,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

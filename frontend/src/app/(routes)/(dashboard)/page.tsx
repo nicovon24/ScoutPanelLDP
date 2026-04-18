@@ -16,7 +16,7 @@ import Pagination from "@/components/home/Pagination";
 
 function HomeContent() {
   const searchParams = useSearchParams();
-  const { setFilterPanelOpen, pageSize, setPageSize } = useScoutStore();
+  const { setFilterPanelOpen, pageSize, setPageSize, searchFilters, setSearchFilters, _hasHydrated } = useScoutStore();
 
   // Data State
   const [players, setPlayers] = useState<any[]>([]);
@@ -25,11 +25,10 @@ function HomeContent() {
   const [page, setPage] = useState(1);
   const [view, setView] = useState<"grid" | "table">("grid");
 
-  // Filters state (Sync with Sidebar)
-  const [filters, setFilters] = useState({
-    q: searchParams.get("q") ?? "",
-    position: searchParams.get("position") ?? "",
-    teamId: searchParams.get("teamId") ?? "",
+  const DEFAULT_FILTERS = {
+    q: "",
+    position: "",
+    teamId: "",
     foot: "",
     ageMin: "",
     ageMax: "",
@@ -38,12 +37,47 @@ function HomeContent() {
     minRating: "6.0",
     marketValueMax: "",
     sortBy: "rating_desc",
-  });
+  };
+  
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [inputQ, setInputQ] = useState("");
+
+  // When Store Hydration finishes, sync local state
+  useEffect(() => {
+    if (_hasHydrated && searchFilters) {
+      setFilters(searchFilters);
+      setInputQ(searchFilters.q || "");
+    }
+  }, [_hasHydrated]);
+
+  // Sync back to local if Store changes later (e.g. from Sidebar)
+  useEffect(() => {
+    if (_hasHydrated && searchFilters) {
+      setFilters(searchFilters);
+      if (searchFilters.q !== inputQ) {
+        setInputQ(searchFilters.q);
+      }
+    }
+  }, [searchFilters]);
+
+  const updateFiltersAndStore = (updates: any) => {
+    if (!_hasHydrated) return;
+    setFilters(prev => {
+      const n = { ...prev, ...updates };
+      setSearchFilters(n);
+      return n;
+    });
+    setPage(1);
+  };
 
   // Debounced search
-  const [inputQ, setInputQ] = useState(filters.q);
   useEffect(() => {
-    const t = setTimeout(() => setFilters(f => ({ ...f, q: inputQ })), 400);
+    if (!_hasHydrated) return;
+    const t = setTimeout(() => {
+      if (inputQ !== filters.q) {
+        updateFiltersAndStore({ q: inputQ });
+      }
+    }, 500);
     return () => clearTimeout(t);
   }, [inputQ]);
 
@@ -79,9 +113,11 @@ function HomeContent() {
     } finally {
       setLoading(false);
     }
-  }, [page, filters, pageSize]);
+  }, [page, filters, pageSize, _hasHydrated]);
 
-  useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
+  useEffect(() => { 
+    if (_hasHydrated) fetchPlayers(); 
+  }, [fetchPlayers, _hasHydrated]);
 
   const activeFilterCount = Object.entries(filters).filter(([key, val]) => {
     if (key === "sortBy") return false;
@@ -119,13 +155,13 @@ function HomeContent() {
             <Button
               isIconOnly
               onClick={() => {
-                setFilters({
+                const resetState = {
                   q: "", position: "", teamId: "", foot: "",
                   ageMin: "", ageMax: "", heightMin: "", heightMax: "",
                   minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
-                });
+                };
+                updateFiltersAndStore(resetState);
                 setInputQ("");
-                setPage(1);
               }}
               className="h-10 w-10 min-w-10 md:h-12 md:w-12 md:min-w-12 rounded-xl bg-[#e05a5a]/10 text-[#e05a5a] border border-[#e05a5a]/25 hover:bg-[#e05a5a]/20 transition-all shadow-[0_0_15px_rgba(224,90,90,0.1)]"
               aria-label="Limpiar filtros"
@@ -182,8 +218,7 @@ function HomeContent() {
             selectedKeys={filters.position ? new Set(filters.position.split(",")) : new Set()}
             onSelectionChange={(keys: any) => {
               const arr = Array.from(keys).join(",");
-              setFilters(prev => ({ ...prev, position: arr }));
-              setPage(1);
+              updateFiltersAndStore({ position: arr });
             }}
             classNames={{
               trigger: `${sharedSelectClasses.trigger} h-12`,
@@ -215,8 +250,7 @@ function HomeContent() {
             selectedKeys={[filters.sortBy]}
             onChange={(e) => {
               if (e.target.value) {
-                setFilters(prev => ({ ...prev, sortBy: e.target.value }));
-                setPage(1);
+                updateFiltersAndStore({ sortBy: e.target.value });
               }
             }}
             classNames={{
@@ -235,18 +269,88 @@ function HomeContent() {
         </div>
       </div>
 
+      {/* ── Active Filters Chips ── */}
+      {_hasHydrated && activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mt-[-8px]">
+          <span className="text-[10px] font-black text-muted uppercase tracking-[0.15em] mr-2">Filtros activos:</span>
+          
+          {filters.position && filters.position.split(",").map(pos => (
+            <div key={pos} className="flex items-center gap-1.5 bg-[#34d35a]/10 border border-[#34d35a]/20 px-2 py-1 rounded-lg">
+              <span className="text-[10px] font-black text-green uppercase">{pos}</span>
+              <button onClick={() => {
+                const arr = filters.position.split(",").filter(p => p !== pos);
+                updateFiltersAndStore({ position: arr.join(",") });
+              }} className="text-green/60 hover:text-green"><X size={10} strokeWidth={3} /></button>
+            </div>
+          ))}
+
+          {filters.teamId && filters.teamId.split(",").map(tid => {
+            const teamName = teams.find(t => t.id.toString() === tid)?.name || "Club";
+            return (
+              <div key={tid} className="flex items-center gap-1.5 bg-[#34d35a]/10 border border-[#34d35a]/20 px-2 py-1 rounded-lg">
+                <span className="text-[10px] font-black text-green uppercase">{teamName}</span>
+                <button onClick={() => {
+                  const arr = filters.teamId.split(",").filter(p => p !== tid);
+                  updateFiltersAndStore({ teamId: arr.join(",") });
+                }} className="text-green/60 hover:text-green"><X size={10} strokeWidth={3} /></button>
+              </div>
+            );
+          })}
+
+          {filters.foot && filters.foot.split(",").map(f => (
+            <div key={f} className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-lg">
+              <span className="text-[10px] font-black text-blue-400 uppercase">Pie: {f === "Both" ? "Ambi" : f === "Left" ? "Zurdo" : "Diestro"}</span>
+              <button onClick={() => {
+                const arr = filters.foot.split(",").filter(p => p !== f);
+                updateFiltersAndStore({ foot: arr.join(",") });
+              }} className="text-blue-400/60 hover:text-blue-400"><X size={10} strokeWidth={3} /></button>
+            </div>
+          ))}
+
+          {(filters.ageMin || filters.ageMax) && (
+            <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded-lg">
+              <span className="text-[10px] font-black text-purple-400 uppercase">Edad: {filters.ageMin || "0"}-{filters.ageMax || "50"}</span>
+              <button onClick={() => updateFiltersAndStore({ ageMin: "", ageMax: "" })} className="text-purple-400/60 hover:text-purple-400"><X size={10} strokeWidth={3} /></button>
+            </div>
+          )}
+
+          {filters.marketValueMax && (
+            <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 px-2 py-1 rounded-lg">
+              <span className="text-[10px] font-black text-orange-400 uppercase">Máx: {filters.marketValueMax}M€</span>
+              <button onClick={() => updateFiltersAndStore({ marketValueMax: "" })} className="text-orange-400/60 hover:text-orange-400"><X size={10} strokeWidth={3} /></button>
+            </div>
+          )}
+
+          <button 
+            onClick={() => {
+              const resetState = {
+                q: "", position: "", teamId: "", foot: "",
+                ageMin: "", ageMax: "", heightMin: "", heightMax: "",
+                minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
+              };
+              updateFiltersAndStore(resetState);
+              setInputQ("");
+            }}
+            className="text-[10px] font-black text-danger uppercase tracking-[0.1em] hover:underline ml-2"
+          >
+            Limpiar todo
+          </button>
+        </div>
+      )}
+
       {/* ── Results Area ── */}
       <div className="min-h-[400px]">
-        {view === "grid"
+        {!_hasHydrated ? (
+          <div className="flex items-center justify-center py-24">
+            <div className="w-10 h-10 border-4 border-green/30 border-t-green rounded-full animate-spin" />
+          </div>
+        ) : view === "grid"
           ? <PlayerGrid players={players} loading={loading} />
           : <PlayerTable
             players={players}
             loading={loading}
             sortBy={filters.sortBy}
-            onSort={(sort) => {
-              setFilters(prev => ({ ...prev, sortBy: sort }));
-              setPage(1);
-            }}
+            onSort={(sort) => updateFiltersAndStore({ sortBy: sort })}
           />
         }
       </div>
@@ -293,15 +397,15 @@ function HomeContent() {
       <FilterSidebar
         teams={teams}
         filters={filters}
-        setFilters={setFilters}
+        setFilters={(n: any) => updateFiltersAndStore(n)}
         onReset={() => {
-          setFilters({
+          const resetState = {
             q: "", position: "", teamId: "", foot: "",
             ageMin: "", ageMax: "", heightMin: "", heightMax: "",
             minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
-          });
+          };
+          updateFiltersAndStore(resetState);
           setInputQ("");
-          setPage(1);
         }}
       />
     </div>

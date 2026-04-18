@@ -123,16 +123,27 @@ router.get("/", async (req, res) => {
       const pattern = `%${(q as string).trim()}%`;
       conditions.push(ilike(players.name, pattern) as any);
     }
-    if (position) {
-      const posArr = (position as string).split(",");
-      if (posArr.length > 1) {
-        conditions.push(inArray(players.position, posArr) as any);
-      } else {
-        conditions.push(eq(players.position, position as string) as any);
+    if (position && position !== "") {
+      const posArr = (position as string).split(",").filter(Boolean);
+      if (posArr.length > 0) {
+        if (posArr.length > 1) {
+          conditions.push(inArray(players.position, posArr) as any);
+        } else {
+          conditions.push(eq(players.position, posArr[0]) as any);
+        }
       }
     }
     if (nationality) conditions.push(eq(players.nationality, nationality as string) as any);
-    if (teamId) conditions.push(eq(players.teamId, Number(teamId)) as any);
+    if (teamId && teamId !== "") {
+      const teamArr = (teamId as string).split(",").filter(Boolean).map(Number);
+      if (teamArr.length > 0) {
+        if (teamArr.length > 1) {
+          conditions.push(inArray(players.teamId, teamArr) as any);
+        } else {
+          conditions.push(eq(players.teamId, teamArr[0]) as any);
+        }
+      }
+    }
     if (foot) conditions.push(eq(players.preferredFoot, foot as string) as any);
 
     if (valueMin) conditions.push(gte(players.marketValueM, valueMin as string) as any);

@@ -178,31 +178,37 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                 <div className="space-y-2">
                   <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Club actual</span>
                   <Select
+                    selectionMode="multiple"
                     items={[
-                      { id: "all", name: "Todos los clubes", logoUrl: "" },
                       ...[...teams].sort((a, b) => a.name.localeCompare(b.name)).map(t => ({ 
                         id: t.id.toString(), 
                         name: t.name, 
                         logoUrl: (t as any).logoUrl || (t as any).imagePath 
                       }))
                     ]}
-                    selectedKeys={filters.teamId ? [filters.teamId.toString()] : []}
-                    onChange={(e) => update("teamId", e.target.value)}
-                    placeholder="Seleccioná un equipo"
+                    selectedKeys={filters.teamId ? new Set(filters.teamId.split(",")) : new Set()}
+                    onSelectionChange={(keys) => {
+                      const keysArray = Array.from(keys);
+                      update("teamId", keysArray.join(","));
+                    }}
+                    placeholder="Seleccioná equipos"
                     renderValue={(items) => {
-                      return items.map((item) => (
-                        <div key={item.key} className="flex gap-2 items-center">
-                          {item.data?.logoUrl && (
-                            <Avatar 
-                              src={item.data.logoUrl} 
-                              alt={item.data.name} 
-                              className="w-5 h-5 flex-shrink-0 bg-transparent"
-                              fallback={<div className="bg-[#34d35a]/20 text-[#34d35a] font-bold w-full h-full flex items-center justify-center text-[10px]">{item.data.name?.substring(0,2)}</div>}
-                            />
-                          )}
-                          <span className="text-sm font-bold text-[#7aab82]">{item.data?.name}</span>
+                      return (
+                        <div className="flex flex-wrap gap-1">
+                          {items.map((item) => (
+                            <span key={item.key} className="bg-[#34d35a]/20 text-[#34d35a] text-[10px] px-2 py-0.5 rounded-md font-black flex items-center gap-1">
+                              {item.data?.logoUrl && (
+                                <Avatar 
+                                  src={item.data.logoUrl} 
+                                  alt={item.data.name} 
+                                  className="w-3 h-3 flex-shrink-0 bg-transparent"
+                                />
+                              )}
+                              {item.data?.name}
+                            </span>
+                          ))}
                         </div>
-                      ));
+                      );
                     }}
                     classNames={{
                       trigger: `${sharedSelectClasses.trigger} h-[46px] lg:h-[50px]`,
@@ -217,14 +223,10 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                         textValue={item.name} 
                         classNames={sharedSelectItemClasses}
                       >
-                        {item.id === "all" ? (
-                          <span>{item.name}</span>
-                        ) : (
-                          <div className="flex gap-2 items-center">
-                            <Avatar alt={item.name} fallback={<div className="bg-[#34d35a]/20 text-[#34d35a] font-bold w-full h-full flex items-center justify-center text-[10px]">{item.name.substring(0,2)}</div>} className="w-5 h-5 flex-shrink-0 bg-transparent" src={item.logoUrl} />
-                            <span className="text-xs font-bold">{item.name}</span>
-                          </div>
-                        )}
+                        <div className="flex gap-2 items-center">
+                          <Avatar alt={item.name} fallback={<div className="bg-[#34d35a]/20 text-[#34d35a] font-bold w-full h-full flex items-center justify-center text-[10px]">{item.name.substring(0,2)}</div>} className="w-5 h-5 flex-shrink-0 bg-transparent" src={item.logoUrl} />
+                          <span className="text-xs font-bold">{item.name}</span>
+                        </div>
                       </SelectItem>
                     )}
                   </Select>
