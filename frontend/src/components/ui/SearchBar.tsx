@@ -4,6 +4,8 @@ import { Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import Image from "next/image";
+import { Select, SelectItem, Input } from "@nextui-org/react";
+import AppButton from "./AppButton";
 
 interface SearchResult {
   players: { id: number; name: string; position: string; photoUrl?: string; nationality?: string }[];
@@ -71,40 +73,53 @@ export default function SearchBar() {
                       transition-all duration-200 focus-within:border-green/40 focus-within:shadow-[0_0_20px_rgba(0,224,148,0.1)] overflow-hidden">
 
         {/* Type Selector */}
-        <div className="relative border-r border-white/[0.05] bg-white/[0.02]">
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as any)}
-            className="appearance-none bg-transparent text-[11px] font-black uppercase tracking-widest text-secondary px-4 pr-8 h-12 outline-none cursor-pointer hover:text-primary transition-colors focus:bg-transparent"
+        <div className="w-[140px] border-r border-white/[0.05] bg-white/[0.02] flex items-center">
+          <Select
+            selectedKeys={[type]}
+            onChange={(e) => { if(e.target.value) setType(e.target.value as any) }}
+            size="sm"
+            classNames={{
+              trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-4 h-12 min-h-12 border-none rounded-none w-full",
+              value: "text-[11px] font-black uppercase tracking-widest text-secondary group-data-[hover=true]:text-primary",
+              popoverContent: "bg-card border border-white/[0.05]",
+              innerWrapper: "gap-1",
+              selectorIcon: "text-muted"
+            }}
+            aria-label="Filtro"
           >
-            <option value="all" className="bg-card text-primary font-bold">Todo</option>
-            <option value="players" className="bg-card text-primary font-bold">Jugadores</option>
-            <option value="clubs" className="bg-card text-primary font-bold">Clubes</option>
-          </select>
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
-            <svg width="8" height="6" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1.5L4 4.5L7 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+            <SelectItem key="all" value="all">Todo</SelectItem>
+            <SelectItem key="players" value="players">Jugadores</SelectItem>
+            <SelectItem key="clubs" value="clubs">Clubes</SelectItem>
+          </Select>
         </div>
 
         {/* Input */}
-        <div className="flex items-center gap-3 flex-1 px-4 py-3">
-          {loading
-            ? <div className="w-4 h-4 border-2 border-green/30 border-t-green rounded-full animate-spin flex-shrink-0" />
-            : <Search size={16} className="text-muted flex-shrink-0" />}
-          <input
+        <div className="flex-1">
+          <Input 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => results && setOpen(true)}
             placeholder={type === "players" ? "Buscar jugador..." : type === "clubs" ? "Buscar club..." : "Buscar jugador o club..."}
-            className="flex-1 bg-transparent text-[14px] text-primary placeholder:text-secondary outline-none"
+            startContent={
+              loading 
+                ? <div className="w-4 h-4 border-2 border-green/30 border-t-green rounded-full animate-spin flex-shrink-0" />
+                : <Search size={16} className="text-muted flex-shrink-0" />
+            }
+            endContent={
+              query && (
+                <button onClick={() => { setQuery(""); setOpen(false); }}>
+                  <X size={15} className="text-muted hover:text-secondary transition-colors" />
+                </button>
+              )
+            }
+            variant="flat"
+            classNames={{
+              base: "h-12",
+              mainWrapper: "h-full",
+              inputWrapper: "h-full bg-transparent border-none shadow-none hover:bg-transparent data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent",
+              input: "text-[14px] text-primary placeholder:text-secondary"
+            }}
           />
-          {query && (
-            <button onClick={() => { setQuery(""); setOpen(false); }}>
-              <X size={15} className="text-muted hover:text-secondary transition-colors" />
-            </button>
-          )}
         </div>
       </div>
 

@@ -9,7 +9,7 @@ const POSITIONS = [
   { id: "RW", label: "RW", x: 80, y: 20, group: "att" },
   // Medios
   { id: "CAM", label: "CAM", x: 50, y: 45, group: "mid" },
-  { id: "CM",  label: "CM",  x: 50, y: 60, group: "mid" },
+  { id: "CM", label: "CM", x: 50, y: 60, group: "mid" },
   { id: "CDM", label: "CDM", x: 50, y: 75, group: "mid" },
   // Defensas
   { id: "CB", label: "CB", x: 50, y: 88, group: "def" },
@@ -25,6 +25,8 @@ interface Props {
 }
 
 export default function SoccerFieldPositions({ selected, onSelect }: Props) {
+  const selectedArr = selected ? selected.split(",") : [];
+
   return (
     <div className="relative w-full aspect-[2/3] bg-[#0E2D1B] rounded-xl overflow-hidden border border-white/5 shadow-inner">
       {/* Field Lines */}
@@ -38,18 +40,24 @@ export default function SoccerFieldPositions({ selected, onSelect }: Props) {
 
       {/* Positions */}
       {POSITIONS.map((p) => {
-        const active = selected === p.id;
+        const active = selectedArr.includes(p.id);
         const groupColor = p.group === "att" ? "bg-danger" : p.group === "mid" ? "bg-purple" : p.group === "def" ? "bg-blue" : "bg-gold";
-        
+
         return (
           <button
             key={p.id}
-            onClick={() => onSelect(active ? "" : p.id)}
+            onClick={() => {
+              if (active) {
+                onSelect(selectedArr.filter(x => x !== p.id).join(","));
+              } else {
+                onSelect([...selectedArr, p.id].join(","));
+              }
+            }}
             className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full 
                         flex items-center justify-center text-[10px] font-black transition-all duration-200
-                        ${active 
-                          ? `${groupColor} text-white shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-110 ring-2 ring-white/50` 
-                          : "bg-white/10 text-white/50 hover:bg-white/20 hover:text-white"}`}
+                        ${active
+                ? `${groupColor} text-white shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-110 ring-2 ring-white/50`
+                : "bg-white/10 text-white/50 hover:bg-white/20 hover:text-white"}`}
             style={{ left: `${p.x}%`, top: `${p.y}%` }}
           >
             {p.id}

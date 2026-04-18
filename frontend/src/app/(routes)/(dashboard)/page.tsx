@@ -4,6 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { Users, SlidersHorizontal, LayoutGrid, List, Search, X } from "lucide-react";
 import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
+import { Select, SelectItem, Button, Input } from "@nextui-org/react";
+import AppButton from "@/components/ui/AppButton";
 
 // Components
 import PlayerGrid from "@/components/home/PlayerGrid";
@@ -92,18 +94,18 @@ function HomeContent() {
         <div className="flex items-center gap-3">
           {/* View Toggle */}
           <div className="flex p-1 bg-white/[0.03] border border-white/[0.05] rounded-xl overflow-hidden mr-3">
-            <button onClick={() => setView("grid")} className={`p-2 rounded-lg transition-all ${view === "grid" ? "bg-white/10 text-primary shadow-sm" : "text-muted hover:text-secondary"}`}>
+            <Button isIconOnly onClick={() => setView("grid")} className={`min-w-10 w-10 h-10 rounded-lg transition-all ${view === "grid" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
               <LayoutGrid size={18} />
-            </button>
-            <button onClick={() => setView("table")} className={`p-2 rounded-lg transition-all ${view === "table" ? "bg-white/10 text-primary shadow-sm" : "text-muted hover:text-secondary"}`}>
+            </Button>
+            <Button isIconOnly onClick={() => setView("table")} className={`min-w-10 w-10 h-10 rounded-lg transition-all ${view === "table" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
               <List size={18} />
-            </button>
+            </Button>
           </div>
 
-          <button
+          <AppButton 
             onClick={() => setFilterPanelOpen(true)}
-            className={`btn h-12 px-6 gap-3 rounded-xl transition-all font-bold text-[14px]
-                       ${activeFilterCount > 0 ? "btn-primary" : "bg-white/[0.05] hover:bg-white/[0.08] text-primary"}`}
+            variant={activeFilterCount > 0 ? "primary" : "secondary"}
+            className="h-12 px-6 gap-3"
           >
             <SlidersHorizontal size={18} />
             Filtros
@@ -112,35 +114,39 @@ function HomeContent() {
                 {activeFilterCount}
               </span>
             )}
-          </button>
+          </AppButton>
         </div>
       </div>
 
       {/* ── Search & Quick Bar ── */}
       <div className="flex items-center gap-4 bg-white/[0.02] border border-white/[0.05] p-5 rounded-2xl shadow-sm">
-        <div className="flex-1 flex items-center bg-card border border-white/[0.05] rounded-xl transition-all duration-200 focus-within:border-green/40 focus-within:shadow-[0_0_20px_rgba(0,224,148,0.1)] overflow-hidden">
-          <div className="flex items-center gap-3 flex-1 px-4 py-3">
-            <Search size={16} className="text-muted flex-shrink-0" />
-            <input
-              value={inputQ}
-              onChange={(e) => { setInputQ(e.target.value); setPage(1); }}
-              placeholder="Buscar por nombre, apellido..."
-              className="flex-1 bg-transparent text-[14px] text-primary placeholder:text-secondary outline-none"
-            />
-            {inputQ && (
-              <button onClick={() => { setInputQ(""); setPage(1); }}>
-                <X size={15} className="text-muted hover:text-secondary transition-colors" />
-              </button>
-            )}
-          </div>
+        <div className="flex-1">
+          <Input 
+            value={inputQ}
+            onChange={(e) => { setInputQ(e.target.value); setPage(1); }}
+            placeholder="Buscar por nombre, apellido..."
+            startContent={<Search size={16} className="text-muted flex-shrink-0" />}
+            endContent={
+              inputQ && (
+                <button onClick={() => { setInputQ(""); setPage(1); }}>
+                  <X size={15} className="text-muted hover:text-secondary transition-colors" />
+                </button>
+              )
+            }
+            variant="flat"
+            classNames={{
+              inputWrapper: "h-12 bg-card border border-white/[0.05] rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
+              input: "text-[14px] text-primary placeholder:text-secondary"
+            }}
+          />
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
           <span className="text-[11px] font-black uppercase tracking-widest text-primary mr-2">Status:</span>
           {["Libre", "A préstamo", "Contrato"].map(s => (
-            <button key={s} className="px-3 py-1 rounded-lg text-[12px] font-bold text-secondary border border-secondary hover:border-green/30 hover:text-green transition-all">
+            <AppButton key={s} size="sm" variant="secondary" className="h-[34px] px-3 border border-secondary text-secondary hover:border-green/30 hover:text-green">
               {s}
-            </button>
+            </AppButton>
           ))}
         </div>
       </div>
@@ -159,17 +165,24 @@ function HomeContent() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-[13px] text-muted font-black uppercase tracking-widest">Mostrar:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-                className="bg-white/[0.03] border border-white/[0.05] rounded-xl px-3 py-1.5 text-[13px] font-bold text-primary focus:outline-none focus:border-green/50 hover:border-white/[0.1] transition-colors"
+              <Select
+                selectedKeys={[String(pageSize)]}
+                onChange={(e) => { if (e.target.value) { setPageSize(Number(e.target.value)); setPage(1); } }}
+                className="w-32"
+                size="md"
+                classNames={{
+                  trigger: "bg-white/[0.03] border border-white/[0.05] data-[hover=true]:border-white/[0.1] data-[focus=true]:border-green/50 data-[open=true]:border-green/50 transition-colors rounded-xl shadow-none",
+                  value: "text-[14px] font-bold text-primary",
+                  popoverContent: "bg-card border border-white/[0.05]"
+                }}
+                aria-label="Mostrar"
               >
-                <option value={10} className="bg-card text-primary font-bold">10</option>
-                <option value={20} className="bg-card text-primary font-bold">20</option>
-                <option value={30} className="bg-card text-primary font-bold">30</option>
-                <option value={40} className="bg-card text-primary font-bold">40</option>
-                <option value={50} className="bg-card text-primary font-bold">50</option>
-              </select>
+                <SelectItem key="10" value="10">10</SelectItem>
+                <SelectItem key="20" value="20">20</SelectItem>
+                <SelectItem key="30" value="30">30</SelectItem>
+                <SelectItem key="40" value="40">40</SelectItem>
+                <SelectItem key="50" value="50">50</SelectItem>
+              </Select>
             </div>
             <span className="text-[13px] text-muted font-bold tracking-tight">
               {Math.min(page * pageSize, totalItems)} de {totalItems}

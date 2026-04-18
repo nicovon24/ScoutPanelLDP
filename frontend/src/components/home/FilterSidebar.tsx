@@ -1,8 +1,10 @@
 "use client";
 import React from "react";
-import { X, Filter, Trash2 } from "lucide-react";
+import { X, Filter, Trash2, CheckCircle2 } from "lucide-react";
 import { useScoutStore } from "@/store/useScoutStore";
 import SoccerFieldPositions from "./SoccerFieldPositions";
+import { Select, SelectItem, Input } from "@nextui-org/react";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   teams: { id: number; name: string }[];
@@ -27,132 +29,190 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
 
   return (
     <>
-      {/* Backdrop */}
-      <div 
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] transition-opacity duration-300 pointer-events-none
+      {/* Backdrop - Increased z-index to ensure it covers everything */}
+      <div
+        className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] transition-all duration-500 pointer-events-none
                    ${filterPanelOpen ? "opacity-100 pointer-events-auto" : "opacity-0"}`}
         onClick={() => setFilterPanelOpen(false)}
       />
 
-      {/* Sidebar Panel */}
-      <aside 
-        className={`fixed left-0 top-0 bottom-0 w-[400px] bg-sidebar border-r border-white/[0.05] z-[70] 
-                   transform transition-transform duration-500 ease-out flex flex-col
-                   ${filterPanelOpen ? "translate-x-0" : "-translate-x-full"}`}
+      {/* Sidebar Panel - Widened to 850px and increased z-index */}
+      <aside
+        className={`fixed right-0 top-0 h-[100dvh] w-full lg:w-[850px] bg-[#0A0A0A] border-l border-white/10 z-[10000] 
+                   transform transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col shadow-[-40px_0_80px_rgba(0,0,0,0.8)]
+                   ${filterPanelOpen ? "translate-x-0" : "translate-x-full"}`}
       >
+        {/* Glow effect */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#00E094]/10 blur-[120px] rounded-full pointer-events-none" />
+
         {/* Header */}
-        <div className="p-6 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.01]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green/10 flex items-center justify-center text-green">
-              <Filter size={20} />
+        <div className="relative p-6 border-b border-white/[0.08] flex items-center justify-between bg-black/40 z-10 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#00E094]/10 border border-[#00E094]/20 flex items-center justify-center text-[#00E094] shadow-[0_0_20px_rgba(0,224,148,0.15)]">
+              <Filter size={24} strokeWidth={2.5} />
             </div>
-            <div>
-              <h2 className="text-[18px] font-black text-primary uppercase tracking-tight">Filtros Avanzados</h2>
-              <p className="text-[10px] text-muted tracking-widest uppercase font-bold">Refina tu búsqueda</p>
+            <div className="flex flex-col">
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight leading-none">Filtros Avanzados</h2>
+              <p className="text-[12px] text-[#00E094] tracking-[0.2em] uppercase font-bold mt-1">Configuración de búsqueda personalizada</p>
             </div>
           </div>
-          <button 
+          <AppButton
+            isIconOnly
+            variant="light"
             onClick={() => setFilterPanelOpen(false)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-muted hover:bg-white/5 hover:text-primary transition-all"
+            className="w-12 h-12 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
           >
-            <X size={20} />
-          </button>
+            <X size={24} />
+          </AppButton>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          
-          {/* Section: Position */}
-          <div className="space-y-4">
-            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary/60">Posición en el campo</label>
-            <SoccerFieldPositions 
-              selected={filters.position} 
-              onSelect={(pos) => update("position", pos)} 
-            />
-          </div>
-
-          {/* Section: Team */}
-          <div className="space-y-3">
-            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary/60">Club / Equipo</label>
-            <select 
-              value={filters.teamId} 
-              onChange={(e) => update("teamId", e.target.value)}
-              className="select-field h-12 w-full bg-white/[0.02] border-white/[0.05]"
-            >
-              <option value="">Todos los clubes</option>
-              {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Pie hábil */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary/60">Pref. Pie</label>
-              <select 
-                value={filters.foot} 
-                onChange={(e) => update("foot", e.target.value)}
-                className="select-field h-12 w-full bg-white/[0.02] border-white/[0.05]"
-              >
-                <option value="">Cualquiera</option>
-                <option value="Right">Derecho</option>
-                <option value="Left">Zurdo</option>
-                <option value="Both">Ambos</option>
-              </select>
+        {/* Content with 2-Column Grid */}
+        <div className="flex-1 overflow-y-auto p-8 relative z-10 custom-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+            
+            {/* Left Column: Soccer Field */}
+            <div className="space-y-6">
+              <label className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#00E094]" /> Ubicación Táctica
+              </label>
+              <div className="bg-black/40 p-5 rounded-[24px] border border-white/5 shadow-2xl">
+                <SoccerFieldPositions
+                  selected={filters.position}
+                  onSelect={(pos) => update("position", pos)}
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                <p className="text-[11px] text-white/30 font-medium leading-relaxed italic">
+                  * Selecciona múltiples posiciones en el campo para encontrar jugadores polifuncionales.
+                </p>
+              </div>
             </div>
 
-            {/* Valor de mercado */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary/60">V. Máximo (M€)</label>
-              <input 
-                type="number"
-                value={filters.marketValueMax}
-                onChange={(e) => update("marketValueMax", e.target.value)}
-                placeholder="Ej: 50"
-                className="field h-12 w-full bg-white/[0.02] border-white/[0.05]"
-              />
-            </div>
-          </div>
+            {/* Right Column: Other Filters */}
+            <div className="space-y-8">
+              {/* Club Selection */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Club / Equipo Actual</label>
+                <Select
+                  selectedKeys={filters.teamId ? [filters.teamId.toString()] : [""]}
+                  onChange={(e) => update("teamId", e.target.value)}
+                  placeholder="Selecciona un equipo"
+                  classNames={{
+                    trigger: "bg-[#141414] border border-white/10 h-14 rounded-xl shadow-none hover:border-[#00E094]/50 hover:bg-[#1a1a1a] transition-all",
+                    value: "text-white font-bold text-[14px]",
+                    popoverContent: "bg-[#0d0d0d] border border-white/10 shadow-2xl rounded-xl",
+                    listbox: "p-2"
+                  }}
+                  aria-label="Seleccionar club"
+                >
+                  <SelectItem key="all" textValue="Todos los clubes" className="text-white/70 hover:text-white">Todos los clubes</SelectItem>
+                  {teams.map((t) => (
+                    <SelectItem key={t.id.toString()} textValue={t.name} className="text-white hover:text-[#00E094] hover:bg-[#00E094]/5">
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </div>
 
-          {/* Edad */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary/60">Rango de Edad</label>
-              <span className="text-[11px] font-bold text-green">{filters.ageMin || 15} - {filters.ageMax || 45} años</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input 
-                type="number" 
-                placeholder="Mín"
-                value={filters.ageMin}
-                onChange={(e) => update("ageMin", e.target.value)}
-                className="field h-11 text-center bg-white/[0.02] border-white/[0.05]"
-              />
-              <input 
-                type="number" 
-                placeholder="Máx"
-                value={filters.ageMax}
-                onChange={(e) => update("ageMax", e.target.value)}
-                className="field h-11 text-center bg-white/[0.02] border-white/[0.05]"
-              />
+              <div className="grid grid-cols-2 gap-5">
+                {/* Preferencia de Pie */}
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Perfil Hábil</label>
+                  <Select
+                    selectedKeys={filters.foot ? [filters.foot] : [""]}
+                    onChange={(e) => update("foot", e.target.value)}
+                    classNames={{
+                      trigger: "bg-[#141414] border border-white/10 h-14 rounded-xl shadow-none hover:border-[#00E094]/50 hover:bg-[#1a1a1a] transition-all",
+                      value: "text-white font-bold text-[14px]",
+                      popoverContent: "bg-[#0d0d0d] border border-white/10 shadow-2xl rounded-xl",
+                    }}
+                    aria-label="Seleccionar pie"
+                  >
+                    <SelectItem key="any" textValue="Cualquiera" className="text-white/70">Cualquiera</SelectItem>
+                    <SelectItem key="Right" textValue="Derecho" className="text-white">Derecho</SelectItem>
+                    <SelectItem key="Left" textValue="Zurdo" className="text-white">Zurdo</SelectItem>
+                    <SelectItem key="Both" textValue="Ambos" className="text-white">Ambos</SelectItem>
+                  </Select>
+                </div>
+
+                {/* Valor de mercado */}
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Presupuesto Máx (M€)</label>
+                  <Input
+                    type="number"
+                    value={filters.marketValueMax}
+                    onChange={(e) => update("marketValueMax", e.target.value)}
+                    placeholder="Ej: 2.5"
+                    variant="bordered"
+                    classNames={{
+                      inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-[#00E094]/50 hover:bg-[#1a1a1a] transition-all group-data-[focus=true]:border-[#00E094]",
+                      input: "text-[15px] font-bold text-white placeholder:text-white/15"
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Rango de Edad */}
+              <div className="space-y-5 bg-white/[0.01] p-6 rounded-2xl border border-white/5">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Rango de Edad</label>
+                  <span className="text-[12px] font-black text-[#00E094] bg-[#00E094]/10 px-4 py-1.5 rounded-full border border-[#00E094]/20">
+                    {filters.ageMin || 15} — {filters.ageMax || 45} Años
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <span className="text-[9px] uppercase font-bold text-white/20 ml-2">Mínima</span>
+                    <Input
+                      type="number"
+                      placeholder="15"
+                      value={filters.ageMin}
+                      onChange={(e) => update("ageMin", e.target.value)}
+                      variant="bordered"
+                      classNames={{
+                        inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-[#00E094]/50 group-data-[focus=true]:border-[#00E094]",
+                        input: "text-center text-[15px] font-bold text-white"
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-[9px] uppercase font-bold text-white/20 ml-2">Máxima</span>
+                    <Input
+                      type="number"
+                      placeholder="45"
+                      value={filters.ageMax}
+                      onChange={(e) => update("ageMax", e.target.value)}
+                      variant="bordered"
+                      classNames={{
+                        inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-[#00E094]/50 group-data-[focus=true]:border-[#00E094]",
+                        input: "text-center text-[15px] font-bold text-white"
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-white/[0.05] bg-white/[0.01] flex gap-3">
-          <button 
+        <div className="p-8 border-t border-white/[0.08] bg-black/60 flex gap-5 relative z-10 backdrop-blur-md">
+          <AppButton
             onClick={onReset}
-            className="flex-1 h-12 rounded-xl border border-white/[0.05] text-[13px] font-bold text-muted hover:text-danger hover:bg-danger/5 transition-all flex items-center justify-center gap-2"
+            variant="danger"
+            className="flex-1 h-16 font-bold tracking-wider rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-lg"
           >
-            <Trash2 size={16} />
-            Limpiar
-          </button>
-          <button 
+            <Trash2 size={20} className="mr-2" />
+            Limpiar Filtros
+          </AppButton>
+          <AppButton
             onClick={() => setFilterPanelOpen(false)}
-            className="flex-[2] h-12 rounded-xl bg-green text-base text-[13px] font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(0,224,148,0.2)]"
+            variant="primary"
+            className="flex-[2] h-16 font-black tracking-widest rounded-2xl bg-[#00E094] text-black hover:bg-[#00c985] hover:shadow-[0_15px_35px_rgba(0,224,148,0.3)] transition-all flex items-center justify-center gap-3"
           >
-            Aplicar Filtros
-          </button>
+            <CheckCircle2 size={22} />
+            APLICAR CAMBIOS
+          </AppButton>
         </div>
       </aside>
     </>

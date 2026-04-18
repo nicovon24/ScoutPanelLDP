@@ -16,9 +16,9 @@ function calcAge(dob?: string) {
 }
 function posStyle(pos: string) {
   const p = pos?.toUpperCase();
-  if (["CF","SS","LW","RW"].includes(p)) return "pos-attack";
-  if (["CAM","CM","CDM"].includes(p))    return "pos-mid";
-  if (["CB","LB","RB"].includes(p))      return "pos-def";
+  if (["CF", "SS", "LW", "RW"].includes(p)) return "pos-attack";
+  if (["CAM", "CM", "CDM"].includes(p)) return "pos-mid";
+  if (["CB", "LB", "RB"].includes(p)) return "pos-def";
   return "pos-gk";
 }
 function fmt(v: string | number | undefined | null, decimals = 0) {
@@ -43,8 +43,8 @@ function DonutCircle({ value, label, color = "#00E094" }: { value: number; label
         <svg viewBox="0 0 68 68" className="w-full h-full -rotate-90">
           <circle cx="34" cy="34" r={r} fill="none" stroke="#2C2C2C" strokeWidth="5" />
           <circle cx="34" cy="34" r={r} fill="none" stroke={color} strokeWidth="5"
-                  strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-                  style={{ transition: "stroke-dasharray 0.6s ease" }} />
+            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+            style={{ transition: "stroke-dasharray 0.6s ease" }} />
         </svg>
         <span className="absolute inset-0 flex items-center justify-center text-[12px] font-bold text-primary">
           {pct.toFixed(0)}%
@@ -109,54 +109,54 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
-        
+
         {/* GK Specific Section */}
         {isGK && (
           <StatSection title="Portería">
             <StatBarRow label="Efectividad en paradas" value={stat.savePct} maxValue={100} color="#E8A838" isPercent />
-            <StatBarRow label="Vallas invictas"     value={stat.cleanSheets}   maxValue={20}  color="#00E094" />
-            <StatBarRow label="Goles recibidos"     value={stat.goalsConceded} maxValue={50}  color="#F04444" />
+            <StatBarRow label="Vallas invictas" value={stat.cleanSheets} maxValue={20} color="#00E094" />
+            <StatBarRow label="Goles recibidos" value={stat.goalsConceded} maxValue={50} color="#F04444" />
           </StatSection>
         )}
 
         {/* Attack Section - Primary for Attackers, shown for others too if relevant */}
         {(isATT || !isGK) && (
           <StatSection title="Ataque">
-            <StatBarRow label="Goles"              value={stat.goals}            maxValue={30}  color="#00E094" />
-            <StatBarRow label="xG por partido"     value={stat.xgPerGame}        maxValue={1.5} color="#00E094" />
-            <StatBarRow label="Tiros por partido"  value={stat.shotsPerGame}     maxValue={6}   color="#0C65D4" />
-            <StatBarRow label="Tiros al arco %"    value={stat.shotsOnTargetPct} maxValue={100} color="#0C65D4" isPercent />
+            <StatBarRow label="Goles" value={stat.goals} maxValue={30} color="#00E094" />
+            <StatBarRow label="xG por partido" value={stat.xgPerGame} maxValue={1.5} color="#00E094" />
+            <StatBarRow label="Tiros por partido" value={stat.shotsPerGame} maxValue={6} color="#0C65D4" />
+            <StatBarRow label="Tiros al arco %" value={stat.shotsOnTargetPct} maxValue={100} color="#0C65D4" isPercent />
           </StatSection>
         )}
 
         {/* Passing / Creation Section - Primary for Midfielders */}
         <StatSection title="Pases y Creación">
-          <StatBarRow label="Asistencias"            value={stat.assists}          maxValue={20}  color="#00E094" />
-          <StatBarRow label="xA por partido"         value={stat.xaPerGame}        maxValue={1}   color="#00E094" />
-          <StatBarRow label="Pases clave por partido" value={stat.keyPassesPerGame} maxValue={3}   color="#00E094" />
-          <StatBarRow label="Precisión de pases %"   value={stat.passAccuracyPct}  maxValue={100} color="#0C65D4" isPercent />
+          <StatBarRow label="Asistencias" value={stat.assists} maxValue={20} color="#00E094" />
+          <StatBarRow label="xA por partido" value={stat.xaPerGame} maxValue={1} color="#00E094" />
+          <StatBarRow label="Pases clave por partido" value={stat.keyPassesPerGame} maxValue={3} color="#00E094" />
+          <StatBarRow label="Precisión de pases %" value={stat.passAccuracyPct} maxValue={100} color="#0C65D4" isPercent />
         </StatSection>
 
         {/* Defense Section - Primary for Defenders and CDMs */}
         <StatSection title="Defensa">
-          <StatBarRow label="Tackles"            value={stat.tackles}       maxValue={80}  color="#00E094" />
-          <StatBarRow label="Intercepciones"     value={stat.interceptions} maxValue={50}  color="#00E094" />
-          <StatBarRow label="Recuperaciones"     value={stat.recoveries}    maxValue={80}  color="#0C65D4" />
+          <StatBarRow label="Tackles" value={stat.tackles} maxValue={80} color="#00E094" />
+          <StatBarRow label="Intercepciones" value={stat.interceptions} maxValue={50} color="#00E094" />
+          <StatBarRow label="Recuperaciones" value={stat.recoveries} maxValue={80} color="#0C65D4" />
           <StatBarRow label="Duelos aéreos ganados %" value={stat.aerialDuelsWonPct} maxValue={100} color="#7533FC" isPercent />
         </StatSection>
 
         {/* Possession Section */}
         {!isGK && (
           <StatSection title="Posesión y Regate">
-            <StatBarRow label="Regates exitosos / PJ"  value={stat.successfulDribblesPerGame} maxValue={5}   color="#00E094" />
-            <StatBarRow label="Tasa de regates %"       value={stat.dribbleSuccessRate}        maxValue={100} color="#0C65D4" isPercent />
+            <StatBarRow label="Regates exitosos / PJ" value={stat.successfulDribblesPerGame} maxValue={5} color="#00E094" />
+            <StatBarRow label="Tasa de regates %" value={stat.dribbleSuccessRate} maxValue={100} color="#0C65D4" isPercent />
           </StatSection>
         )}
 
         {/* Discipline Section */}
         <StatSection title="Disciplina">
-          <StatBarRow label="Tarjetas amarillas" value={stat.yellowCards}   maxValue={15}  color="#E8A838" />
-          <StatBarRow label="Tarjetas rojas"     value={stat.redCards}      maxValue={5}   color="#F04444" />
+          <StatBarRow label="Tarjetas amarillas" value={stat.yellowCards} maxValue={15} color="#E8A838" />
+          <StatBarRow label="Tarjetas rojas" value={stat.redCards} maxValue={5} color="#F04444" />
         </StatSection>
 
       </div>
@@ -167,8 +167,8 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
 /* ── Main Page ───────────────────────────── */
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [player, setPlayer]         = useState<any>(null);
-  const [loading, setLoading]       = useState(true);
+  const [player, setPlayer] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [selSeasonId, setSelSeason] = useState<number | null>(null);
 
   const { isFavorite, addFavorite, removeFavorite, addToCompare, isInCompare, removeFromCompare } = useScoutStore();
@@ -193,32 +193,32 @@ export default function PlayerDetailPage() {
   );
   if (!player) return <p className="text-center text-muted py-32">Jugador no encontrado.</p>;
 
-  const fav     = isFavorite(player.id);
+  const fav = isFavorite(player.id);
   const compare = isInCompare(player.id);
-  const age     = calcAge(player.dateOfBirth);
+  const age = calcAge(player.dateOfBirth);
 
-  const allStats  = [...(player.stats ?? [])].sort((a: any, b: any) => b.season?.year - a.season?.year);
-  const curStat   = allStats.find((s: any) => s.seasonId === selSeasonId) ?? allStats[0];
+  const allStats = [...(player.stats ?? [])].sort((a: any, b: any) => b.season?.year - a.season?.year);
+  const curStat = allStats.find((s: any) => s.seasonId === selSeasonId) ?? allStats[0];
   const curRating = player.ratings?.find((r: any) => r.seasonId === selSeasonId) ?? player.ratings?.[0];
 
   const ratingHistory = curRating?.ratingByMonth
     ? Object.entries(curRating.ratingByMonth as Record<string, number>)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([month, rval]) => ({ month: month.slice(5), rating: rval }))
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, rval]) => ({ month: month.slice(5), rating: rval }))
     : [];
 
   const radarData = curStat ? [
-    { metric: "Goles",    playerA: Math.min(100, (curStat.goals ?? 0) * 5) },
-    { metric: "Asist.",   playerA: Math.min(100, (curStat.assists ?? 0) * 6) },
-    { metric: "xG",       playerA: Math.min(100, parseFloat(curStat.xgPerGame ?? "0") * 150) },
-    { metric: "Pases%",   playerA: Math.min(100, parseFloat(curStat.passAccuracyPct ?? "0")) },
-    { metric: "Tackles",  playerA: Math.min(100, (curStat.tackles ?? 0) * 0.8) },
-    { metric: "Recup.",   playerA: Math.min(100, (curStat.recoveries ?? 0) * 1.0) },
+    { metric: "Goles", playerA: Math.min(100, (curStat.goals ?? 0) * 5) },
+    { metric: "Asist.", playerA: Math.min(100, (curStat.assists ?? 0) * 6) },
+    { metric: "xG", playerA: Math.min(100, parseFloat(curStat.xgPerGame ?? "0") * 150) },
+    { metric: "Pases%", playerA: Math.min(100, parseFloat(curStat.passAccuracyPct ?? "0")) },
+    { metric: "Tackles", playerA: Math.min(100, (curStat.tackles ?? 0) * 0.8) },
+    { metric: "Recup.", playerA: Math.min(100, (curStat.recoveries ?? 0) * 1.0) },
     { metric: "Regates%", playerA: Math.min(100, parseFloat(curStat.dribbleSuccessRate ?? "0")) },
-    { metric: "Aéreos%",  playerA: Math.min(100, parseFloat(curStat.aerialDuelsWonPct ?? "0")) },
+    { metric: "Aéreos%", playerA: Math.min(100, parseFloat(curStat.aerialDuelsWonPct ?? "0")) },
   ] : [];
 
-  const mainRating  = curStat ? parseFloat(curStat.sofascoreRating ?? "0") : null;
+  const mainRating = curStat ? parseFloat(curStat.sofascoreRating ?? "0") : null;
   const ratingColor = mainRating
     ? mainRating >= 7.5 ? "text-green" : mainRating >= 7.0 ? "text-gold" : "text-secondary"
     : "text-muted";
@@ -227,14 +227,14 @@ export default function PlayerDetailPage() {
 
   /* Quick Info chips */
   const infoChips = [
-    { label: "Posición",   value: player.position },
-    { label: "Pie hábil",  value: player.preferredFoot ?? "—" },
-    { label: "Altura",     value: player.heightCm ? `${player.heightCm} cm` : "—" },
-    { label: "Peso",       value: player.weightKg ? `${player.weightKg} kg` : "—" },
-    { label: "Nac.",       value: player.nationality ?? "—" },
-    { label: "Debut",      value: player.debutYear ?? "—" },
-    { label: "Club",       value: player.team?.name ?? "—" },
-    { label: "Valor",      value: `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M` },
+    { label: "Posición", value: player.position },
+    { label: "Pie hábil", value: player.preferredFoot ?? "—" },
+    { label: "Altura", value: player.heightCm ? `${player.heightCm} cm` : "—" },
+    { label: "Peso", value: player.weightKg ? `${player.weightKg} kg` : "—" },
+    { label: "Nac.", value: player.nationality ?? "—" },
+    { label: "Debut", value: player.debutYear ?? "—" },
+    { label: "Club", value: player.team?.name ?? "—" },
+    { label: "Valor", value: `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M` },
   ];
 
   return (
@@ -245,8 +245,8 @@ export default function PlayerDetailPage() {
     <div className="space-y-4 animate-fade-in pb-10">
 
       {/* Back */}
-      <Link href="/players"
-            className="inline-flex items-center gap-1.5 text-[12px] text-muted hover:text-secondary transition-colors">
+      <Link href="/"
+        className="inline-flex items-center gap-1.5 text-[16px] text-muted hover:text-secondary transition-colors">
         <ArrowLeft size={13} />
         Todos los jugadores
       </Link>
@@ -266,7 +266,7 @@ export default function PlayerDetailPage() {
             </div>
             {player.nationality && (
               <span className="absolute -bottom-1 -right-1 badge badge-muted text-[9px]">
-                {player.nationality.slice(0,3).toUpperCase()}
+                {player.nationality.slice(0, 3).toUpperCase()}
               </span>
             )}
           </div>
@@ -316,8 +316,7 @@ export default function PlayerDetailPage() {
 
                 <button
                   onClick={() => fav ? removeFavorite(player.id) : addFavorite(player)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all border ${
-                    fav ? "bg-gold/10 border-gold/30 text-gold" : "bg-input border-border text-muted hover:text-gold hover:border-gold/30"}`}
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all border ${fav ? "bg-gold/10 border-gold/30 text-gold" : "bg-input border-border text-muted hover:text-gold hover:border-gold/30"}`}
                 >
                   <Star size={15} fill={fav ? "currentColor" : "none"} />
                 </button>
@@ -341,12 +340,12 @@ export default function PlayerDetailPage() {
                   </div>
                 )}
                 {[
-                  { label: "PJ",    value: curStat.matchesPlayed },
-                  { label: "Min",   value: curStat.minutesPlayed ? `${curStat.minutesPlayed}'` : "—" },
+                  { label: "PJ", value: curStat.matchesPlayed },
+                  { label: "Min", value: curStat.minutesPlayed ? `${curStat.minutesPlayed}'` : "—" },
                   { label: "Goles", value: curStat.goals },
                   { label: "Asist", value: curStat.assists },
-                  { label: "xG",    value: fmt(curStat.xgPerGame, 2) },
-                  { label: "xA",    value: fmt(curStat.xaPerGame, 2) },
+                  { label: "xG", value: fmt(curStat.xgPerGame, 2) },
+                  { label: "xA", value: fmt(curStat.xaPerGame, 2) },
                   { label: "Valor", value: `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M` },
                 ].map(({ label, value }) => (
                   <div key={label} className="text-center">
@@ -431,8 +430,7 @@ export default function PlayerDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2">
             {player.injuries.slice(0, 8).map((inj: any) => (
               <div key={inj.id} className="flex items-start gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${
-                  inj.daysOut > 60 ? "bg-danger" : inj.daysOut > 20 ? "bg-warn" : "bg-green"}`} />
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${inj.daysOut > 60 ? "bg-danger" : inj.daysOut > 20 ? "bg-warn" : "bg-green"}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] text-primary leading-tight truncate">{inj.injuryType}</p>
                   <p className="text-[10px] text-muted">{inj.daysOut} días · {inj.startedAt}</p>
