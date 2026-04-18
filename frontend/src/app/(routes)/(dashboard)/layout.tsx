@@ -8,22 +8,14 @@ import CompareBar from "@/components/ui/CompareBar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { token } = useScoutStore();
-
-  /* 
-  useEffect(() => {
-    if (!token) router.replace("/login");
-  }, [token, router]);
-
-  if (!token) return null; 
-  */
+  const { token, sidebarExpanded } = useScoutStore();
 
   return (
-    <div className="flex min-h-screen bg-base">
+    <div className="flex min-h-screen bg-base overflow-x-hidden">
       <Sidebar />
-      <div className="flex flex-col flex-1 ml-16 min-h-screen">
+      <div className={`flex flex-col flex-1 transition-all duration-300 min-h-screen ${sidebarExpanded ? "ml-64" : "ml-20"}`}>
         <Topbar />
-        <main className="flex-1 p-6 max-w-[1400px] w-full mx-auto">
+        <main className="flex-1 p-8 w-full">
           {children}
         </main>
         <CompareBar />

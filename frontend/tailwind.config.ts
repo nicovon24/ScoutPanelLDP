@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "-apple-system", "sans-serif"],
+        sans: ["'Nunito Sans'", "sans-serif"],
       },
       colors: {
         // ── Brand palette (LDP consigna) ────────────────

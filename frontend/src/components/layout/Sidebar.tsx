@@ -1,74 +1,105 @@
 "use client";
-import Link from "next/link";
+import Link from "next/navigation";
 import { usePathname } from "next/navigation";
-import { Home, Users, BarChart2, Star, LogOut } from "lucide-react";
+import { Home, Users, BarChart2, Star, LogOut, Menu, ChevronLeft, ChevronRight } from "lucide-react";
 import { useScoutStore } from "@/store/useScoutStore";
+import LinkNext from "next/link";
 
 const NAV_ITEMS = [
-  { href: "/",          icon: Home,     label: "Home" },
-  { href: "/players",   icon: Users,    label: "Jugadores" },
-  { href: "/compare",   icon: BarChart2, label: "Comparar" },
-  { href: "/favorites", icon: Star,     label: "Favoritos" },
+  { href: "/", icon: Home, label: "Inicio" },
+  { href: "/compare", icon: BarChart2, label: "Comparar" },
+  { href: "/favorites", icon: Star, label: "Favoritos" },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { compareList, clearAuth } = useScoutStore();
+  const { compareList, clearAuth, sidebarExpanded, setSidebarExpanded } = useScoutStore();
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-16 bg-sidebar border-r border-border
-                      flex flex-col items-center py-4 z-50">
-      {/* Logo mark */}
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-7
-                      bg-green/10 border border-green/25">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
-                fill="#00E094" fillOpacity="0.9"/>
-        </svg>
-      </div>
+    <aside className={`fixed left-0 top-0 bottom-0 bg-[#0A0A0A] border-r border-white/[0.05]
+                      flex flex-col py-6 z-[80] transition-all duration-300 ease-in-out
+                      ${sidebarExpanded ? "w-64 px-4" : "w-20 px-3 items-center"}`}>
+
+      {/* Toggle Button */}
+      <button
+        onClick={() => setSidebarExpanded(!sidebarExpanded)}
+        className={`mb-10 w-11 h-11 rounded-xl flex items-center justify-center
+                   text-secondary hover:text-primary hover:bg-white/5 transition-all
+                   ${sidebarExpanded ? "self-end" : ""}`}
+      >
+        {sidebarExpanded ? <ChevronLeft size={22} /> : <Menu size={22} />}
+      </button>
 
       {/* Nav */}
-      <nav className="flex flex-col gap-0.5 flex-1 w-full px-2">
+      <nav className="flex flex-col gap-2 flex-1 w-full">
         {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || (href !== "/" && pathname.startsWith(href));
           return (
-            <Link
+            <LinkNext
               key={href}
               href={href}
-              title={label}
-              className={`relative flex items-center justify-center w-full h-10 rounded-lg
-                          transition-all duration-150 group
+              className={`relative flex items-center h-12 rounded-xl
+                          transition-all duration-200 group
                           ${active
-                            ? "bg-green/12 text-green"
-                            : "text-muted hover:bg-card-2 hover:text-secondary"}`}
+                  ? "bg-green/10 text-green shadow-[inset_0_0_0_1px_rgba(0,224,148,0.2)]"
+                  : "text-muted hover:bg-white/[0.03] hover:text-secondary"}
+                          ${sidebarExpanded ? "px-4 gap-4" : "justify-center"}`}
             >
-              <Icon size={18} strokeWidth={active ? 2.5 : 2} />
-              {/* Active indicator */}
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5
-                                 bg-green rounded-r-full" />
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} className="flex-shrink-0" />
+
+              {sidebarExpanded && (
+                <span className={`text-[14px] font-bold whitespace-nowrap overflow-hidden transition-all duration-300
+                                 ${active ? "text-primary" : "text-secondary"}`}>
+                  {label}
+                </span>
               )}
-              {/* Compare badge */}
+
+              {/* Tooltip (only when collapsed) */}
+              {!sidebarExpanded && (
+                <div className="absolute left-[calc(100%+15px)] px-3 py-2 rounded-lg bg-primary text-base text-[12px] font-black
+                                whitespace-nowrap opacity-0 scale-90 pointer-events-none group-hover:opacity-100 group-hover:scale-100 
+                                transition-all duration-200 shadow-2xl z-[100] uppercase tracking-widest border border-white/10">
+                  {label}
+                  {/* Arrow */}
+                  <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-primary rotate-45 border-l border-b border-white/10" />
+                </div>
+              )}
+
+              {/* Compare Badge */}
               {label === "Comparar" && compareList.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full
-                                 bg-green text-base text-[9px] font-bold
-                                 flex items-center justify-center leading-none">
+                <span className={`absolute flex items-center justify-center rounded-full bg-green text-base text-[10px] font-black 
+                                 shadow-[0_0_10px_rgba(0,224,148,0.3)]
+                                 ${sidebarExpanded ? "right-4 w-5 h-5" : "top-1.5 right-1.5 w-4 h-4"}`}>
                   {compareList.length}
                 </span>
               )}
-            </Link>
+
+              {active && sidebarExpanded && (
+                <span className="absolute left-[-16px] top-1/2 -translate-y-1/2 w-1 h-6 bg-green rounded-r-full shadow-[2px_0_10px_rgba(0,224,148,0.4)]" />
+              )}
+            </LinkNext>
           );
         })}
       </nav>
 
       {/* Logout */}
       <button
-        title="Cerrar sesión"
         onClick={() => { clearAuth(); window.location.href = "/login"; }}
-        className="w-10 h-10 rounded-lg flex items-center justify-center
-                   text-muted hover:bg-danger/10 hover:text-danger transition-all"
+        className={`w-full h-12 rounded-xl flex items-center transition-all group relative
+                   text-muted hover:bg-danger/10 hover:text-danger
+                   ${sidebarExpanded ? "px-4 gap-4" : "justify-center"}`}
       >
-        <LogOut size={16} />
+        <LogOut size={18} />
+        {sidebarExpanded && <span className="text-[14px] font-bold">Cerrar Sesión</span>}
+
+        {!sidebarExpanded && (
+          <div className="absolute left-[calc(100%+15px)] px-3 py-2 rounded-lg bg-danger text-white text-[12px] font-black
+                          whitespace-nowrap opacity-0 scale-90 pointer-events-none group-hover:opacity-100 group-hover:scale-100 
+                          transition-all duration-200 shadow-2xl z-[100] uppercase tracking-widest border border-danger/20">
+            Cerrar Sesión
+            <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-danger rotate-45" />
+          </div>
+        )}
       </button>
     </aside>
   );

@@ -58,6 +58,7 @@ interface RS {
   xaB: number; kpB: number; passB: number;
   tackB: number; intB: number; recB: number;
   aerB: number; dribB: number; dribRB: number;
+  saveB?: number; csB?: number;
 }
 
 // ─── LEVEL A: datos reales ────────────────────────────────────────────────────
@@ -119,10 +120,10 @@ const REAL: Record<string, Record<number, RS>> = {
     2026: { mp: 5, min: 380, g: 1, a: 1, yc: 0, rc: 0, rating: 7.6, xgB: .40, shotB: 2.5, shotOTB: 48, xaB: .30, kpB: 2.0, passB: 75, tackB: 10, intB: 5, recB: 14, aerB: 20, dribB: 2.6, dribRB: 58 },
   },
   "Leandro Brey": {
-    2023: { mp: 10, min: 900, g: 0, a: 0, yc: 0, rc: 0, rating: 6.8, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .2, passB: 62, tackB: 2, intB: 1, recB: 4, aerB: 70, dribB: .1, dribRB: 25 },
-    2024: { mp: 18, min: 1620, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .2, passB: 64, tackB: 2, intB: 1, recB: 4, aerB: 72, dribB: .1, dribRB: 26 },
-    2025: { mp: 28, min: 2520, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27 },
-    2026: { mp: 14, min: 1260, g: 0, a: 0, yc: 1, rc: 0, rating: 7.2, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 66, tackB: 2, intB: 1, recB: 5, aerB: 74, dribB: .1, dribRB: 28 },
+    2023: { mp: 10, min: 900, g: 0, a: 0, yc: 0, rc: 0, rating: 6.8, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .2, passB: 62, tackB: 2, intB: 1, recB: 4, aerB: 70, dribB: .1, dribRB: 25, saveB: 74, csB: 0.4 },
+    2024: { mp: 18, min: 1620, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .2, passB: 64, tackB: 2, intB: 1, recB: 4, aerB: 72, dribB: .1, dribRB: 26, saveB: 76, csB: 0.45 },
+    2025: { mp: 28, min: 2520, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27, saveB: 75, csB: 0.42 },
+    2026: { mp: 14, min: 1260, g: 0, a: 0, yc: 1, rc: 0, rating: 7.2, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 66, tackB: 2, intB: 1, recB: 5, aerB: 74, dribB: .1, dribRB: 28, saveB: 78, csB: 0.5 },
   },
   // ── RACING CLUB ──
   "Marco Di Césare": {
@@ -144,10 +145,10 @@ const REAL: Record<string, Record<number, RS>> = {
     2026: { mp: 12, min: 1020, g: 0, a: 1, yc: 3, rc: 0, rating: 7.0, xgB: .06, shotB: .5, shotOTB: 27, xaB: .12, kpB: 1.0, passB: 88, tackB: 68, intB: 39, recB: 54, aerB: 50, dribB: .5, dribRB: 40 },
   },
   "Ezequiel Unsain": {
-    2023: { mp: 30, min: 2700, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26 },
-    2024: { mp: 32, min: 2880, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27 },
-    2025: { mp: 34, min: 3060, g: 0, a: 0, yc: 1, rc: 0, rating: 7.2, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 66, tackB: 2, intB: 1, recB: 6, aerB: 74, dribB: .1, dribRB: 28 },
-    2026: { mp: 14, min: 1260, g: 0, a: 0, yc: 0, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27 },
+    2023: { mp: 30, min: 2700, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26, saveB: 74, csB: 0.38 },
+    2024: { mp: 32, min: 2880, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27, saveB: 75, csB: 0.4 },
+    2025: { mp: 34, min: 3060, g: 0, a: 0, yc: 1, rc: 0, rating: 7.2, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 66, tackB: 2, intB: 1, recB: 6, aerB: 74, dribB: .1, dribRB: 28, saveB: 76, csB: 0.42 },
+    2026: { mp: 14, min: 1260, g: 0, a: 0, yc: 0, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27, saveB: 75, csB: 0.35 },
   },
   "Gabriel Rojas": {
     2023: { mp: 24, min: 1980, g: 1, a: 3, yc: 3, rc: 0, rating: 7.0, xgB: .05, shotB: .5, shotOTB: 26, xaB: .16, kpB: .9, passB: 81, tackB: 50, intB: 27, recB: 42, aerB: 42, dribB: .9, dribRB: 42 },
@@ -181,17 +182,17 @@ const REAL: Record<string, Record<number, RS>> = {
     2026: { mp: 10, min: 760, g: 0, a: 3, yc: 1, rc: 0, rating: 6.9, xgB: .32, shotB: 2.0, shotOTB: 38, xaB: .20, kpB: 1.2, passB: 69, tackB: 8, intB: 4, recB: 12, aerB: 50, dribB: 1.1, dribRB: 42 },
   },
   "Thiago Cardozo": {
-    2023: { mp: 28, min: 2520, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 71, dribB: .1, dribRB: 26 },
-    2024: { mp: 30, min: 2700, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 27 },
-    2025: { mp: 32, min: 2880, g: 0, a: 0, yc: 1, rc: 0, rating: 7.2, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 6, aerB: 73, dribB: .1, dribRB: 28 },
-    2026: { mp: 13, min: 1170, g: 0, a: 0, yc: 1, rc: 0, rating: 7.8, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 27 },
+    2023: { mp: 28, min: 2520, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 71, dribB: .1, dribRB: 26, saveB: 72, csB: 0.35 },
+    2024: { mp: 30, min: 2700, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 27, saveB: 73, csB: 0.36 },
+    2025: { mp: 32, min: 2880, g: 0, a: 0, yc: 1, rc: 0, rating: 7.2, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 65, tackB: 2, intB: 1, recB: 6, aerB: 73, dribB: .1, dribRB: 28, saveB: 74, csB: 0.38 },
+    2026: { mp: 13, min: 1170, g: 0, a: 0, yc: 1, rc: 0, rating: 7.8, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 27, saveB: 76, csB: 0.45 },
   },
   // ── TALLERES ──
   "Guido Herrera": {
-    2023: { mp: 34, min: 3060, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26 },
-    2024: { mp: 36, min: 3240, g: 0, a: 0, yc: 3, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26 },
-    2025: { mp: 36, min: 3240, g: 0, a: 0, yc: 1, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27 },
-    2026: { mp: 12, min: 1080, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26 },
+    2023: { mp: 34, min: 3060, g: 0, a: 0, yc: 2, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26, saveB: 75, csB: 0.38 },
+    2024: { mp: 36, min: 3240, g: 0, a: 0, yc: 3, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26, saveB: 74, csB: 0.35 },
+    2025: { mp: 36, min: 3240, g: 0, a: 0, yc: 1, rc: 0, rating: 7.1, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 64, tackB: 2, intB: 1, recB: 5, aerB: 73, dribB: .1, dribRB: 27, saveB: 76, csB: 0.4 },
+    2026: { mp: 12, min: 1080, g: 0, a: 0, yc: 1, rc: 0, rating: 7.0, xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .3, passB: 63, tackB: 2, intB: 1, recB: 5, aerB: 72, dribB: .1, dribRB: 26, saveB: 75, csB: 0.38 },
   },
   "Matías Galarza": {
     2024: { mp: 22, min: 1720, g: 1, a: 2, yc: 3, rc: 0, rating: 7.0, xgB: .08, shotB: .6, shotOTB: 28, xaB: .14, kpB: 1.1, passB: 87, tackB: 60, intB: 36, recB: 52, aerB: 48, dribB: .7, dribRB: 42 },
@@ -223,6 +224,7 @@ interface TPL {
   ratingR: [number, number]; xgB: number; shotB: number; shotOTB: number;
   xaB: number; kpB: number; passB: number; tackB: number; intB: number;
   recB: number; aerB: number; dribB: number; dribRB: number;
+  saveB?: number; csB?: number;
 }
 const BASE_TPL: Record<string, TPL> = {
   CF: { gRange: [6, 18], aRange: [1, 6], mpRange: [20, 35], ratingR: [6.6, 7.4], xgB: .48, shotB: 2.8, shotOTB: 43, xaB: .12, kpB: .8, passB: 70, tackB: 9, intB: 4, recB: 12, aerB: 46, dribB: 1.4, dribRB: 44 },
@@ -235,7 +237,7 @@ const BASE_TPL: Record<string, TPL> = {
   CB: { gRange: [0, 3], aRange: [0, 2], mpRange: [18, 34], ratingR: [6.6, 7.2], xgB: .06, shotB: .4, shotOTB: 24, xaB: .03, kpB: .4, passB: 84, tackB: 70, intB: 43, recB: 58, aerB: 63, dribB: .3, dribRB: 34 },
   LB: { gRange: [0, 3], aRange: [2, 6], mpRange: [20, 34], ratingR: [6.6, 7.2], xgB: .04, shotB: .5, shotOTB: 26, xaB: .14, kpB: .8, passB: 82, tackB: 52, intB: 28, recB: 42, aerB: 44, dribB: .9, dribRB: 42 },
   RB: { gRange: [0, 3], aRange: [2, 6], mpRange: [20, 34], ratingR: [6.6, 7.2], xgB: .04, shotB: .5, shotOTB: 26, xaB: .14, kpB: .8, passB: 82, tackB: 52, intB: 28, recB: 42, aerB: 44, dribB: .9, dribRB: 42 },
-  GK: { gRange: [0, 0], aRange: [0, 1], mpRange: [18, 34], ratingR: [6.5, 7.3], xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .2, passB: 62, tackB: 2, intB: 1, recB: 4, aerB: 70, dribB: .1, dribRB: 25 },
+  GK: { gRange: [0, 0], aRange: [0, 1], mpRange: [18, 34], ratingR: [6.5, 7.3], xgB: 0, shotB: 0, shotOTB: 0, xaB: 0, kpB: .2, passB: 62, tackB: 2, intB: 1, recB: 4, aerB: 70, dribB: .1, dribRB: 25, saveB: 72, csB: 0.35 },
 };
 
 function genRS(tpl: TPL): RS {
@@ -250,6 +252,7 @@ function genRS(tpl: TPL): RS {
     xaB: tpl.xaB, kpB: tpl.kpB, passB: tpl.passB,
     tackB: tpl.tackB, intB: tpl.intB, recB: tpl.recB,
     aerB: tpl.aerB, dribB: tpl.dribB, dribRB: tpl.dribRB,
+    saveB: tpl.saveB, csB: tpl.csB,
   };
 }
 function buildStat(rs: RS, playerId: number, seasonId: number, mv: string) {
@@ -265,7 +268,9 @@ function buildStat(rs: RS, playerId: number, seasonId: number, mv: string) {
     tackles: varyI(rs.tackB), interceptions: varyI(rs.intB),
     recoveries: varyI(rs.recB), aerialDuelsWonPct: vary(rs.aerB, .10),
     successfulDribblesPerGame: vary(rs.dribB), dribbleSuccessRate: vary(rs.dribRB, .10),
-    savePct: null, cleanSheets: null, goalsConceded: null,
+    savePct: rs.saveB ? vary(rs.saveB, 0.08) : null,
+    cleanSheets: rs.csB ? Math.round(rs.mp * (rs.csB + (Math.random() * 0.1 - 0.05))) : null,
+    goalsConceded: rs.saveB ? Math.round(rs.mp * (0.8 + Math.random() * 0.6)) : null,
   };
 }
 function buildRating(rating: number, year: number, playerId: number, seasonId: number) {

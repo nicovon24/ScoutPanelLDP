@@ -185,7 +185,10 @@ router.get("/", async (req, res) => {
           p.team_id AS "teamId",
           t.name AS "teamName", t.logo_url AS "teamLogoUrl",
           ps.sofascore_rating AS "sofascoreRating",
-          ps.goals, ps.assists, ps.matches_played AS "matchesPlayed"
+          ps.goals, ps.assists, ps.matches_played AS "matchesPlayed",
+          ps.tackles, ps.interceptions, ps.clean_sheets AS "cleanSheets",
+          ps.save_pct AS "savePct", ps.pass_accuracy_pct AS "passAccuracyPct",
+          ps.xg_per_game AS "xgPerGame", ps.xa_per_game AS "xaPerGame"
         FROM players p
         LEFT JOIN teams t ON t.id = p.team_id
         LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
@@ -216,6 +219,13 @@ router.get("/", async (req, res) => {
           goals: r.goals,
           assists: r.assists,
           matchesPlayed: r.matchesPlayed,
+          tackles: r.tackles,
+          interceptions: r.interceptions,
+          cleanSheets: r.cleanSheets,
+          savePct: r.savePct,
+          passAccuracyPct: r.passAccuracyPct,
+          xgPerGame: r.xgPerGame,
+          xaPerGame: r.xaPerGame,
         }] : [],
       }));
 

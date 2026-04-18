@@ -30,7 +30,16 @@ interface ScoutState {
   user: { id: number; name: string; email: string } | null;
   setAuth: (token: string, user: ScoutState["user"]) => void;
   clearAuth: () => void;
+  // UI State
+  filterPanelOpen: boolean;
+  setFilterPanelOpen: (open: boolean) => void;
+  pageSize: number;
+  setPageSize: (size: number) => void;
+  sidebarExpanded: boolean;
+  setSidebarExpanded: (expanded: boolean) => void;
 }
+
+
 
 export const useScoutStore = create<ScoutState>()(
   persist(
@@ -67,10 +76,24 @@ export const useScoutStore = create<ScoutState>()(
         }
         set({ token: null, user: null });
       },
+
+      filterPanelOpen: false,
+      setFilterPanelOpen: (open) => set({ filterPanelOpen: open }),
+      pageSize: 30,
+      setPageSize: (size) => set({ pageSize: size }),
+      sidebarExpanded: false,
+      setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
     }),
     {
       name: "scout-store",
-      partialize: (s) => ({ favorites: s.favorites, compareList: s.compareList, token: s.token, user: s.user }),
+      partialize: (s) => ({
+        favorites: s.favorites,
+        compareList: s.compareList,
+        token: s.token,
+        user: s.user,
+        pageSize: s.pageSize,
+        sidebarExpanded: s.sidebarExpanded,
+      }),
     }
   )
 );
