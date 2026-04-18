@@ -1,17 +1,24 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, X, Search, Plus, RotateCcw, User, Flag, Euro, Footprints } from "lucide-react";
+import { Loader2, X, Search, Plus, RotateCcw, Calendar, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/api";
 import RadarChartComponent from "@/components/charts/RadarChart";
 import { useScoutStore } from "@/store/useScoutStore";
+import { Select, SelectItem } from "@nextui-org/react";
+import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 
-/* ── Helpers ──────────────────────────────────── */
 function calcAge(dob?: string) {
   if (!dob) return "—";
-  return `${Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))} años`;
+  try {
+    const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return "—";
+    const age = Math.floor((Date.now() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+    return `${age} años`;
+  } catch { return "—"; }
 }
+
 function posStyle(pos: string) {
   const p = pos?.toUpperCase();
   if (["CF", "SS", "LW", "RW"].includes(p)) return "pos-attack";
@@ -19,465 +26,539 @@ function posStyle(pos: string) {
   if (["CB", "LB", "RB"].includes(p)) return "pos-def";
   return "pos-gk";
 }
-function fmtVal(v: string | number | null | undefined, dec = 0) {
+
+function fmtVal(v: any, dec = 0) {
   if (v == null || v === "") return "—";
   const n = typeof v === "string" ? parseFloat(v) : v;
   if (isNaN(n)) return "—";
   return dec > 0 ? n.toFixed(dec) : String(n);
 }
-function winner(a: number, b: number, higherIsBetter = true): "A" | "B" | "tie" {
-  if (a === b) return "tie";
-  return (higherIsBetter ? a > b : a < b) ? "A" : "B";
-}
 
-/* ── Inline player search (for slots) ─────────── */
-interface SearchHit {
-  id: number; name: string; position: string;
-  photoUrl?: string; nationality?: string;
-}
+const num = (v: any) => {
+  const f = parseFloat(String(v ?? "0"));
+  return isNaN(f) ? 0 : f;
+};
 
-function PlayerSearch({ onSelect }: { onSelect: (p: SearchHit) => void }) {
+const COLORS = [
+  { name: "green", text: "text-[#00e87a]", bg: "bg-[#00e87a]", glow: "bg-[#00e87a]/5", border: "border-[#00e87a]/25", accentBg: "bg-[#00e87a]/10", hex: "#00e87a" },
+  { name: "purple", text: "text-[#8b5cf6]", bg: "bg-[#8b5cf6]", glow: "bg-[#8b5cf6]/5", border: "border-[#8b5cf6]/25", accentBg: "bg-[#8b5cf6]/10", hex: "#8b5cf6" },
+  { name: "gold", text: "text-[#f59e0b]", bg: "bg-[#f59e0b]", glow: "bg-[#f59e0b]/5", border: "border-[#f59e0b]/25", accentBg: "bg-[#f59e0b]/10", hex: "#f59e0b" },
+];
+
+interface SearchHit { id: number; name: string; position: string; photoUrl?: string; nationality?: string; }
+
+function PlayerSearch({ onSelect, excludeIds = [] }: { onSelect: (p: SearchHit) => void, excludeIds?: number[] }) {
   const [q, setQ] = useState("");
   const [results, setRes] = useState<SearchHit[]>([]);
   const [loading, setLoad] = useState(false);
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
-
-  const search = useCallback((val: string) => {
-    if (val.length < 2) { setRes([]); setOpen(false); return; }
+  const fetchPlayers = useCallback(async (val: string) => {
     setLoad(true);
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(async () => {
-      try {
-        const { data } = await api.get<{ players: SearchHit[] }>(`/players/search?q=${encodeURIComponent(val)}`);
-        setRes(data.players);
-        setOpen(true);
-      } catch { /* */ }
-      finally { setLoad(false); }
-    }, 280);
+    try {
+      const { data } = await api.get<{ players: SearchHit[] }>(`/players/search?q=${encodeURIComponent(val)}`);
+      const filtered = data.players.filter(p => !excludeIds.includes(p.id));
+      setRes(filtered);
+      setOpen(true);
+    } catch {
+      setRes([]);
+    } finally {
+      setLoad(false);
+    }
+  }, [excludeIds]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => { search(q); }, [q, search]);
+  useEffect(() => {
+    if (q.length >= 2) {
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => fetchPlayers(q), 280);
+    } else if (q.length > 0) {
+      setRes([]);
+    }
+    return () => clearTimeout(timerRef.current);
+  }, [q, fetchPlayers]);
 
   return (
-    <div className="relative w-full">
-      <div className="flex items-center gap-2 bg-input border border-border rounded-lg px-3 py-2.5
-                      focus-within:border-green/60 transition-colors">
-        {loading
-          ? <div className="w-3.5 h-3.5 border-2 border-green/30 border-t-green rounded-full animate-spin" />
-          : <Search size={13} className="text-muted" />}
+    <div ref={wrapperRef} className="relative w-full text-left">
+      <div className="flex items-center gap-2 bg-input border border-border rounded-lg px-3 py-[9px]">
+        {loading ? <Loader2 size={13} className="animate-spin text-muted" /> : <Search size={13} className="text-muted" />}
         <input
-          ref={inputRef} value={q}
+          ref={inputRef}
+          value={q}
           onChange={(e) => setQ(e.target.value)}
+          onFocus={() => {
+            if (q === "" && results.length === 0) fetchPlayers("");
+            else setOpen(true);
+          }}
           placeholder="Buscar jugador..."
-          className="flex-1 bg-transparent text-base text-primary placeholder:text-muted outline-none"
+          className="flex-1 bg-transparent text-[12px] font-bold text-primary placeholder:text-muted outline-none"
         />
         {q && <button onClick={() => { setQ(""); setOpen(false); }}><X size={12} className="text-muted" /></button>}
       </div>
       {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border
-                        rounded-lg shadow-xl z-50 overflow-hidden animate-fade-in">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-surface-2 border border-border-md rounded-[10px] shadow-xl z-50 overflow-hidden max-h-[300px] overflow-y-auto w-[250px] sm:w-[100%] max-w-[280px]">
           {results.map((p) => (
-            <button key={p.id} onClick={() => { onSelect(p); setQ(""); setOpen(false); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-card-2 transition-colors text-left">
-              <div className="w-8 h-8 rounded-full bg-input border border-border flex-shrink-0 overflow-hidden flex items-center justify-center">
-                {p.photoUrl
-                  ? <Image src={p.photoUrl} alt={p.name} width={32} height={32} className="object-cover w-full h-full" unoptimized />
-                  : <span className="text-xs font-bold text-muted">{p.name[0]}</span>}
+            <button key={p.id} onClick={() => { onSelect(p); setQ(""); setOpen(false); }} className="w-full flex items-center gap-[9px] px-[12px] py-[9px] border-b border-border hover:bg-white/[0.04] transition-colors text-left last:border-0">
+              <div className="w-[30px] h-[30px] rounded-full bg-surface-3 flex items-center justify-center text-[10px] font-black text-secondary shrink-0 overflow-hidden">
+                {p.photoUrl ? <Image src={p.photoUrl} alt={p.name} width={30} height={30} className="object-cover w-full h-full" unoptimized /> : p.name[0]}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-base font-medium text-primary truncate">{p.name}</p>
-                <p className="text-xs text-muted">{p.nationality}</p>
+                <p className="text-[12px] font-extrabold text-primary truncate">{p.name}</p>
+                <p className="text-[10px] font-semibold text-muted mt-[1px] truncate">{p.position} · {p.nationality}</p>
               </div>
-              <span className={`badge text-2xs ${posStyle(p.position)}`}>{p.position}</span>
             </button>
           ))}
         </div>
       )}
-      {open && !loading && results.length === 0 && q.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 px-4 py-4 text-center">
-          <p className="text-sm text-muted">Sin resultados para &ldquo;{q}&rdquo;</p>
-        </div>
-      )}
     </div>
   );
 }
 
-/* ── General Info Pill ────────────────────────── */
-function InfoPill({ icon, label, value, accentClass }: {
-  icon: React.ReactNode; label: string; value: string; accentClass: string
-}) {
-  return (
-    <div className="flex items-center gap-2 py-2 border-b border-border last:border-0">
-      <span className={`flex-shrink-0 ${accentClass} opacity-60`}>{icon}</span>
-      <span className="text-xs text-muted w-[90px] flex-shrink-0">{label}</span>
-      <span className="text-sm font-semibold text-primary truncate">{value}</span>
-    </div>
-  );
-}
-
-/* ── Player Slot ──────────────────────────────── */
-function PlayerSlot({
-  player, fullData, loading, color, slotLabel, onSelect, onClear
-}: {
-  player: any | null;
-  fullData: any | null;
-  loading: boolean;
-  color: "green" | "purple";
-  slotLabel: string;
-  onSelect: (p: SearchHit) => void;
-  onClear: () => void;
-}) {
-  const borderCol = color === "green" ? "border-green/25" : "border-purple/25";
-  const bgGlow = color === "green" ? "bg-green/5" : "bg-purple/5";
-  const accentText = color === "green" ? "text-green" : "text-purple";
-  const accentBg = color === "green" ? "bg-green/10" : "bg-purple/10";
-  const accentClass = color === "green" ? "text-green" : "text-purple";
-
-  if (!player) {
-    return (
-      <div className={`card border ${borderCol} ${bgGlow} flex flex-col items-center justify-center gap-4 min-h-[180px] p-5`}>
-        <div className={`w-12 h-12 rounded-full ${accentBg} flex items-center justify-center`}>
-          <Plus size={24} className={accentText} />
-        </div>
-        <p className="text-sm text-secondary text-center uppercase">{slotLabel}</p>
-        <div className="w-full">
-          <PlayerSearch onSelect={onSelect} />
-        </div>
-      </div>
-    );
-  }
-
-  const stat = fullData?.stats?.sort((a: any, b: any) => b.season?.year - a.season?.year)[0];
-  const ratingVal = stat ? parseFloat(stat.sofascoreRating ?? "0") : null;
-  const ratingColor = ratingVal
-    ? ratingVal >= 7.5 ? "text-green" : ratingVal >= 7.0 ? "text-gold" : "text-secondary"
-    : "text-muted";
-
-  return (
-    <div className={`card border ${borderCol} ${bgGlow} relative p-5 transition-all`}>
-      {/* Clear btn */}
-      <button onClick={onClear}
-        className="absolute top-3 right-3 w-6 h-6 rounded flex items-center justify-center
-                         text-muted hover:text-danger hover:bg-danger/10 transition-colors">
-        <X size={13} />
-      </button>
-
-      {loading ? (
-        <div className="flex items-center justify-center h-20">
-          <Loader2 size={20} className={`animate-spin ${accentText}`} />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* ── Avatar + Name section ── */}
-          <div className="text-center space-y-3">
-            <div className="flex flex-col items-center gap-2">
-              <Link href={`/players/${player.id}`}>
-                <div className={`w-20 h-20 rounded-xl bg-input border ${borderCol} overflow-hidden
-                                flex items-center justify-center cursor-pointer
-                                hover:opacity-90 transition-opacity`}>
-                  {player.photoUrl
-                    ? <Image src={player.photoUrl} alt={player.name} width={80} height={80}
-                      className="object-cover w-full h-full" unoptimized />
-                    : <span className="text-3xl font-black text-muted">{player.name[0]}</span>}
-                </div>
-              </Link>
-              <div>
-                <Link href={`/players/${player.id}`}>
-                  <p className={`font-black text-md text-primary hover:${accentText} transition-colors leading-tight`}>
-                    {player.name}
-                  </p>
-                </Link>
-                <span className={`badge text-2xs mt-1 inline-flex ${posStyle(player.position)}`}>
-                  {player.position}
-                </span>
-              </div>
-            </div>
-
-            {/* Rating badge */}
-            {ratingVal != null && (
-              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${accentBg}`}>
-                <span className={`text-md font-black ${ratingColor}`}>{ratingVal.toFixed(1)}</span>
-                <span className="text-2xs text-muted">Rating</span>
-              </div>
-            )}
-          </div>
-
-          {/* ── General info block ── */}
-          {fullData && (
-            <div className={`rounded-xl border ${borderCol} px-3 py-1`}>
-              <p className={`text-2xs font-black uppercase tracking-wider ${accentClass} mb-1 pt-2`}>
-                Información general
-              </p>
-              <InfoPill
-                icon={<User size={12} />}
-                label="Edad"
-                value={calcAge(fullData.dateOfBirth)}
-                accentClass={accentClass}
-              />
-              <InfoPill
-                icon={<span className="text-sm">📍</span>}
-                label="Posición"
-                value={fullData.position ?? "—"}
-                accentClass={accentClass}
-              />
-              <InfoPill
-                icon={<span className="text-sm">🏟</span>}
-                label="Equipo"
-                value={fullData.team?.name ?? "—"}
-                accentClass={accentClass}
-              />
-              <InfoPill
-                icon={<Flag size={12} />}
-                label="País"
-                value={fullData.nationality ?? "—"}
-                accentClass={accentClass}
-              />
-              <InfoPill
-                icon={<Euro size={12} />}
-                label="Valor"
-                value={`€${fmtVal(fullData.marketValueM, 1)}M`}
-                accentClass={accentClass}
-              />
-              <InfoPill
-                icon={<Footprints size={12} />}
-                label="Pie hábil"
-                value={fullData.preferredFoot ?? "—"}
-                accentClass={accentClass}
-              />
-              <InfoPill
-                icon={<span className="text-sm">📏</span>}
-                label="Altura"
-                value={fullData.heightCm ? `${fullData.heightCm} cm` : "—"}
-                accentClass={accentClass}
-              />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Comparison Row ───────────────────────────── */
 function CompRow({
-  label, valA, valB, numA, numB, unit = "", higherIsBetter = true
+  label, vals, nums, activeColors, unit = "", higherIsBetter = true
 }: {
-  label: string; valA: string; valB: string;
-  numA: number; numB: number; unit?: string; higherIsBetter?: boolean;
+  label: string; vals: string[]; nums: number[]; activeColors: string[]; unit?: string; higherIsBetter?: boolean;
 }) {
-  const w = winner(numA, numB, higherIsBetter);
-  const winA = w === "A";
-  const winB = w === "B";
+  const maxAbs = Math.max(...nums, 0.001);
+  const winVal = higherIsBetter ? Math.max(...nums) : Math.min(...nums);
+  const validNums = nums.filter(n => !isNaN(n));
+  const isTie = validNums.length > 0 && nums.every(n => n === nums[0]);
 
   return (
-    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2.5 border-b border-border last:border-0 gap-2">
-      {/* Value A */}
-      <div className="text-right">
-        <span className={`text-base font-bold transition-colors ${winA ? "text-green" : "text-primary"}`}>
-          {valA}{unit}
-        </span>
-        {winA && <span className="ml-1 text-2xs text-green font-black">▲</span>}
+    <div className="flex items-stretch border-t border-border hover:bg-white/[0.016] transition-colors">
+      <div className="w-[180px] shrink-0 flex items-center px-4 border-r border-border text-[11px] font-bold text-muted">
+        {label}
       </div>
-      {/* Label */}
-      <p className="text-center text-xs text-muted font-medium">{label}</p>
-      {/* Value B */}
-      <div className="text-left">
-        {winB && <span className="mr-1 text-2xs text-purple font-black">▲</span>}
-        <span className={`text-base font-bold transition-colors ${winB ? "text-purple" : "text-primary"}`}>
-          {valB}{unit}
-        </span>
+      <div className="flex-1 flex">
+        {vals.map((v, i) => {
+          const nVal = nums[i];
+          const win = !isTie && nVal === winVal && nVal !== 0;
+          const colorClass = activeColors[i];
+          const bgClass = colorClass ? colorClass.replace("text-", "bg-") : "";
+          const pct = Math.min(100, (nVal / maxAbs) * 100);
+
+          return (
+            <div key={i} className="flex-1 flex items-center px-4 gap-2 border-r border-border last:border-0 py-2.5">
+              <span className={`text-[15px] font-black tracking-[-0.01em] ${win ? colorClass : (isTie ? 'text-primary' : 'text-primary/[0.65]')} min-w-[38px]`}>
+                {v}{unit}
+              </span>
+              {win && <span className={`text-[9px] font-black ${colorClass}`}>▲</span>}
+              <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden max-w-[80px] ml-auto">
+                <div className={`h-full rounded-full transition-all duration-500 ${bgClass}`} style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-/* ── MAIN PAGE ────────────────────────────────── */
+function GeneralRow({ label, vals }: { label: string; vals: string[] }) {
+  return (
+    <div className="flex items-stretch border-t border-border hover:bg-white/[0.016] transition-colors">
+      <div className="w-[180px] shrink-0 flex items-center px-4 border-r border-border text-[11px] font-bold text-muted">
+        {label}
+      </div>
+      <div className="flex-1 flex">
+        {vals.map((v, i) => (
+          <div key={i} className="flex-1 flex items-center px-4 gap-2 border-r border-border last:border-0 py-2.5">
+            <span className="text-[13px] font-black text-primary">{v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ComparePage() {
   const { compareList } = useScoutStore();
 
-  // Slots: start with players from the store if any
-  const [slotA, setSlotA] = useState<SearchHit | null>(compareList[0] ?? null);
-  const [slotB, setSlotB] = useState<SearchHit | null>(compareList[1] ?? null);
-  const [dataA, setDataA] = useState<any | null>(null);
-  const [dataB, setDataB] = useState<any | null>(null);
-  const [loadA, setLoadA] = useState(false);
-  const [loadB, setLoadB] = useState(false);
+  const [slots, setSlots] = useState<(SearchHit | null)[]>([null, null, null]);
 
-  const fetchPlayer = useCallback(async (id: number, setter: typeof setDataA, loadSetter: typeof setLoadA) => {
-    loadSetter(true);
+  // Synchronize state with store on initial load and when store changes externally
+  useEffect(() => {
+    setSlots(prev => {
+      const newSlots = [...prev];
+      for (let i = 0; i < 3; i++) {
+        if (i < compareList.length) newSlots[i] = compareList[i];
+        else if (!newSlots[i] && i === 0 && prev.length === 2) newSlots[i] = null; // Maintain length
+      }
+      return newSlots.slice(0, Math.max(2, compareList.length, prev.length));
+    });
+  }, [compareList]);
+
+  const [playersData, setPlayersData] = useState<(any | null)[]>([null, null, null]);
+  const [loadings, setLoadings] = useState<boolean[]>([false, false, false]);
+  const [seasons, setSeasons] = useState<any[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
+
+  useEffect(() => {
+    api.get("/seasons").then(({ data }) => {
+      setSeasons(data);
+      if (data.length > 0) setSelectedSeasonId(String(data[0].id));
+    }).catch(() => { });
+  }, []);
+
+  const fetchPlayer = useCallback(async (id: number, idx: number) => {
+    setLoadings(p => { const o = [...p]; o[idx] = true; return o; });
     try {
       const { data } = await api.get(`/players/${id}`);
-      setter(data);
-    } catch { setter(null); }
-    finally { loadSetter(false); }
+      setPlayersData(prev => {
+        const o = [...prev];
+        o[idx] = data;
+        return o;
+      });
+    } catch {
+      setPlayersData(prev => { const o = [...prev]; o[idx] = null; return o; });
+    } finally {
+      setLoadings(p => { const o = [...p]; o[idx] = false; return o; });
+    }
   }, []);
 
   useEffect(() => {
-    if (slotA) fetchPlayer(slotA.id, setDataA, setLoadA);
-    else setDataA(null);
-  }, [slotA, fetchPlayer]);
+    slots.forEach((s, i) => {
+      if (s) {
+        if (!playersData[i] || playersData[i].id !== s.id) {
+          fetchPlayer(s.id, i);
+        }
+      } else {
+        if (playersData[i] !== null) {
+          setPlayersData(prev => { const o = [...prev]; o[i] = null; return o; });
+        }
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots]);
 
-  useEffect(() => {
-    if (slotB) fetchPlayer(slotB.id, setDataB, setLoadB);
-    else setDataB(null);
-  }, [slotB, fetchPlayer]);
+  const activeCount = slots.filter(Boolean).length;
+  const canAdd = slots.length < 3 && activeCount === slots.length;
 
-  const statA = dataA?.stats?.sort((a: any, b: any) => b.season?.year - a.season?.year)[0] ?? {};
-  const statB = dataB?.stats?.sort((a: any, b: any) => b.season?.year - a.season?.year)[0] ?? {};
+  function handleClearSlot(idx: number) {
+    const p = slots[idx];
+    const newSlots = [...slots];
+    if (newSlots.length === 3 && idx === 2) newSlots.pop();
+    else newSlots[idx] = null;
 
-  const n = (v: string | number | null | undefined) => {
-    const f = parseFloat(String(v ?? "0"));
-    return isNaN(f) ? 0 : f;
+    setSlots(newSlots);
+    setPlayersData(prev => { const o = [...prev]; o[idx] = null; return o; });
+
+    if (p) useScoutStore.getState().removeFromCompare(p.id);
+  }
+
+  function handleAddSlot() {
+    if (slots.length < 3) {
+      setSlots([...slots, null]);
+    }
+  }
+
+  const validIndices = slots.map((s, i) => (s && playersData[i] && !loadings[i] ? i : -1)).filter(i => i !== -1);
+  const bothLoaded = validIndices.length >= 2;
+
+  const getStat = (i: number): any => {
+    if (!playersData[i]?.stats) return {};
+    if (!selectedSeasonId) {
+      return playersData[i].stats.sort((a: any, b: any) => (b.season?.year || 0) - (a.season?.year || 0))[0] ?? {};
+    }
+    return playersData[i].stats.find((s: any) => String(s.seasonId) === selectedSeasonId) ?? {};
   };
 
-  const bothLoaded = slotA && slotB && dataA && dataB && !loadA && !loadB;
-
-  // Radar
-  const radarData = bothLoaded ? [
-    { metric: "Goles", playerA: Math.min(100, n(statA.goals) * 5), playerB: Math.min(100, n(statB.goals) * 5) },
-    { metric: "Asist.", playerA: Math.min(100, n(statA.assists) * 6), playerB: Math.min(100, n(statB.assists) * 6) },
-    { metric: "xG", playerA: Math.min(100, n(statA.xgPerGame) * 150), playerB: Math.min(100, n(statB.xgPerGame) * 150) },
-    { metric: "Pases%", playerA: Math.min(100, n(statA.passAccuracyPct)), playerB: Math.min(100, n(statB.passAccuracyPct)) },
-    { metric: "Tackles", playerA: Math.min(100, n(statA.tackles) * 0.8), playerB: Math.min(100, n(statB.tackles) * 0.8) },
-    { metric: "Recup.", playerA: Math.min(100, n(statA.recoveries)), playerB: Math.min(100, n(statB.recoveries)) },
-    { metric: "Regates%", playerA: Math.min(100, n(statA.dribbleSuccessRate)), playerB: Math.min(100, n(statB.dribbleSuccessRate)) },
-    { metric: "Aéreos%", playerA: Math.min(100, n(statA.aerialDuelsWonPct)), playerB: Math.min(100, n(statB.aerialDuelsWonPct)) },
-  ] : [];
+  const currentCols = [];
+  slots.forEach((_, i) => {
+    if (i > 0) currentCols.push('52px');
+    currentCols.push('1fr');
+  });
+  if (canAdd) currentCols.push('60px');
 
   return (
-    <div className="space-y-5 animate-fade-in pb-10">
-      {/* Title bar */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-[1500px] mx-auto pb-[80px] pt-[30px] px-[18px] animate-fade-in font-sans">
+      <div className="flex items-center gap-[5px] text-[11px] font-bold text-muted mb-[16px]">
+        <span>Player comparison</span>
+      </div>
+
+      <div className="flex items-end justify-between mb-[20px] gap-4 flex-wrap">
         <div>
-          <h1 className="text-lg font-black text-primary">Player Comparison</h1>
-          <p className="text-sm text-muted mt-0.5">Temporada 2026 · Liga Profesional</p>
+          <h1 className="text-[20px] font-black tracking-[-0.01em] text-primary uppercase">Comparación de jugadores</h1>
+
         </div>
-        {(slotA || slotB) && (
-          <button onClick={() => { setSlotA(null); setSlotB(null); }}
-            className="btn btn-ghost text-sm gap-1.5 text-danger hover:border-danger/30">
-            <RotateCcw size={12} /> Limpiar
-          </button>
+
+        <div className="flex items-center gap-3">
+          <div className="w-[180px]">
+            <Select
+              aria-label="Seleccionar temporada"
+              placeholder="Temporada"
+              selectedKeys={selectedSeasonId ? [selectedSeasonId] : []}
+              onSelectionChange={(keys: any) => {
+                const val = Array.from(keys)[0];
+                if (val) setSelectedSeasonId(String(val));
+              }}
+              classNames={{
+                trigger: `${sharedSelectClasses.trigger} h-[38px]`,
+                value: sharedSelectClasses.value,
+                popoverContent: sharedSelectClasses.popoverContent,
+              }}
+              startContent={<Calendar size={14} className="text-green" />}
+            >
+              {seasons.map((s) => (
+                <SelectItem key={String(s.id)} textValue={s.name} classNames={sharedSelectItemClasses}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
+
+          {slots.some(Boolean) && (
+            <button
+              onClick={() => {
+                setSlots([null, null]);
+                setPlayersData([null, null, null]);
+                useScoutStore.getState().clearCompare();
+              }}
+              className="flex items-center gap-[6px] bg-transparent border border-danger/25 rounded-[8px] px-[14px] h-[38px] text-danger text-[12px] font-extrabold hover:bg-danger/10 hover:border-danger/45 transition-all"
+            >
+              <RotateCcw size={12} strokeWidth={2.5} /> <span className="hidden sm:inline">Limpiar todo</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-surface border border-border rounded-[14px]">
+        {/* SLOTS GRID */}
+        <div className="grid border-b border-border" style={{ gridTemplateColumns: currentCols.join(' ') }}>
+          {slots.map((s, i) => {
+            const data = playersData[i];
+            const load = loadings[i];
+            const C = COLORS[i];
+            const stat = data ? getStat(i) : null;
+            const ratingVal = stat?.sofascoreRating ? parseFloat(stat.sofascoreRating) : null;
+            const ratingColor = ratingVal ? ratingVal >= 7.5 ? C.text : ratingVal >= 7.0 ? "text-gold" : "text-muted" : "text-muted";
+
+            return (
+              <div key={i} className="contents">
+                {i > 0 && <div className="flex items-center justify-center border-l border-r border-border bg-surface-2"><span className="text-[12px] font-black text-muted tracking-[0.08em]">VS</span></div>}
+
+                <div className={`relative flex flex-col items-center p-[26px_18px_20px] gap-0 text-center h-full ${!s ? 'z-20' : 'z-10'} transition-all duration-300`}>
+                  {s && !load && (
+                    <div
+                      className="absolute inset-0 pointer-events-none opacity-50 transition-all duration-700"
+                      style={{
+                        background: `radial-gradient(circle at 50% 35%, ${C.hex}33 0%, transparent 80%)`,
+                      }}
+                    />
+                  )}
+                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: `linear-gradient(90deg, transparent, ${C.hex}40 50%, transparent)` }} />
+
+                  {s && !load && (
+                    <div className="absolute top-4 left-0 right-0 mx-auto w-fit h-[32px] px-3 z-20">
+                      <button
+                        onClick={() => handleClearSlot(i)}
+                        className="flex items-center justify-center gap-2 text-white/40 hover:text-danger hover:bg-danger/10 px-3 py-1 rounded-full transition-all group"
+                      >
+                        <X size={16} strokeWidth={3} />
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline">Sacar</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {!s ? (
+                    <div className="flex flex-col items-center justify-center min-h-[190px] gap-2.5 w-full bg-transparent">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${C.glow} ${C.text}`}><Search size={20} strokeWidth={2.5} /></div>
+                      <div className="text-[11px] font-extrabold text-muted mb-2">{i === 0 ? 'Primer jugador' : i === 1 ? 'Segundo jugador' : 'Tercer jugador'}</div>
+                      <div className="w-[92%] z-50">
+                        <PlayerSearch
+                          onSelect={(p) => {
+                            const n = [...slots];
+                            n[i] = p;
+                            setSlots(n);
+                            useScoutStore.getState().addToCompare(p as any);
+                          }}
+                          excludeIds={slots.filter(sz => sz !== null).map(sz => (sz as SearchHit).id)}
+                        />
+                      </div>
+                    </div>
+                  ) : load ? (
+                    <div className="flex flex-col items-center justify-center min-h-[190px] w-full"><Loader2 className={`animate-spin ${C.text}`} size={24} /></div>
+                  ) : data && (
+                    <div className="flex flex-col items-center z-10 w-full pt-1">
+                      <div className="relative mb-3">
+                        <div className="absolute -inset-1 rounded-full border-[2.5px] shadow-[0_0_16px]" style={{ borderColor: C.hex, boxShadow: `0 0 16px ${C.hex}22` }} />
+                        <div className="w-[72px] h-[72px] rounded-full bg-surface-3 flex items-center justify-center text-[24px] font-black text-secondary overflow-hidden relative z-10">
+                          {data.photoUrl ? <Image src={data.photoUrl} alt={data.name} width={72} height={72} className="object-cover w-full h-full" unoptimized /> : (data.name?.[0] || "?")}
+                        </div>
+                      </div>
+                      <Link href={`/players/${data.id}`} className="hover:opacity-80 transition-opacity"><p className={`text-[15px] font-black tracking-[-0.01em] leading-[1.2] mb-[7px]`}>{data.name}</p></Link>
+
+                      <div className="flex items-center justify-center gap-[6px] mb-2">
+                        <span className={`text-[9px] font-black tracking-[0.1em] uppercase px-[7px] py-[3px] rounded-[5px] bg-white/[0.04] ${C.text}`}>{data.position}</span>
+                        {ratingVal && (
+                          <div className="flex items-center gap-[3px] bg-white/[0.06] rounded-[5px] px-[8px] py-[3px]">
+                            <span className={`text-[14px] font-black ${ratingColor}`}>{ratingVal.toFixed(1)}</span>
+                            <span className="text-[9px] font-bold text-muted uppercase tracking-[0.08em]">Rating</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-[11px] font-bold text-muted mb-[6px]">{data.team?.name || "Sin Equipo"} · {data.nationality}</div>
+
+                      <div className="flex items-center gap-[12px] mb-[12px]">
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] font-black text-secondary/50 uppercase tracking-widest leading-none mb-1">Altura</span>
+                          <span className="text-[13px] font-black text-primary leading-none">{data.heightCm ? `${data.heightCm}cm` : "—"}</span>
+                        </div>
+                        <div className="w-[1px] h-6 bg-white/5" />
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] font-black text-secondary/50 uppercase tracking-widest leading-none mb-1">Peso</span>
+                          <span className="text-[13px] font-black text-primary leading-none">{data.weightKg ? `${data.weightKg}kg` : "—"}</span>
+                        </div>
+                        <div className="w-[1px] h-6 bg-white/5" />
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] font-black text-secondary/50 uppercase tracking-widest leading-none mb-1">Pie</span>
+                          <span className="text-[13px] font-black text-primary leading-none">{data.preferredFoot || "—"}</span>
+                        </div>
+                      </div>
+
+                      <div className="inline-flex items-center gap-[6px] bg-white/[0.04] border border-white/5 rounded-full px-[12px] py-1.5">
+                        <span className="text-[10px] font-black text-secondary tracking-tight">
+                          {seasons.find(sz => String(sz.id) === selectedSeasonId)?.name || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {canAdd && (
+            <button onClick={handleAddSlot} className="flex flex-col items-center justify-center border-l border-border bg-surface-2 hover:bg-surface-3 transition-colors group p-[20px_10px] gap-2">
+              <div className="w-9 h-9 rounded-full border-[1.5px] border-dashed border-border-md flex items-center justify-center text-muted group-hover:border-[#00e87a]/40 group-hover:text-[#00e87a] transition-all"><Plus size={16} strokeWidth={2.5} /></div>
+              <div className="text-[9px] font-extrabold text-muted tracking-[0.1em] uppercase text-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Agregar</div>
+            </button>
+          )}
+        </div>
+
+        {/* COMPARISON Content */}
+        {!bothLoaded ? (
+          <div className="flex flex-col items-center justify-center py-[60px] pb-[56px] gap-[12px] text-center">
+            <div className="w-[58px] h-[58px] rounded-[14px] bg-surface-2 border border-border flex items-center justify-center text-muted"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="9" height="18" rx="2" /><rect x="13" y="3" width="9" height="18" rx="2" /></svg></div>
+            <p className="text-[15px] font-black text-secondary">Seleccioná al menos 2 jugadores</p>
+            <p className="text-[12px] font-semibold text-muted max-w-[290px] leading-[1.75]">Buscá en los slots de arriba para comparar estadísticas lado a lado. Podés agregar un <strong className="text-secondary font-extrabold">tercer jugador</strong> usando el botón +.</p>
+          </div>
+        ) : (
+          <div className="animate-fade-in relative">
+            {/* Legend Map */}
+            <div className="flex items-center justify-center gap-[24px] p-[11px] border-b border-border bg-surface-2/50 backdrop-blur-sm sticky top-0 z-30">
+              {validIndices.map(i => (
+                <div key={i} className="flex items-center gap-[6px] text-[11px] font-extrabold text-secondary">
+                  <div className="w-[9px] h-[9px] rounded-[3px]" style={{ background: COLORS[i].hex }} />
+                  {playersData[i]?.name.split(" ")[0]}
+                </div>
+              ))}
+            </div>
+
+            {/* SECTIONS */}
+            {[
+              {
+                label: "Info General", type: "general", rows: [
+                  { l: "Edad", fn: (vi: number) => calcAge(playersData[vi]?.dateOfBirth) },
+                  { l: "Valor Mercado", fn: (vi: number) => playersData[vi]?.marketValueM ? `€${fmtVal(playersData[vi].marketValueM, 1)}M` : "—" },
+                  { l: "Altura", fn: (vi: number) => playersData[vi]?.heightCm ? `${playersData[vi].heightCm} cm` : "—" },
+                  { l: "Pie hábil", fn: (vi: number) => playersData[vi]?.preferredFoot || "—" }
+                ]
+              },
+              {
+                label: "Ataque", rows: [
+                  { l: "Goles", k: "goals" }, { l: "Asistencias", k: "assists" }, { l: "xG / Partido", k: "xgPerGame", d: 2 }, { l: "Tiros / Partido", k: "shotsPerGame", d: 2 }, { l: "Tiros al arco %", k: "shotsOnTargetPct", d: 1, u: "%" }
+                ]
+              },
+              {
+                label: "Pases & Creación", rows: [
+                  { l: "xA / Partido", k: "xaPerGame", d: 2 }, { l: "Pases clave / Partido", k: "keyPassesPerGame", d: 2 }, { l: "Precisión pases %", k: "passAccuracyPct", d: 1, u: "%" }
+                ]
+              },
+              {
+                label: "Defensa", rows: [
+                  { l: "Tackles", k: "tackles" }, { l: "Intercepciones", k: "interceptions" }, { l: "Recuperaciones", k: "recoveries" }, { l: "Duelos aéreos %", k: "aerialDuelsWonPct", d: 1, u: "%" }
+                ]
+              },
+              {
+                label: "Regates", rows: [
+                  { l: "Regates exitosos/PJ", k: "successfulDribblesPerGame", d: 2 }, { l: "Tasa de éxito %", k: "dribbleSuccessRate", d: 1, u: "%" }
+                ]
+              },
+              {
+                label: "Disciplina", rows: [
+                  { l: "Tarjetas amarillas", k: "yellowCards", lower: true }, { l: "Tarjetas rojas", k: "redCards", lower: true }
+                ]
+              },
+              {
+                label: "Participación", rows: [
+                  { l: "Partidos jugados", k: "matchesPlayed" }, { l: "Minutos jugados", k: "minutesPlayed" }
+                ]
+              },
+              {
+                label: "Radar de Rendimiento", type: "radar"
+              }
+            ].map((sec, sIdx) => (
+              <div key={sIdx}>
+                <div className="flex items-stretch bg-surface-2 border-t border-border">
+                  <div className="w-[180px] shrink-0 flex items-center justify-center p-[10px_0] border-r border-border text-[9.5px] font-black tracking-[0.16em] uppercase text-muted whitespace-nowrap">{sec.label}</div>
+                  <div className="flex-1 flex">
+                    {validIndices.map((vi) => <div key={vi} className="flex-1 border-r border-border last:border-0 py-2.5" />)}
+                  </div>
+                </div>
+
+                {sec.type === "radar" ? (
+                  <div className="border-t border-border bg-surface-2 p-[26px_28px_30px]">
+                    <div className="flex justify-center max-w-[360px] mx-auto">
+                      <RadarChartComponent
+                        data={[
+                          { metric: "Goles", playerA: Math.min(100, num(getStat(validIndices[0]).goals) * 6), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).goals) * 6) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).goals) * 6) : undefined },
+                          { metric: "Asist.", playerA: Math.min(100, num(getStat(validIndices[0]).assists) * 10), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).assists) * 10) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).assists) * 10) : undefined },
+                          { metric: "xG", playerA: Math.min(100, num(getStat(validIndices[0]).xgPerGame) * 150), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).xgPerGame) * 150) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).xgPerGame) * 150) : undefined },
+                          { metric: "Pases%", playerA: Math.min(100, num(getStat(validIndices[0]).passAccuracyPct)), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).passAccuracyPct)) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).passAccuracyPct)) : undefined },
+                          { metric: "Tackles", playerA: Math.min(100, num(getStat(validIndices[0]).tackles) * 2), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).tackles) * 2) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).tackles) * 2) : undefined },
+                          { metric: "Recup.", playerA: Math.min(100, num(getStat(validIndices[0]).recoveries) * 1.5), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).recoveries) * 1.5) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).recoveries) * 1.5) : undefined },
+                          { metric: "Regates%", playerA: Math.min(100, num(getStat(validIndices[0]).dribbleSuccessRate)), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).dribbleSuccessRate)) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).dribbleSuccessRate)) : undefined },
+                          { metric: "Aéreos%", playerA: Math.min(100, num(getStat(validIndices[0]).aerialDuelsWonPct)), playerB: validIndices.length > 1 ? Math.min(100, num(getStat(validIndices[1]).aerialDuelsWonPct)) : 0, playerC: validIndices.length > 2 ? Math.min(100, num(getStat(validIndices[2]).aerialDuelsWonPct)) : undefined },
+                        ]}
+                        nameA={playersData[validIndices[0]]?.name}
+                        nameB={validIndices.length > 1 ? playersData[validIndices[1]]?.name : undefined}
+                        nameC={validIndices.length > 2 ? playersData[validIndices[2]]?.name : undefined}
+                        colorA={COLORS[validIndices[0]].hex}
+                        colorB={validIndices.length > 1 ? COLORS[validIndices[1]].hex : undefined}
+                        colorC={validIndices.length > 2 ? COLORS[validIndices[2]].hex : undefined}
+                      />
+                    </div>
+                  </div>
+                ) : sec.type === "general" ? (
+                  sec.rows?.map((r, rIdx) => (
+                    <GeneralRow key={rIdx} label={r.l} vals={validIndices.map(vi => r.fn?.(vi) || "—")} />
+                  ))
+                ) : (
+                  sec.rows?.map((r, rIdx) => {
+                    const vals = validIndices.map(vi => fmtVal(getStat(vi)[r.k], r.d));
+                    const nums = validIndices.map(vi => num(getStat(vi)[r.k]));
+                    const activeCols = validIndices.map(vi => COLORS[vi].text);
+                    return <CompRow key={rIdx} label={r.l} vals={vals} nums={nums} activeColors={activeCols} unit={r.u} higherIsBetter={!r.lower} />;
+                  })
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
-
-      {/* ── 2 Slots ── */}
-      <div className="grid grid-cols-2 gap-4">
-        <PlayerSlot
-          player={slotA}
-          fullData={dataA}
-          loading={loadA}
-          color="green"
-          slotLabel="Seleccioná el primer jugador"
-          onSelect={(p) => setSlotA(p)}
-          onClear={() => setSlotA(null)}
-        />
-        <PlayerSlot
-          player={slotB}
-          fullData={dataB}
-          loading={loadB}
-          color="purple"
-          slotLabel="Seleccioná el segundo jugador"
-          onSelect={(p) => setSlotB(p)}
-          onClear={() => setSlotB(null)}
-        />
-      </div>
-
-      {/* ── Comparison content (only when both selected) ── */}
-      {bothLoaded && (
-        <div className="space-y-4 animate-fade-in">
-
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-6">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-green" />
-              <span className="text-sm text-secondary">{dataA.name}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-purple" />
-              <span className="text-sm text-secondary">{dataB.name}</span>
-            </div>
-          </div>
-
-          {/* Radar chart */}
-          <div className="card">
-            <p className="section-title mb-2">Radar de rendimiento</p>
-            <RadarChartComponent
-              data={radarData}
-              nameA={dataA.name}
-              nameB={dataB.name}
-              colorA="#00E094"
-              colorB="#7533FC"
-            />
-          </div>
-
-          {/* Stats comparison table */}
-          <div className="card">
-            <div className="grid grid-cols-[1fr_120px_1fr] items-center mb-3 pb-3 border-b border-border">
-              <p className="text-right text-sm font-black text-green truncate pr-2">{dataA.name.split(" ")[0]}</p>
-              <p className="text-center text-2xs text-muted uppercase tracking-wider font-semibold">Métrica</p>
-              <p className="text-left text-sm font-black text-purple truncate pl-2">{dataB.name.split(" ")[0]}</p>
-            </div>
-
-            {/* Ataque */}
-            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mb-1">Ataque</p>
-            <CompRow label="Goles" valA={fmtVal(statA.goals)} valB={fmtVal(statB.goals)} numA={n(statA.goals)} numB={n(statB.goals)} />
-            <CompRow label="Asistencias" valA={fmtVal(statA.assists)} valB={fmtVal(statB.assists)} numA={n(statA.assists)} numB={n(statB.assists)} />
-            <CompRow label="xG/PJ" valA={fmtVal(statA.xgPerGame, 2)} valB={fmtVal(statB.xgPerGame, 2)} numA={n(statA.xgPerGame)} numB={n(statB.xgPerGame)} />
-            <CompRow label="Tiros/PJ" valA={fmtVal(statA.shotsPerGame, 2)} valB={fmtVal(statB.shotsPerGame, 2)} numA={n(statA.shotsPerGame)} numB={n(statB.shotsPerGame)} />
-            <CompRow label="Tiros al arco%" valA={`${fmtVal(statA.shotsOnTargetPct, 1)}%`} valB={`${fmtVal(statB.shotsOnTargetPct, 1)}%`} numA={n(statA.shotsOnTargetPct)} numB={n(statB.shotsOnTargetPct)} />
-
-            {/* Pases */}
-            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Pases</p>
-            <CompRow label="xA/PJ" valA={fmtVal(statA.xaPerGame, 2)} valB={fmtVal(statB.xaPerGame, 2)} numA={n(statA.xaPerGame)} numB={n(statB.xaPerGame)} />
-            <CompRow label="Pases clave/PJ" valA={fmtVal(statA.keyPassesPerGame, 2)} valB={fmtVal(statB.keyPassesPerGame, 2)} numA={n(statA.keyPassesPerGame)} numB={n(statB.keyPassesPerGame)} />
-            <CompRow label="Precisión pases%" valA={`${fmtVal(statA.passAccuracyPct, 1)}%`} valB={`${fmtVal(statB.passAccuracyPct, 1)}%`} numA={n(statA.passAccuracyPct)} numB={n(statB.passAccuracyPct)} />
-
-            {/* Defensa */}
-            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Defensa</p>
-            <CompRow label="Tackles" valA={fmtVal(statA.tackles)} valB={fmtVal(statB.tackles)} numA={n(statA.tackles)} numB={n(statB.tackles)} />
-            <CompRow label="Intercepciones" valA={fmtVal(statA.interceptions)} valB={fmtVal(statB.interceptions)} numA={n(statA.interceptions)} numB={n(statB.interceptions)} />
-            <CompRow label="Recuperaciones" valA={fmtVal(statA.recoveries)} valB={fmtVal(statB.recoveries)} numA={n(statA.recoveries)} numB={n(statB.recoveries)} />
-            <CompRow label="Duelos aéreos%" valA={`${fmtVal(statA.aerialDuelsWonPct, 1)}%`} valB={`${fmtVal(statB.aerialDuelsWonPct, 1)}%`} numA={n(statA.aerialDuelsWonPct)} numB={n(statB.aerialDuelsWonPct)} />
-
-            {/* Regates */}
-            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Regates</p>
-            <CompRow label="Regates exitosos/PJ" valA={fmtVal(statA.successfulDribblesPerGame, 2)} valB={fmtVal(statB.successfulDribblesPerGame, 2)} numA={n(statA.successfulDribblesPerGame)} numB={n(statB.successfulDribblesPerGame)} />
-            <CompRow label="Tasa de éxito %" valA={`${fmtVal(statA.dribbleSuccessRate, 1)}%`} valB={`${fmtVal(statB.dribbleSuccessRate, 1)}%`} numA={n(statA.dribbleSuccessRate)} numB={n(statB.dribbleSuccessRate)} />
-
-            {/* Disciplina */}
-            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Disciplina</p>
-            <CompRow label="Tarjetas amarillas" valA={fmtVal(statA.yellowCards)} valB={fmtVal(statB.yellowCards)} numA={n(statA.yellowCards)} numB={n(statB.yellowCards)} higherIsBetter={false} />
-            <CompRow label="Tarjetas rojas" valA={fmtVal(statA.redCards)} valB={fmtVal(statB.redCards)} numA={n(statA.redCards)} numB={n(statB.redCards)} higherIsBetter={false} />
-          </div>
-
-          {/* PJ block */}
-          <div className="card">
-            <p className="section-title mb-4">Participación</p>
-            <CompRow label="Partidos jugados" valA={fmtVal(statA.matchesPlayed)} valB={fmtVal(statB.matchesPlayed)} numA={n(statA.matchesPlayed)} numB={n(statB.matchesPlayed)} />
-            <CompRow label="Minutos jugados" valA={fmtVal(statA.minutesPlayed)} valB={fmtVal(statB.minutesPlayed)} numA={n(statA.minutesPlayed)} numB={n(statB.minutesPlayed)} />
-          </div>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!slotA && !slotB && (
-        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-          <div className="w-16 h-16 rounded-lg bg-card-2 border border-border flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-muted">
-              <path d="M9 19H5a2 2 0 01-2-2V7a2 2 0 012-2h4M15 19h4a2 2 0 002-2V7a2 2 0 00-2-2h-4M9 12h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </div>
-          <p className="text-primary font-semibold">Compará dos jugadores</p>
-          <p className="text-sm text-secondary max-w-xs">
-            Buscá directamente en los slots de arriba, o marcá jugadores con el botón
-            <strong className="text-primary"> Comparar</strong> desde su perfil.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

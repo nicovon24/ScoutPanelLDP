@@ -54,7 +54,7 @@ export const useScoutStore = create<ScoutState>()(
       compareList: [],
       addToCompare: (player) => {
         const list = get().compareList;
-        if (list.length >= 2 || list.some((p) => p.id === player.id)) return;
+        if (list.length >= 3 || list.some((p) => p.id === player.id)) return;
         set({ compareList: [...list, player] });
       },
       removeFromCompare: (id) =>

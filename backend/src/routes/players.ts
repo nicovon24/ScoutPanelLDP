@@ -8,8 +8,24 @@ const router = Router();
 // ─── GET /api/players/search  (MUST be before /:id) ────────────────────────
 router.get("/search", async (req, res) => {
   try {
-    const q = (req.query.q as string)?.trim();
-    if (!q || q.length < 2) return res.json({ players: [], teams: [] });
+    const q = (req.query.q as string)?.trim() || "";
+    
+    if (q === "") {
+      const defaultPlayers = await db
+        .select({
+          id: players.id,
+          name: players.name,
+          position: players.position,
+          nationality: players.nationality,
+          photoUrl: players.photoUrl,
+        })
+        .from(players)
+        .orderBy(asc(players.name))
+        .limit(20);
+      return res.json({ players: defaultPlayers, teams: [] });
+    }
+
+    if (q.length < 2) return res.json({ players: [], teams: [] });
 
     const pattern = `%${q}%`;
 
@@ -23,7 +39,15 @@ router.get("/search", async (req, res) => {
         marketValueM: players.marketValueM,
       })
       .from(players)
-      .where(or(ilike(players.name, pattern), ilike(players.nationality, pattern)))
+      .leftJoin(teams, eq(players.teamId, teams.id))
+      .where(
+        or(
+          ilike(players.name, pattern),
+          ilike(players.nationality, pattern),
+          ilike(players.position, pattern),
+          ilike(teams.name, pattern)
+        )
+      )
       .limit(8);
 
     const matchingTeams = await db
@@ -209,7 +233,8 @@ router.get("/", async (req, res) => {
           ps.goals, ps.assists, ps.matches_played AS "matchesPlayed",
           ps.tackles, ps.interceptions, ps.clean_sheets AS "cleanSheets",
           ps.save_pct AS "savePct", ps.pass_accuracy_pct AS "passAccuracyPct",
-          ps.xg_per_game AS "xgPerGame", ps.xa_per_game AS "xaPerGame"
+          ps.xg_per_game AS "xgPerGame", ps.xa_per_game AS "xaPerGame",
+          ps.recoveries
         FROM players p
         LEFT JOIN teams t ON t.id = p.team_id
         LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
@@ -247,6 +272,7 @@ router.get("/", async (req, res) => {
           passAccuracyPct: r.passAccuracyPct,
           xgPerGame: r.xgPerGame,
           xaPerGame: r.xaPerGame,
+          recoveries: r.recoveries,
         }] : [],
       }));
 
