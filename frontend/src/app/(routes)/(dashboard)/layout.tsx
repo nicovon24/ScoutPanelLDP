@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { token, sidebarExpanded } = useScoutStore();
 
   return (
-    <div className="flex min-h-screen bg-base overflow-x-hidden">
+    <div className="flex min-h-screen bg-mainBg overflow-x-hidden">
       <Sidebar />
       <div className={`flex flex-col flex-1 transition-all duration-300 min-h-screen ${sidebarExpanded ? "ml-64" : "ml-20"}`}>
         <Topbar />

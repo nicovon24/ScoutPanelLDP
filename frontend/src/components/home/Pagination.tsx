@@ -20,8 +20,8 @@ export default function Pagination({ current, total, onPageChange }: Props) {
         onChange={onPageChange}
         classNames={{
           wrapper: "gap-2",
-          item: "w-10 h-10 text-[14px] font-bold text-muted hover:text-primary transition-all bg-transparent [&[data-hover=true]]:bg-white/5",
-          cursor: "w-10 h-10 text-[14px] font-bold bg-green text-base shadow-[0_4px_15px_rgba(0,224,148,0.2)]",
+          item: "w-10 h-10 text-base font-bold text-muted hover:text-primary transition-all bg-transparent [&[data-hover=true]]:bg-white/5",
+          cursor: "w-10 h-10 text-base font-bold bg-green text-mainBg shadow-[0_4px_15px_rgba(0,224,148,0.2)]",
           prev: "w-10 h-10 text-muted bg-transparent hover:text-primary [&[data-hover=true]]:bg-white/5",
           next: "w-10 h-10 text-muted bg-transparent hover:text-primary [&[data-hover=true]]:bg-white/5"
         }}

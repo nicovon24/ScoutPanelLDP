@@ -15,7 +15,7 @@ export default function SortSelect({ value, onChange }: Props) {
       <select 
         value={value} 
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none bg-transparent text-[12px] font-bold text-primary pl-3 pr-10 h-full outline-none cursor-pointer w-40"
+        className="appearance-none bg-transparent text-sm font-bold text-primary pl-3 pr-10 h-full outline-none cursor-pointer w-40"
       >
         <option value="">Ordenar por: Defecto</option>
         <option value="marketValue_desc">Mayor Valor</option>

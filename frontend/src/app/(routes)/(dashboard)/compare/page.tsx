@@ -73,7 +73,7 @@ function PlayerSearch({ onSelect }: { onSelect: (p: SearchHit) => void }) {
           ref={inputRef} value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar jugador..."
-          className="flex-1 bg-transparent text-[13px] text-primary placeholder:text-muted outline-none"
+          className="flex-1 bg-transparent text-base text-primary placeholder:text-muted outline-none"
         />
         {q && <button onClick={() => { setQ(""); setOpen(false); }}><X size={12} className="text-muted" /></button>}
       </div>
@@ -89,17 +89,17 @@ function PlayerSearch({ onSelect }: { onSelect: (p: SearchHit) => void }) {
                   : <span className="text-xs font-bold text-muted">{p.name[0]}</span>}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-primary truncate">{p.name}</p>
-                <p className="text-[11px] text-muted">{p.nationality}</p>
+                <p className="text-base font-medium text-primary truncate">{p.name}</p>
+                <p className="text-xs text-muted">{p.nationality}</p>
               </div>
-              <span className={`badge text-[10px] ${posStyle(p.position)}`}>{p.position}</span>
+              <span className={`badge text-2xs ${posStyle(p.position)}`}>{p.position}</span>
             </button>
           ))}
         </div>
       )}
       {open && !loading && results.length === 0 && q.length >= 2 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 px-4 py-4 text-center">
-          <p className="text-[12px] text-muted">Sin resultados para &ldquo;{q}&rdquo;</p>
+          <p className="text-sm text-muted">Sin resultados para &ldquo;{q}&rdquo;</p>
         </div>
       )}
     </div>
@@ -113,8 +113,8 @@ function InfoPill({ icon, label, value, accentClass }: {
   return (
     <div className="flex items-center gap-2 py-2 border-b border-border last:border-0">
       <span className={`flex-shrink-0 ${accentClass} opacity-60`}>{icon}</span>
-      <span className="text-[11px] text-muted w-[90px] flex-shrink-0">{label}</span>
-      <span className="text-[12px] font-semibold text-primary truncate">{value}</span>
+      <span className="text-xs text-muted w-[90px] flex-shrink-0">{label}</span>
+      <span className="text-sm font-semibold text-primary truncate">{value}</span>
     </div>
   );
 }
@@ -143,7 +143,7 @@ function PlayerSlot({
         <div className={`w-12 h-12 rounded-xl ${accentBg} flex items-center justify-center`}>
           <Plus size={20} className={accentText} />
         </div>
-        <p className="text-[12px] text-muted text-center">{slotLabel}</p>
+        <p className="text-sm text-muted text-center">{slotLabel}</p>
         <div className="w-full">
           <PlayerSearch onSelect={onSelect} />
         </div>
@@ -187,11 +187,11 @@ function PlayerSlot({
               </Link>
               <div>
                 <Link href={`/players/${player.id}`}>
-                  <p className={`font-black text-[15px] text-primary hover:${accentText} transition-colors leading-tight`}>
+                  <p className={`font-black text-md text-primary hover:${accentText} transition-colors leading-tight`}>
                     {player.name}
                   </p>
                 </Link>
-                <span className={`badge text-[10px] mt-1 inline-flex ${posStyle(player.position)}`}>
+                <span className={`badge text-2xs mt-1 inline-flex ${posStyle(player.position)}`}>
                   {player.position}
                 </span>
               </div>
@@ -200,8 +200,8 @@ function PlayerSlot({
             {/* Rating badge */}
             {ratingVal != null && (
               <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${accentBg}`}>
-                <span className={`text-[15px] font-black ${ratingColor}`}>{ratingVal.toFixed(1)}</span>
-                <span className="text-[10px] text-muted">Rating</span>
+                <span className={`text-md font-black ${ratingColor}`}>{ratingVal.toFixed(1)}</span>
+                <span className="text-2xs text-muted">Rating</span>
               </div>
             )}
           </div>
@@ -209,7 +209,7 @@ function PlayerSlot({
           {/* ── General info block ── */}
           {fullData && (
             <div className={`rounded-xl border ${borderCol} px-3 py-1`}>
-              <p className={`text-[10px] font-black uppercase tracking-wider ${accentClass} mb-1 pt-2`}>
+              <p className={`text-2xs font-black uppercase tracking-wider ${accentClass} mb-1 pt-2`}>
                 Información general
               </p>
               <InfoPill
@@ -219,13 +219,13 @@ function PlayerSlot({
                 accentClass={accentClass}
               />
               <InfoPill
-                icon={<span className="text-[12px]">📍</span>}
+                icon={<span className="text-sm">📍</span>}
                 label="Posición"
                 value={fullData.position ?? "—"}
                 accentClass={accentClass}
               />
               <InfoPill
-                icon={<span className="text-[12px]">🏟</span>}
+                icon={<span className="text-sm">🏟</span>}
                 label="Equipo"
                 value={fullData.team?.name ?? "—"}
                 accentClass={accentClass}
@@ -249,7 +249,7 @@ function PlayerSlot({
                 accentClass={accentClass}
               />
               <InfoPill
-                icon={<span className="text-[12px]">📏</span>}
+                icon={<span className="text-sm">📏</span>}
                 label="Altura"
                 value={fullData.heightCm ? `${fullData.heightCm} cm` : "—"}
                 accentClass={accentClass}
@@ -277,17 +277,17 @@ function CompRow({
     <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2.5 border-b border-border last:border-0 gap-2">
       {/* Value A */}
       <div className="text-right">
-        <span className={`text-[13px] font-bold transition-colors ${winA ? "text-green" : "text-primary"}`}>
+        <span className={`text-base font-bold transition-colors ${winA ? "text-green" : "text-primary"}`}>
           {valA}{unit}
         </span>
-        {winA && <span className="ml-1 text-[9px] text-green font-black">▲</span>}
+        {winA && <span className="ml-1 text-2xs text-green font-black">▲</span>}
       </div>
       {/* Label */}
-      <p className="text-center text-[11px] text-muted font-medium">{label}</p>
+      <p className="text-center text-xs text-muted font-medium">{label}</p>
       {/* Value B */}
       <div className="text-left">
-        {winB && <span className="mr-1 text-[9px] text-purple font-black">▲</span>}
-        <span className={`text-[13px] font-bold transition-colors ${winB ? "text-purple" : "text-primary"}`}>
+        {winB && <span className="mr-1 text-2xs text-purple font-black">▲</span>}
+        <span className={`text-base font-bold transition-colors ${winB ? "text-purple" : "text-primary"}`}>
           {valB}{unit}
         </span>
       </div>
@@ -353,12 +353,12 @@ export default function ComparePage() {
       {/* Title bar */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[18px] font-black text-primary">Player Comparison</h1>
-          <p className="text-[12px] text-muted mt-0.5">Temporada 2026 · Liga Profesional</p>
+          <h1 className="text-lg font-black text-primary">Player Comparison</h1>
+          <p className="text-sm text-muted mt-0.5">Temporada 2026 · Liga Profesional</p>
         </div>
         {(slotA || slotB) && (
           <button onClick={() => { setSlotA(null); setSlotB(null); }}
-                  className="btn btn-ghost text-[12px] gap-1.5 text-danger hover:border-danger/30">
+                  className="btn btn-ghost text-sm gap-1.5 text-danger hover:border-danger/30">
             <RotateCcw size={12} /> Limpiar
           </button>
         )}
@@ -394,11 +394,11 @@ export default function ComparePage() {
           <div className="flex items-center justify-center gap-6">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-green" />
-              <span className="text-[12px] text-secondary">{dataA.name}</span>
+              <span className="text-sm text-secondary">{dataA.name}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-purple" />
-              <span className="text-[12px] text-secondary">{dataB.name}</span>
+              <span className="text-sm text-secondary">{dataB.name}</span>
             </div>
           </div>
 
@@ -417,13 +417,13 @@ export default function ComparePage() {
           {/* Stats comparison table */}
           <div className="card">
             <div className="grid grid-cols-[1fr_120px_1fr] items-center mb-3 pb-3 border-b border-border">
-              <p className="text-right text-[12px] font-black text-green truncate pr-2">{dataA.name.split(" ")[0]}</p>
-              <p className="text-center text-[10px] text-muted uppercase tracking-wider font-semibold">Métrica</p>
-              <p className="text-left text-[12px] font-black text-purple truncate pl-2">{dataB.name.split(" ")[0]}</p>
+              <p className="text-right text-sm font-black text-green truncate pr-2">{dataA.name.split(" ")[0]}</p>
+              <p className="text-center text-2xs text-muted uppercase tracking-wider font-semibold">Métrica</p>
+              <p className="text-left text-sm font-black text-purple truncate pl-2">{dataB.name.split(" ")[0]}</p>
             </div>
 
             {/* Ataque */}
-            <p className="text-[10px] text-muted uppercase tracking-wider font-semibold mb-1">Ataque</p>
+            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mb-1">Ataque</p>
             <CompRow label="Goles"       valA={fmtVal(statA.goals)}   valB={fmtVal(statB.goals)}   numA={n(statA.goals)}   numB={n(statB.goals)} />
             <CompRow label="Asistencias" valA={fmtVal(statA.assists)} valB={fmtVal(statB.assists)} numA={n(statA.assists)} numB={n(statB.assists)} />
             <CompRow label="xG/PJ"       valA={fmtVal(statA.xgPerGame, 2)}  valB={fmtVal(statB.xgPerGame, 2)}  numA={n(statA.xgPerGame)}  numB={n(statB.xgPerGame)} />
@@ -431,25 +431,25 @@ export default function ComparePage() {
             <CompRow label="Tiros al arco%" valA={`${fmtVal(statA.shotsOnTargetPct, 1)}%`} valB={`${fmtVal(statB.shotsOnTargetPct, 1)}%`} numA={n(statA.shotsOnTargetPct)} numB={n(statB.shotsOnTargetPct)} />
 
             {/* Pases */}
-            <p className="text-[10px] text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Pases</p>
+            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Pases</p>
             <CompRow label="xA/PJ"        valA={fmtVal(statA.xaPerGame, 2)}       valB={fmtVal(statB.xaPerGame, 2)}       numA={n(statA.xaPerGame)}       numB={n(statB.xaPerGame)} />
             <CompRow label="Pases clave/PJ" valA={fmtVal(statA.keyPassesPerGame, 2)} valB={fmtVal(statB.keyPassesPerGame, 2)} numA={n(statA.keyPassesPerGame)} numB={n(statB.keyPassesPerGame)} />
             <CompRow label="Precisión pases%" valA={`${fmtVal(statA.passAccuracyPct, 1)}%`} valB={`${fmtVal(statB.passAccuracyPct, 1)}%`} numA={n(statA.passAccuracyPct)} numB={n(statB.passAccuracyPct)} />
 
             {/* Defensa */}
-            <p className="text-[10px] text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Defensa</p>
+            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Defensa</p>
             <CompRow label="Tackles"       valA={fmtVal(statA.tackles)}       valB={fmtVal(statB.tackles)}       numA={n(statA.tackles)}       numB={n(statB.tackles)} />
             <CompRow label="Intercepciones" valA={fmtVal(statA.interceptions)} valB={fmtVal(statB.interceptions)} numA={n(statA.interceptions)} numB={n(statB.interceptions)} />
             <CompRow label="Recuperaciones" valA={fmtVal(statA.recoveries)}    valB={fmtVal(statB.recoveries)}    numA={n(statA.recoveries)}    numB={n(statB.recoveries)} />
             <CompRow label="Duelos aéreos%" valA={`${fmtVal(statA.aerialDuelsWonPct, 1)}%`} valB={`${fmtVal(statB.aerialDuelsWonPct, 1)}%`} numA={n(statA.aerialDuelsWonPct)} numB={n(statB.aerialDuelsWonPct)} />
 
             {/* Regates */}
-            <p className="text-[10px] text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Regates</p>
+            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Regates</p>
             <CompRow label="Regates exitosos/PJ" valA={fmtVal(statA.successfulDribblesPerGame, 2)} valB={fmtVal(statB.successfulDribblesPerGame, 2)} numA={n(statA.successfulDribblesPerGame)} numB={n(statB.successfulDribblesPerGame)} />
             <CompRow label="Tasa de éxito %" valA={`${fmtVal(statA.dribbleSuccessRate, 1)}%`} valB={`${fmtVal(statB.dribbleSuccessRate, 1)}%`} numA={n(statA.dribbleSuccessRate)} numB={n(statB.dribbleSuccessRate)} />
 
             {/* Disciplina */}
-            <p className="text-[10px] text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Disciplina</p>
+            <p className="text-2xs text-muted uppercase tracking-wider font-semibold mt-3 mb-1">Disciplina</p>
             <CompRow label="Tarjetas amarillas" valA={fmtVal(statA.yellowCards)} valB={fmtVal(statB.yellowCards)} numA={n(statA.yellowCards)} numB={n(statB.yellowCards)} higherIsBetter={false} />
             <CompRow label="Tarjetas rojas"     valA={fmtVal(statA.redCards)}    valB={fmtVal(statB.redCards)}    numA={n(statA.redCards)}    numB={n(statB.redCards)}    higherIsBetter={false} />
           </div>
@@ -471,8 +471,8 @@ export default function ComparePage() {
               <path d="M9 19H5a2 2 0 01-2-2V7a2 2 0 012-2h4M15 19h4a2 2 0 002-2V7a2 2 0 00-2-2h-4M9 12h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </div>
-          <p className="text-[14px] font-semibold text-secondary">Compará dos jugadores</p>
-          <p className="text-[12px] text-muted max-w-xs">
+          <p className="text-base font-semibold text-secondary">Compará dos jugadores</p>
+          <p className="text-sm text-muted max-w-xs">
             Buscá directamente en los slots de arriba, o marcá jugadores con el botón
             <strong className="text-primary"> Comparar</strong> desde su perfil.
           </p>

@@ -84,9 +84,9 @@ function HomeContent() {
       {/* ── Page Header ── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-[32px] font-black text-primary tracking-tight leading-none">Explorar Jugadores</h1>
+          <h1 className="text-3xl font-black text-primary tracking-tight leading-none">Explorar Jugadores</h1>
           <p className="text-secondary mt-3 font-medium flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
+            <span className="w-2 h-2 rounded-full  animate-pulse" />
             Mostrando talentos activos • Apertura 2026
           </p>
         </div>
@@ -102,7 +102,7 @@ function HomeContent() {
             </Button>
           </div>
 
-          <AppButton 
+          <AppButton
             onClick={() => setFilterPanelOpen(true)}
             variant={activeFilterCount > 0 ? "primary" : "secondary"}
             className="h-12 px-6 gap-3"
@@ -110,7 +110,7 @@ function HomeContent() {
             <SlidersHorizontal size={18} />
             Filtros
             {activeFilterCount > 0 && (
-              <span className="w-5 h-5 rounded-lg bg-base text-green text-[11px] font-black flex items-center justify-center">
+              <span className="w-5 h-5 rounded-lg bg-mainBg text-green text-xs font-black flex items-center justify-center">
                 {activeFilterCount}
               </span>
             )}
@@ -121,7 +121,7 @@ function HomeContent() {
       {/* ── Search & Quick Bar ── */}
       <div className="flex items-center gap-4 bg-white/[0.02] border border-white/[0.05] p-5 rounded-2xl shadow-sm">
         <div className="flex-1">
-          <Input 
+          <Input
             value={inputQ}
             onChange={(e) => { setInputQ(e.target.value); setPage(1); }}
             placeholder="Buscar por nombre, apellido..."
@@ -129,20 +129,20 @@ function HomeContent() {
             endContent={
               inputQ && (
                 <button onClick={() => { setInputQ(""); setPage(1); }}>
-                  <X size={15} className="text-muted hover:text-secondary transition-colors" />
+                  <X size={15} className="text-secondary transition-colors" />
                 </button>
               )
             }
             variant="flat"
             classNames={{
-              inputWrapper: "h-12 bg-card border border-white/[0.05] rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
-              input: "text-[14px] text-primary placeholder:text-secondary"
+              inputWrapper: " h-12 bg-card border border-white/[0.05] rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
+              input: "text-base text-primary placeholder:text-secondary"
             }}
           />
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
-          <span className="text-[11px] font-black uppercase tracking-widest text-primary mr-2">Status:</span>
+          <span className="text-xs font-black uppercase tracking-widest text-primary mr-2">Status:</span>
           {["Libre", "A préstamo", "Contrato"].map(s => (
             <AppButton key={s} size="sm" variant="secondary" className="h-[34px] px-3 border border-secondary text-secondary hover:border-green/30 hover:text-green">
               {s}
@@ -164,7 +164,7 @@ function HomeContent() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-white/[0.05]">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-[13px] text-muted font-black uppercase tracking-widest">Mostrar:</span>
+              <span className="text-base text-muted font-black uppercase tracking-widest">Mostrar:</span>
               <Select
                 selectedKeys={[String(pageSize)]}
                 onChange={(e) => { if (e.target.value) { setPageSize(Number(e.target.value)); setPage(1); } }}
@@ -172,7 +172,7 @@ function HomeContent() {
                 size="md"
                 classNames={{
                   trigger: "bg-white/[0.03] border border-white/[0.05] data-[hover=true]:border-white/[0.1] data-[focus=true]:border-green/50 data-[open=true]:border-green/50 transition-colors rounded-xl shadow-none",
-                  value: "text-[14px] font-bold text-primary",
+                  value: "text-base font-bold text-primary",
                   popoverContent: "bg-card border border-white/[0.05]"
                 }}
                 aria-label="Mostrar"
@@ -184,7 +184,7 @@ function HomeContent() {
                 <SelectItem key="50" value="50">50</SelectItem>
               </Select>
             </div>
-            <span className="text-[13px] text-muted font-bold tracking-tight">
+            <span className="text-base text-muted font-bold tracking-tight">
               {Math.min(page * pageSize, totalItems)} de {totalItems}
             </span>
           </div>

@@ -64,14 +64,13 @@ export default function PlayerCardV2({ player }: { player: Player }) {
   const rating = stat?.sofascoreRating ? parseFloat(stat.sofascoreRating) : null;
 
   const ratingColor = rating
-    ? rating >= 7.5 ? "text-green border-green/30" : rating >= 7.0 ? "text-yellow-400 border-yellow-400/30" : "text-white/70 border-white/10"
-    : "text-white/30 border-white/5";
+    ? rating >= 7.5 ? "text-green border-green/30" : rating >= 7.0 ? "text-yellow-400 border-yellow-400/30" : "text-primary/70 border-white/10"
+    : "text-primary/30 border-white/5";
 
   return (
     <Card
       as={Link}
       href={`/players/${player.id}`}
-      isPressable
       classNames={{
         base: "w-full group bg-[#0d0d0d] border border-white/5 rounded-[20px] overflow-hidden hover:border-green/40 transition-all duration-500 hover:shadow-[0_10px_40px_rgba(0,224,148,0.12)] hover:-translate-y-1"
       }}
@@ -84,7 +83,7 @@ export default function PlayerCardV2({ player }: { player: Player }) {
         {/* TOP: Pos, Flag, Value */}
         <div className="flex justify-between items-start mb-4">
           <div className="flex gap-2.5 items-center">
-            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider border ${getPositionStyle(player.position)}`}>
+            <span className={`px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider border ${getPositionStyle(player.position)}`}>
               {player.position}
             </span>
             {getFlagUrl(player.nationality) && (
@@ -96,8 +95,8 @@ export default function PlayerCardV2({ player }: { player: Player }) {
 
           {player.marketValueM && (
             <div className="flex flex-col items-end">
-              <span className="text-[9px] text-white/40 uppercase font-bold tracking-widest mb-0.5">Valor</span>
-              <span className="text-yellow-500/90 font-black text-[15px] leading-none">€{parseFloat(player.marketValueM).toFixed(1)}M</span>
+              <span className="text-2xs text-primary/40 uppercase font-bold tracking-widest mb-0.5">Valor</span>
+              <span className="text-yellow-500/90 font-black text-md leading-none">€{parseFloat(player.marketValueM).toFixed(1)}M</span>
             </div>
           )}
         </div>
@@ -108,17 +107,17 @@ export default function PlayerCardV2({ player }: { player: Player }) {
             {player.photoUrl ? (
               <Image src={player.photoUrl} alt={player.name} fill className="object-cover transform group-hover:scale-110 transition-transform duration-700" unoptimized />
             ) : (
-              <span className="w-full h-full flex items-center justify-center text-xl font-bold text-white/30">{player.name[0]}</span>
+              <span className="w-full h-full flex items-center justify-center text-xl font-bold text-primary/30">{player.name[0]}</span>
             )}
           </div>
 
           <div className="flex flex-col flex-1 min-w-0">
-            <h3 className="text-[17px] font-black text-white truncate leading-tight transition-colors tracking-tight">
+            <h3 className="text-md font-black text-primary truncate leading-tight transition-colors tracking-tight">
               {player.name}
             </h3>
 
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs text-white/50 font-medium">{age} años</span>
+              <span className="text-xs text-primary/50 font-medium">{age} años</span>
               {player.team?.name && (
                 <>
                   <span className="w-1 h-1 rounded-full bg-white/10" />
@@ -128,7 +127,7 @@ export default function PlayerCardV2({ player }: { player: Player }) {
                         <Image src={player.team.logoUrl} alt={player.team.name} fill className="object-contain" unoptimized />
                       </div>
                     )}
-                    <span className="text-xs text-white/70 truncate font-medium">{player.team.name}</span>
+                    <span className="text-xs text-primary/70 truncate font-medium">{player.team.name}</span>
                   </div>
                 </>
               )}
@@ -149,8 +148,8 @@ export default function PlayerCardV2({ player }: { player: Player }) {
 
               const StatItem = ({ label, value }: { label: string, value: string | number }) => (
                 <div className="flex flex-col items-center">
-                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1">{label}</span>
-                  <span className="text-white font-bold text-[14px] leading-none">{value}</span>
+                  <span className="text-2xs text-primary/40 uppercase font-bold tracking-wider mb-1">{label}</span>
+                  <span className="text-primary font-bold text-base leading-none">{value}</span>
                 </div>
               );
 
@@ -192,7 +191,7 @@ export default function PlayerCardV2({ player }: { player: Player }) {
                 {rating.toFixed(1)}
               </div>
               <div className="flex-1 flex flex-col gap-1.5">
-                <span className="text-[9px] text-white/40 uppercase font-bold tracking-widest">Season Rating</span>
+                <span className="text-2xs text-primary/40 uppercase font-bold tracking-widest">Season Rating</span>
                 <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-1000 ease-out"

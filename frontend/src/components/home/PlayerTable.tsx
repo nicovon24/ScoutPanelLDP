@@ -31,7 +31,7 @@ export default function PlayerTable({ players, loading }: Props) {
         base: "overflow-x-auto rounded-2xl border border-white/[0.05] bg-card/30 backdrop-blur-sm",
         table: "w-full border-collapse",
         thead: "[&>tr]:first:shadow-none",
-        th: "bg-white/[0.02] border-b border-white/[0.05] px-6 py-4 text-[11px] font-black uppercase tracking-widest text-muted",
+        th: "bg-white/[0.02] border-b border-white/[0.05] px-6 py-4 text-xs font-black uppercase tracking-widest text-muted",
         td: "px-6 py-4 border-b border-white/[0.03] group-data-[hover=true]:bg-white/[0.02]",
         tr: "transition-colors group",
       }}
@@ -59,25 +59,25 @@ export default function PlayerTable({ players, loading }: Props) {
                       : <User size={18} className="text-muted" />}
                   </div>
                   <div>
-                    <p className="text-[14px] font-bold text-primary transition-colors hover:text-green">{p.name}</p>
-                    <p className="text-[12px] text-muted">Apertura 2026</p>
+                    <p className="text-base font-bold text-primary transition-colors hover:text-green">{p.name}</p>
+                    <p className="text-sm text-muted">Apertura 2026</p>
                   </div>
                 </Link>
               </TableCell>
               <TableCell>
-                <span className="badge text-[10px] font-black bg-white/5">{p.position}</span>
+                <span className="badge text-2xs font-black bg-white/5">{p.position}</span>
               </TableCell>
               <TableCell>
-                <span className="text-[13px] text-secondary font-medium">{p.nationality}</span>
+                <span className="text-base text-secondary font-medium">{p.nationality}</span>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   {p.team?.logoUrl && <Image src={p.team.logoUrl} alt="" width={18} height={18} className="object-contain" unoptimized />}
-                  <span className="text-[13px] text-secondary font-medium">{p.team?.name}</span>
+                  <span className="text-base text-secondary font-medium">{p.team?.name}</span>
                 </div>
               </TableCell>
               <TableCell className="text-right">
-                <span className="text-[14px] font-bold text-primary">€{p.marketValueM}M</span>
+                <span className="text-base font-bold text-primary">€{p.marketValueM}M</span>
               </TableCell>
               <TableCell className="text-right">
                 <div className={`flex items-center justify-end gap-1.5 font-black ${rColor}`}>

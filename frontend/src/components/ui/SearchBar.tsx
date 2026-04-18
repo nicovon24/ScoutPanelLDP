@@ -80,7 +80,7 @@ export default function SearchBar() {
             size="sm"
             classNames={{
               trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-4 h-12 min-h-12 border-none rounded-none w-full",
-              value: "text-[11px] font-black uppercase tracking-widest text-secondary group-data-[hover=true]:text-primary",
+              value: "text-xs font-black uppercase tracking-widest text-secondary group-data-[hover=true]:text-primary",
               popoverContent: "bg-card border border-white/[0.05]",
               innerWrapper: "gap-1",
               selectorIcon: "text-muted"
@@ -117,7 +117,7 @@ export default function SearchBar() {
               base: "h-12",
               mainWrapper: "h-full",
               inputWrapper: "h-full bg-transparent border-none shadow-none hover:bg-transparent data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent",
-              input: "text-[14px] text-primary placeholder:text-secondary"
+              input: "text-base text-primary placeholder:text-secondary"
             }}
           />
         </div>
@@ -128,12 +128,12 @@ export default function SearchBar() {
         <div className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-white/[0.05]
                         rounded-xl shadow-2xl z-[60] overflow-hidden animate-fade-in ring-1 ring-black/50">
           {!hasResults ? (
-            <p className="text-center text-muted py-8 text-[13px]">Sin resultados para &ldquo;{query}&rdquo;</p>
+            <p className="text-center text-muted py-8 text-base">Sin resultados para &ldquo;{query}&rdquo;</p>
           ) : (
             <>
               {(type === "all" || type === "players") && results!.players.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted/60
+                  <p className="text-2xs font-black uppercase tracking-widest text-muted/60
                                 px-5 py-3 border-b border-white/[0.03] bg-white/[0.01]">
                     Resultados de Jugadores
                   </p>
@@ -149,10 +149,10 @@ export default function SearchBar() {
                           : <span className="text-sm font-bold text-muted">{p.name[0]}</span>}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-bold text-primary truncate group-hover:text-green transition-colors">{p.name}</p>
-                        <p className="text-[12px] text-muted">{p.nationality}</p>
+                        <p className="text-base font-bold text-primary truncate group-hover:text-green transition-colors">{p.name}</p>
+                        <p className="text-sm text-muted">{p.nationality}</p>
                       </div>
-                      <span className={`badge text-[10px] ${posClass(p.position)}`}>{p.position}</span>
+                      <span className={`badge text-2xs ${posClass(p.position)}`}>{p.position}</span>
                     </button>
                   ))}
                 </div>
@@ -160,7 +160,7 @@ export default function SearchBar() {
 
               {(type === "all" || type === "clubs") && results!.teams.length > 0 && (
                 <div className={(type === "all" && results!.players.length > 0) ? "border-t border-white/[0.05]" : ""}>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted/60
+                  <p className="text-2xs font-black uppercase tracking-widest text-muted/60
                                 px-5 py-3 border-b border-white/[0.03] bg-white/[0.01]">
                     Resultados de Clubes
                   </p>
@@ -175,8 +175,8 @@ export default function SearchBar() {
                           : <span className="text-sm text-muted">{t.name[0]}</span>}
                       </div>
                       <div>
-                        <p className="text-[14px] font-bold text-primary group-hover:text-green transition-colors">{t.name}</p>
-                        <p className="text-[12px] text-muted">{t.country}</p>
+                        <p className="text-base font-bold text-primary group-hover:text-green transition-colors">{t.name}</p>
+                        <p className="text-sm text-muted">{t.country}</p>
                       </div>
                     </button>
                   ))}

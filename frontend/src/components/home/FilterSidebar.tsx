@@ -43,24 +43,24 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                    ${filterPanelOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Glow effect */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#00E094]/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-green/10 blur-[120px] rounded-full pointer-events-none" />
 
         {/* Header */}
         <div className="relative p-6 border-b border-white/[0.08] flex items-center justify-between bg-black/40 z-10 backdrop-blur-sm">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#00E094]/10 border border-[#00E094]/20 flex items-center justify-center text-[#00E094] shadow-[0_0_20px_rgba(0,224,148,0.15)]">
+            <div className="w-12 h-12 rounded-2xl bg-green/10 border border-green/20 flex items-center justify-center text-green shadow-[0_0_20px_rgba(0,224,148,0.15)]">
               <Filter size={24} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight leading-none">Filtros Avanzados</h2>
-              <p className="text-[12px] text-[#00E094] tracking-[0.2em] uppercase font-bold mt-1">Configuración de búsqueda personalizada</p>
+              <h2 className="text-2xl font-black text-primary uppercase tracking-tight leading-none">Filtros Avanzados</h2>
+              <p className="text-sm text-green tracking-[0.2em] uppercase font-bold mt-1">Configuración de búsqueda personalizada</p>
             </div>
           </div>
           <AppButton
             isIconOnly
             variant="light"
             onClick={() => setFilterPanelOpen(false)}
-            className="w-12 h-12 text-white/40 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+            className="w-12 h-12 text-primary/40 hover:text-primary hover:bg-white/5 rounded-2xl transition-all"
           >
             <X size={24} />
           </AppButton>
@@ -69,11 +69,11 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
         {/* Content with 2-Column Grid */}
         <div className="flex-1 overflow-y-auto p-8 relative z-10 custom-scrollbar">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-            
+
             {/* Left Column: Soccer Field */}
             <div className="space-y-6">
-              <label className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#00E094]" /> Ubicación Táctica
+              <label className="text-xs font-black uppercase tracking-[0.25em] text-primary/50 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green" /> Ubicación Táctica
               </label>
               <div className="bg-black/40 p-5 rounded-[24px] border border-white/5 shadow-2xl">
                 <SoccerFieldPositions
@@ -82,7 +82,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                 />
               </div>
               <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                <p className="text-[11px] text-white/30 font-medium leading-relaxed italic">
+                <p className="text-xs text-primary/30 font-medium leading-relaxed italic">
                   * Selecciona múltiples posiciones en el campo para encontrar jugadores polifuncionales.
                 </p>
               </div>
@@ -92,52 +92,59 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
             <div className="space-y-8">
               {/* Club Selection */}
               <div className="space-y-3">
-                <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Club / Equipo Actual</label>
+                <label className="text-xs font-black uppercase tracking-[0.2em] text-primary/40">Club / Equipo Actual</label>
                 <Select
+                  items={[
+                    { id: "all", name: "Todos los clubes" },
+                    ...teams.map(t => ({ id: t.id.toString(), name: t.name }))
+                  ]}
                   selectedKeys={filters.teamId ? [filters.teamId.toString()] : [""]}
                   onChange={(e) => update("teamId", e.target.value)}
                   placeholder="Selecciona un equipo"
                   classNames={{
-                    trigger: "bg-[#141414] border border-white/10 h-14 rounded-xl shadow-none hover:border-[#00E094]/50 hover:bg-[#1a1a1a] transition-all",
-                    value: "text-white font-bold text-[14px]",
+                    trigger: "bg-[#141414] border border-white/10 h-14 rounded-xl shadow-none hover:border-green/50 hover:bg-[#1a1a1a] transition-all",
+                    value: "text-primary font-bold text-base",
                     popoverContent: "bg-[#0d0d0d] border border-white/10 shadow-2xl rounded-xl",
                     listbox: "p-2"
                   }}
                   aria-label="Seleccionar club"
                 >
-                  <SelectItem key="all" textValue="Todos los clubes" className="text-white/70 hover:text-white">Todos los clubes</SelectItem>
-                  {teams.map((t) => (
-                    <SelectItem key={t.id.toString()} textValue={t.name} className="text-white hover:text-[#00E094] hover:bg-[#00E094]/5">
-                      {t.name}
+                  {(item) => (
+                    <SelectItem
+                      key={item.id}
+                      textValue={item.name}
+                      className={item.id === "all" ? "text-primary/70 hover:text-primary" : "text-primary hover:text-green hover:bg-green/5"}
+                    >
+                      {item.name}
                     </SelectItem>
-                  ))}
+                  )}
                 </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-5">
                 {/* Preferencia de Pie */}
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Perfil Hábil</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-primary/40">Perfil Hábil</label>
                   <Select
                     selectedKeys={filters.foot ? [filters.foot] : [""]}
                     onChange={(e) => update("foot", e.target.value)}
                     classNames={{
-                      trigger: "bg-[#141414] border border-white/10 h-14 rounded-xl shadow-none hover:border-[#00E094]/50 hover:bg-[#1a1a1a] transition-all",
-                      value: "text-white font-bold text-[14px]",
+                      trigger: "bg-[#141414] border border-white/10 h-14 rounded-xl shadow-none hover:border-green/50 hover:bg-[#1a1a1a] transition-all",
+                      value: "text-primary font-bold text-base",
                       popoverContent: "bg-[#0d0d0d] border border-white/10 shadow-2xl rounded-xl",
                     }}
                     aria-label="Seleccionar pie"
                   >
-                    <SelectItem key="any" textValue="Cualquiera" className="text-white/70">Cualquiera</SelectItem>
-                    <SelectItem key="Right" textValue="Derecho" className="text-white">Derecho</SelectItem>
-                    <SelectItem key="Left" textValue="Zurdo" className="text-white">Zurdo</SelectItem>
-                    <SelectItem key="Both" textValue="Ambos" className="text-white">Ambos</SelectItem>
+                    <SelectItem key="any" textValue="Cualquiera" className="text-primary/70">Cualquiera</SelectItem>
+                    <SelectItem key="Right" textValue="Derecho" className="text-primary">Derecho</SelectItem>
+                    <SelectItem key="Left" textValue="Zurdo" className="text-primary">Zurdo</SelectItem>
+                    <SelectItem key="Both" textValue="Ambos" className="text-primary">Ambos</SelectItem>
                   </Select>
                 </div>
 
                 {/* Valor de mercado */}
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Presupuesto Máx (M€)</label>
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-primary/40">Presupuesto Máx (M€)</label>
                   <Input
                     type="number"
                     value={filters.marketValueMax}
@@ -145,8 +152,8 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                     placeholder="Ej: 2.5"
                     variant="bordered"
                     classNames={{
-                      inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-[#00E094]/50 hover:bg-[#1a1a1a] transition-all group-data-[focus=true]:border-[#00E094]",
-                      input: "text-[15px] font-bold text-white placeholder:text-white/15"
+                      inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-green/50 hover:bg-[#1a1a1a] transition-all group-data-[focus=true]:border-green",
+                      input: "text-base font-bold text-primary placeholder:text-primary/15"
                     }}
                   />
                 </div>
@@ -155,14 +162,14 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
               {/* Rango de Edad */}
               <div className="space-y-5 bg-white/[0.01] p-6 rounded-2xl border border-white/5">
                 <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <label className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Rango de Edad</label>
-                  <span className="text-[12px] font-black text-[#00E094] bg-[#00E094]/10 px-4 py-1.5 rounded-full border border-[#00E094]/20">
+                  <label className="text-xs font-black uppercase tracking-[0.2em] text-primary/40">Rango de Edad</label>
+                  <span className="text-sm font-black text-green bg-green/10 px-4 py-1.5 rounded-full border border-green/20">
                     {filters.ageMin || 15} — {filters.ageMax || 45} Años
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <span className="text-[9px] uppercase font-bold text-white/20 ml-2">Mínima</span>
+                    <span className="text-2xs uppercase font-bold text-primary/20 ml-2">Mínima</span>
                     <Input
                       type="number"
                       placeholder="15"
@@ -170,13 +177,13 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                       onChange={(e) => update("ageMin", e.target.value)}
                       variant="bordered"
                       classNames={{
-                        inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-[#00E094]/50 group-data-[focus=true]:border-[#00E094]",
-                        input: "text-center text-[15px] font-bold text-white"
+                        inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-green/50 group-data-[focus=true]:border-green",
+                        input: "text-center text-base font-bold text-primary"
                       }}
                     />
                   </div>
                   <div className="space-y-2">
-                    <span className="text-[9px] uppercase font-bold text-white/20 ml-2">Máxima</span>
+                    <span className="text-2xs uppercase font-bold text-primary/20 ml-2">Máxima</span>
                     <Input
                       type="number"
                       placeholder="45"
@@ -184,8 +191,8 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                       onChange={(e) => update("ageMax", e.target.value)}
                       variant="bordered"
                       classNames={{
-                        inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-[#00E094]/50 group-data-[focus=true]:border-[#00E094]",
-                        input: "text-center text-[15px] font-bold text-white"
+                        inputWrapper: "h-14 bg-[#141414] border-white/10 rounded-xl hover:border-green/50 group-data-[focus=true]:border-green",
+                        input: "text-center text-base font-bold text-primary"
                       }}
                     />
                   </div>
@@ -200,7 +207,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
           <AppButton
             onClick={onReset}
             variant="danger"
-            className="flex-1 h-16 font-bold tracking-wider rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-lg"
+            className="flex-1 h-16 font-bold tracking-wider rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-primary transition-all shadow-lg"
           >
             <Trash2 size={20} className="mr-2" />
             Limpiar Filtros
@@ -208,7 +215,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
           <AppButton
             onClick={() => setFilterPanelOpen(false)}
             variant="primary"
-            className="flex-[2] h-16 font-black tracking-widest rounded-2xl bg-[#00E094] text-black hover:bg-[#00c985] hover:shadow-[0_15px_35px_rgba(0,224,148,0.3)] transition-all flex items-center justify-center gap-3"
+            className="flex-[2] h-16 font-black tracking-widest rounded-2xl bg-green text-mainBg hover:bg-green-dark hover:shadow-[0_15px_35px_rgba(0,224,148,0.3)] transition-all flex items-center justify-center gap-3"
           >
             <CheckCircle2 size={22} />
             APLICAR CAMBIOS

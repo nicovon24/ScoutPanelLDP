@@ -48,7 +48,7 @@ export default function Sidebar() {
               <Icon size={20} strokeWidth={active ? 2.5 : 2} className="flex-shrink-0" />
 
               {sidebarExpanded && (
-                <span className={`text-[14px] font-bold whitespace-nowrap overflow-hidden transition-all duration-300
+                <span className={`text-base font-bold whitespace-nowrap overflow-hidden transition-all duration-300
                                  ${active ? "text-primary" : "text-secondary"}`}>
                   {label}
                 </span>
@@ -56,7 +56,7 @@ export default function Sidebar() {
 
               {/* Tooltip (only when collapsed) */}
               {!sidebarExpanded && (
-                <div className="absolute left-[calc(100%+15px)] px-3 py-2 rounded-lg bg-primary text-base text-[12px] font-black
+                <div className="absolute left-[calc(100%+15px)] px-3 py-2 rounded-lg bg-primary text-base text-sm font-black
                                 whitespace-nowrap opacity-0 scale-90 pointer-events-none group-hover:opacity-100 group-hover:scale-100 
                                 transition-all duration-200 shadow-2xl z-[100] uppercase tracking-widest border border-white/10">
                   {label}
@@ -67,7 +67,7 @@ export default function Sidebar() {
 
               {/* Compare Badge */}
               {label === "Comparar" && compareList.length > 0 && (
-                <span className={`absolute flex items-center justify-center rounded-full bg-green text-base text-[10px] font-black 
+                <span className={`absolute flex items-center justify-center rounded-full bg-green text-base text-2xs font-black 
                                  shadow-[0_0_10px_rgba(0,224,148,0.3)]
                                  ${sidebarExpanded ? "right-4 w-5 h-5" : "top-1.5 right-1.5 w-4 h-4"}`}>
                   {compareList.length}
@@ -90,10 +90,10 @@ export default function Sidebar() {
                    ${sidebarExpanded ? "px-4 gap-4" : "justify-center"}`}
       >
         <LogOut size={18} />
-        {sidebarExpanded && <span className="text-[14px] font-bold">Cerrar Sesión</span>}
+        {sidebarExpanded && <span className="text-base font-bold">Cerrar Sesión</span>}
 
         {!sidebarExpanded && (
-          <div className="absolute left-[calc(100%+15px)] px-3 py-2 rounded-lg bg-danger text-white text-[12px] font-black
+          <div className="absolute left-[calc(100%+15px)] px-3 py-2 rounded-lg bg-danger text-primary text-sm font-black
                           whitespace-nowrap opacity-0 scale-90 pointer-events-none group-hover:opacity-100 group-hover:scale-100 
                           transition-all duration-200 shadow-2xl z-[100] uppercase tracking-widest border border-danger/20">
             Cerrar Sesión

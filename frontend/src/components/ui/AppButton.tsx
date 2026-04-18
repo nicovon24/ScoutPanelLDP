@@ -11,7 +11,7 @@ interface AppButtonProps extends Omit<ButtonProps, "variant"> {
 
 export default function AppButton({ variant = "primary", size, className = "", children, ...props }: AppButtonProps) {
   const variants = {
-    primary: "bg-green text-base font-black uppercase tracking-widest hover:brightness-110 shadow-[0_4px_20px_rgba(0,224,148,0.2)]",
+    primary: "bg-green text-mainBg font-black uppercase tracking-widest hover:brightness-110 shadow-[0_4px_20px_rgba(0,224,148,0.2)]",
     secondary: "bg-white/[0.05] hover:bg-white/[0.08] text-primary font-bold",
     danger: "bg-transparent text-muted hover:text-danger hover:bg-danger/5 border border-white/[0.05]",
     ghost: "bg-transparent border border-white/[0.1] hover:bg-white/[0.05] text-primary",

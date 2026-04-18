@@ -46,11 +46,11 @@ function DonutCircle({ value, label, color = "#00E094" }: { value: number; label
             strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
             style={{ transition: "stroke-dasharray 0.6s ease" }} />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-[12px] font-bold text-primary">
+        <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-primary">
           {pct.toFixed(0)}%
         </span>
       </div>
-      <span className="text-[10px] text-secondary text-center leading-tight max-w-[64px]">{label}</span>
+      <span className="text-2xs text-secondary text-center leading-tight max-w-[64px]">{label}</span>
     </div>
   );
 }
@@ -71,8 +71,8 @@ function StatBarRow({
 
   return (
     <div className="flex items-center gap-3 py-[7px] border-b border-border/60 last:border-0">
-      <span className="text-[12px] text-secondary flex-1 min-w-0">{label}</span>
-      <span className="text-[12px] font-bold text-primary w-[56px] text-right flex-shrink-0">{display}</span>
+      <span className="text-base text-secondary flex-1 min-w-0">{label}</span>
+      <span className="text-base font-bold text-primary w-[56px] text-right flex-shrink-0">{display}</span>
       <div className="w-[160px] flex-shrink-0 h-[5px] rounded-full bg-[#1E1E1E]">
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
@@ -85,7 +85,7 @@ function StatSection({ title, children }: { title: string; children: React.React
   return (
     <div>
       <div className="flex items-center gap-3 mb-1 mt-5 first:mt-0">
-        <span className="text-[11px] font-black uppercase tracking-widest text-green">{title}</span>
+        <span className="text-xs font-black uppercase tracking-widest text-green">{title}</span>
         <div className="flex-1 h-px bg-border/50" />
       </div>
       {children}
@@ -105,7 +105,7 @@ function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
     <div className="card">
       <div className="flex items-center justify-between mb-4">
         <p className="section-title mb-0">Estadísticas completas</p>
-        <span className="text-[10px] text-muted font-medium bg-input px-2 py-0.5 rounded uppercase">{player.position}</span>
+        <span className="text-2xs text-muted font-medium bg-input px-2 py-0.5 rounded uppercase">{player.position}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
@@ -246,7 +246,7 @@ export default function PlayerDetailPage() {
 
       {/* Back */}
       <Link href="/"
-        className="inline-flex items-center gap-1.5 text-[16px] text-muted hover:text-secondary transition-colors">
+        className="inline-flex items-center gap-1.5 text-md text-muted hover:text-secondary transition-colors">
         <ArrowLeft size={13} />
         Todos los jugadores
       </Link>
@@ -265,7 +265,7 @@ export default function PlayerDetailPage() {
                 : player.name[0]}
             </div>
             {player.nationality && (
-              <span className="absolute -bottom-1 -right-1 badge badge-muted text-[9px]">
+              <span className="absolute -bottom-1 -right-1 badge badge-muted text-2xs">
                 {player.nationality.slice(0, 3).toUpperCase()}
               </span>
             )}
@@ -276,16 +276,16 @@ export default function PlayerDetailPage() {
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className={`badge text-[10px] ${posStyle(player.position)}`}>{player.position}</span>
-                  {age && <span className="text-[13px] text-muted">{age} años</span>}
-                  {player.preferredFoot && <span className="text-[13px] text-muted">· {player.preferredFoot}</span>}
-                  {player.heightCm && <span className="text-[13px] text-muted">· {player.heightCm} cm</span>}
+                  <span className={`badge text-2xs ${posStyle(player.position)}`}>{player.position}</span>
+                  {age && <span className="text-base text-muted">{age} años</span>}
+                  {player.preferredFoot && <span className="text-base text-muted">· {player.preferredFoot}</span>}
+                  {player.heightCm && <span className="text-base text-muted">· {player.heightCm} cm</span>}
                 </div>
-                <h1 className="text-[24px] font-black text-primary leading-tight">{player.name}</h1>
+                <h1 className="text-2xl font-black text-primary leading-tight">{player.name}</h1>
                 {player.team?.name && (
                   <div className="flex items-center gap-2 mt-1">
                     {player.team.logoUrl && <Image src={player.team.logoUrl} alt="" width={15} height={15} unoptimized />}
-                    <span className="text-[13px] text-secondary">{player.team.name}</span>
+                    <span className="text-base text-secondary">{player.team.name}</span>
                   </div>
                 )}
               </div>
@@ -294,11 +294,11 @@ export default function PlayerDetailPage() {
                 {/* Season selector */}
                 {allStats.length > 1 && (
                   <div className="flex items-center gap-2 bg-input/60 border border-border rounded-lg pl-3 pr-1 h-9">
-                    <span className="text-[10px] font-black text-muted uppercase tracking-widest">Temporada</span>
+                    <span className="text-2xs font-black text-muted uppercase tracking-widest">Temporada</span>
                     <select
                       value={selSeasonId ?? ""}
                       onChange={(e) => setSelSeason(Number(e.target.value))}
-                      className="bg-transparent text-[12px] font-bold text-primary outline-none cursor-pointer pr-6 appearance-none"
+                      className="bg-transparent text-base font-bold text-primary outline-none cursor-pointer pr-6 appearance-none"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                         backgroundRepeat: "no-repeat",
@@ -322,7 +322,7 @@ export default function PlayerDetailPage() {
                 </button>
                 <button
                   onClick={() => compare ? removeFromCompare(player.id) : addToCompare(player)}
-                  className={`btn text-[12px] h-9 px-3 ${compare ? "bg-purple/15 text-purple border border-purple/35" : "btn-primary"}`}
+                  className={`btn text-base h-9 px-3 ${compare ? "bg-purple/15 text-purple border border-purple/35" : "btn-primary"}`}
                 >
                   <BarChart2 size={13} />
                   {compare ? "En comparación" : "Comparar"}
@@ -335,8 +335,8 @@ export default function PlayerDetailPage() {
               <div className="flex items-center gap-6 mt-4 pt-3 border-t border-border flex-wrap">
                 {mainRating != null && mainRating > 0 && (
                   <div className="text-center">
-                    <p className={`text-[20px] font-black leading-none ${ratingColor}`}>{mainRating.toFixed(1)}</p>
-                    <p className="text-[10px] text-muted mt-0.5 uppercase tracking-wide">Rating</p>
+                    <p className={`text-xl font-black leading-none ${ratingColor}`}>{mainRating.toFixed(1)}</p>
+                    <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">Rating</p>
                   </div>
                 )}
                 {[
@@ -349,8 +349,8 @@ export default function PlayerDetailPage() {
                   { label: "Valor", value: `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M` },
                 ].map(({ label, value }) => (
                   <div key={label} className="text-center">
-                    <p className="text-[15px] font-bold text-primary leading-none">{value}</p>
-                    <p className="text-[10px] text-muted mt-0.5 uppercase tracking-wide">{label}</p>
+                    <p className="text-md font-bold text-primary leading-none">{value}</p>
+                    <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">{label}</p>
                   </div>
                 ))}
               </div>
@@ -370,8 +370,8 @@ export default function PlayerDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-0">
             {infoChips.map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between py-2 border-b border-border/60">
-                <span className="text-[12px] text-muted">{label}</span>
-                <span className="text-[12px] font-semibold text-primary">{value}</span>
+                <span className="text-base text-muted">{label}</span>
+                <span className="text-base font-semibold text-primary">{value}</span>
               </div>
             ))}
           </div>
@@ -425,15 +425,15 @@ export default function PlayerDetailPage() {
           Lesiones
         </p>
         {!player.injuries?.length ? (
-          <p className="text-[12px] text-muted py-6 text-center">Sin lesiones registradas</p>
+          <p className="text-base text-muted py-6 text-center">Sin lesiones registradas</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2">
             {player.injuries.slice(0, 8).map((inj: any) => (
               <div key={inj.id} className="flex items-start gap-2">
                 <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${inj.daysOut > 60 ? "bg-danger" : inj.daysOut > 20 ? "bg-warn" : "bg-green"}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] text-primary leading-tight truncate">{inj.injuryType}</p>
-                  <p className="text-[10px] text-muted">{inj.daysOut} días · {inj.startedAt}</p>
+                  <p className="text-base text-primary leading-tight truncate">{inj.injuryType}</p>
+                  <p className="text-2xs text-muted">{inj.daysOut} días · {inj.startedAt}</p>
                 </div>
               </div>
             ))}

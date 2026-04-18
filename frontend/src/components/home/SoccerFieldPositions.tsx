@@ -54,10 +54,10 @@ export default function SoccerFieldPositions({ selected, onSelect }: Props) {
               }
             }}
             className={`absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full 
-                        flex items-center justify-center text-[10px] font-black transition-all duration-200
+                        flex items-center justify-center text-2xs font-black transition-all duration-200
                         ${active
-                ? `${groupColor} text-white shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-110 ring-2 ring-white/50`
-                : "bg-white/10 text-white/50 hover:bg-white/20 hover:text-white"}`}
+                ? `${groupColor} text-primary shadow-[0_0_15px_rgba(255,255,255,0.3)] scale-110 ring-2 ring-white/50`
+                : "bg-white/10 text-primary/50 hover:bg-white/20 hover:text-primary"}`}
             style={{ left: `${p.x}%`, top: `${p.y}%` }}
           >
             {p.id}
