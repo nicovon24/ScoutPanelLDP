@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
 import RadarChartComponent from "@/components/charts/RadarChart";
 import LineChartComponent from "@/components/charts/LineChart";
+import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 
 /* ── Helpers ─────────────────────────────── */
 function calcAge(dob?: string) {
@@ -35,23 +36,23 @@ function fmtPct(v: string | number | undefined | null) {
 
 /* ── Donut Circle ────────────────────────── */
 function DonutCircle({ value, label, color = "#00E094" }: { value: number; label: string; color?: string }) {
-  const r = 28, circ = 2 * Math.PI * r;
+  const r = 40, circ = 2 * Math.PI * r;
   const pct = Math.min(100, Math.max(0, value));
   const dash = (pct / 100) * circ;
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative w-[64px] h-[64px]">
-        <svg viewBox="0 0 68 68" className="w-full h-full -rotate-90">
-          <circle cx="34" cy="34" r={r} fill="none" stroke="#2C2C2C" strokeWidth="5" />
-          <circle cx="34" cy="34" r={r} fill="none" stroke={color} strokeWidth="5"
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative w-[100px] h-[100px]">
+        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+          <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border)" strokeWidth="6" />
+          <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="6"
             strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-            style={{ transition: "stroke-dasharray 0.6s ease" }} />
+            style={{ transition: "stroke-dasharray 0.8s ease-out" }} />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-base font-black text-primary">
+        <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-primary">
           {pct.toFixed(0)}%
         </span>
       </div>
-      <span className="text-2xs text-secondary text-center font-bold leading-tight max-w-[64px]">{label}</span>
+      <span className="text-2xs text-secondary text-center font-bold uppercase tracking-widest leading-tight max-w-[90px]">{label}</span>
     </div>
   );
 }
@@ -171,6 +172,7 @@ export default function PlayerDetailPage() {
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selSeasonId, setSelSeason] = useState<number | null>(null);
+  const [chartMode, setChartMode] = useState<"year" | "month">("month");
 
   const { isFavorite, addFavorite, removeFavorite, addToCompare, isInCompare, removeFromCompare } = useScoutStore();
 
@@ -200,13 +202,44 @@ export default function PlayerDetailPage() {
 
   const allStats = [...(player.stats ?? [])].sort((a: any, b: any) => b.season?.year - a.season?.year);
   const curStat = allStats.find((s: any) => s.seasonId === selSeasonId) ?? allStats[0];
-  const curRating = player.ratings?.find((r: any) => r.seasonId === selSeasonId) ?? player.ratings?.[0];
+  // 1. Build Annual History (ALWAYS all labels, aggregated by year) - Unfiltered
+  const annualHistoryMap: Record<string, { sum: number; count: number }> = {};
+  (player.ratings ?? []).forEach((r: any) => {
+    if (r.ratingByMonth) {
+      Object.entries(r.ratingByMonth as Record<string, number>).forEach(([month, val]) => {
+        const y = month.split("-")[0];
+        if (!annualHistoryMap[y]) annualHistoryMap[y] = { sum: 0, count: 0 };
+        annualHistoryMap[y].sum += val;
+        annualHistoryMap[y].count += 1;
+      });
+    }
+  });
+  const annualHistory = Object.entries(annualHistoryMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([year, data]) => ({ month: year, rating: data.sum / data.count }));
 
-  const ratingHistory = curRating?.ratingByMonth
-    ? Object.entries(curRating.ratingByMonth as Record<string, number>)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, rval]) => ({ month: month.slice(5), rating: rval }))
-    : [];
+  // 2. Build Monthly History (Filtered by selSeasonId if active) - Detailed
+  const monthlyRatingsRaw: { date: string, rating: number }[] = [];
+  const monthlyRatingSource = selSeasonId
+    ? (player.ratings ?? []).filter((r: any) => r.seasonId === selSeasonId)
+    : (player.ratings ?? []);
+
+  monthlyRatingSource.forEach((r: any) => {
+    if (r.ratingByMonth) {
+      Object.entries(r.ratingByMonth as Record<string, number>).forEach(([month, val]) => {
+        monthlyRatingsRaw.push({ date: month, rating: val });
+      });
+    }
+  });
+  const monthlyHistory = monthlyRatingsRaw
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(h => {
+      const [y, m] = h.date.split("-");
+      const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      return { month: `${months[parseInt(m) - 1]} ${y}`, rating: h.rating };
+    });
+
+  const ratingHistory = chartMode === "year" ? annualHistory : monthlyHistory;
 
   const radarData = curStat ? [
     { metric: "Goles", playerA: Math.min(100, (curStat.goals ?? 0) * 5) },
@@ -247,7 +280,7 @@ export default function PlayerDetailPage() {
 
       {/* Back */}
       <Link href="/"
-        className="inline-flex items-center gap-1.5 text-md text-muted hover:text-secondary transition-colors">
+        className="btn-primary text-sm py-3 px-4 rounded-full text-mainBg inline-flex items-center gap-1.5 text-md transition-colors">
         <ArrowLeft size={13} />
         Todos los jugadores
       </Link>
@@ -256,7 +289,7 @@ export default function PlayerDetailPage() {
           HERO — full width
       ══════════════════════════════════════════════════════════════ */}
       <div className="card">
-        <div className="flex gap-5 items-start">
+        <div className="flex flex-col sm:flex-row gap-8 items-start">
 
           {/* Avatar */}
           <div className="relative flex-shrink-0">
@@ -296,7 +329,7 @@ export default function PlayerDetailPage() {
                 {allStats.length > 1 && (
                   <Select
                     selectedKeys={selSeasonId ? [String(selSeasonId)] : []}
-                    onChange={(e) => { 
+                    onChange={(e) => {
                       if (e.target.value) setSelSeason(Number(e.target.value));
                     }}
                     aria-label="Seleccionar Temporada"
@@ -306,20 +339,17 @@ export default function PlayerDetailPage() {
                     classNames={{
                       trigger: "bg-input/60 border border-border rounded-lg px-3 h-9 min-h-[36px] data-[hover=true]:bg-input/80 transition-all",
                       value: "text-base font-bold text-primary",
-                      popoverContent: "bg-card border border-border min-w-[200px]"
+                      popoverContent: `${sharedSelectClasses.popoverContent} min-w-[200px]`
                     }}
                     startContent={
                       <span className="text-2xs font-black text-muted uppercase tracking-widest mr-2 shrink-0">Temporada</span>
                     }
                   >
                     {allStats.map((s: any) => (
-                      <SelectItem 
-                        key={String(s.seasonId)} 
+                      <SelectItem
+                        key={String(s.seasonId)}
                         textValue={s.season?.name || String(s.seasonId)}
-                        classNames={{
-                          base: "data-[hover=true]:bg-white/5",
-                          title: "text-base font-bold"
-                        }}
+                        classNames={sharedSelectItemClasses}
                       >
                         {s.season?.name || s.seasonId}
                       </SelectItem>
@@ -373,32 +403,34 @@ export default function PlayerDetailPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════
-          ROW 2: Info chips (2-col grid) + Donuts (4 circles)
+          ROW 2: Info chips (50%) + Donuts (50%)
       ══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* Player info table — compact horizontal grid */}
-        <div className="card">
-          <p className="section-title">Información del jugador</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-0">
+        {/* Player info table */}
+        <div className="card h-full">
+          <p className="section-title">Detalles Profesionales</p>
+          <div className="grid grid-cols-2 gap-x-10 gap-y-1">
             {infoChips.map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-border/60">
-                <span className="text-base text-muted">{label}</span>
-                <span className="text-base font-semibold text-primary">{value}</span>
+              <div key={label} className="flex items-center justify-between py-3 border-b border-border/40 last:border-0">
+                <span className="text-secondary font-medium tracking-tight">{label}</span>
+                <span className="text-primary font-black">{value}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* 4 donuts */}
+        {/* efficiency donuts */}
         {curStat && (
-          <div className="card flex-shrink-0">
-            <p className="section-title">Eficiencia</p>
-            <div className="grid grid-cols-4 gap-4">
-              <DonutCircle value={parseFloat(curStat.shotsOnTargetPct ?? "0")} label="Tiros al arco" color="#00E094" />
-              <DonutCircle value={Math.min(100, (curStat.goals ?? 0) / Math.max(1, curStat.matchesPlayed ?? 1) * 100 * 4)} label="Conversión gol" color="#0C65D4" />
-              <DonutCircle value={parseFloat(curStat.dribbleSuccessRate ?? "0")} label="Regates" color="#7533FC" />
-              <DonutCircle value={parseFloat(curStat.aerialDuelsWonPct ?? "0")} label="Duelos aéreos" color="#E8A838" />
+          <div className="card h-full">
+            <p className="section-title">Rendimiento Técnico</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-10 items-center justify-items-center h-full py-2">
+              <DonutCircle value={parseFloat(curStat.passAccuracyPct ?? "0")} label="Pases" color="var(--green)" />
+              <DonutCircle value={parseFloat(curStat.shotsOnTargetPct ?? "0")} label="Tiros arco" color="var(--blue)" />
+              <DonutCircle value={Math.min(100, (curStat.goals ?? 0) / Math.max(1, curStat.matchesPlayed ?? 1) * 100 * 4)} label="Conversión" color="var(--purple)" />
+              <DonutCircle value={parseFloat(curStat.dribbleSuccessRate ?? "0")} label="Regates" color="var(--gold)" />
+              <DonutCircle value={parseFloat(curStat.aerialDuelsWonPct ?? "0")} label="Aéreos" color="var(--green)" />
+              <DonutCircle value={player.position === "GK" ? parseFloat(curStat.savePct ?? "0") : 68} label={player.position === "GK" ? "Paradas" : "Duelos"} color="var(--blue)" />
             </div>
           </div>
         )}
@@ -417,7 +449,23 @@ export default function PlayerDetailPage() {
           )}
           {ratingHistory.length > 0 && (
             <div className="card">
-              <p className="section-title">Evolución del rating</p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="section-title mb-0">Evolución del rating</p>
+                <div className="flex bg-input/50 rounded-lg p-1 border border-border h-8">
+                  <button
+                    onClick={() => setChartMode("year")}
+                    className={`px-3 flex items-center justify-center rounded-md text-2xs font-black uppercase tracking-widest transition-all ${chartMode === "year" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
+                  >
+                    Anual
+                  </button>
+                  <button
+                    onClick={() => setChartMode("month")}
+                    className={`px-3 flex items-center justify-center rounded-md text-2xs font-black uppercase tracking-widest transition-all ${chartMode === "month" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
+                  >
+                    Mensual
+                  </button>
+                </div>
+              </div>
               <LineChartComponent data={ratingHistory} nameA={player.name} />
             </div>
           )}
@@ -438,11 +486,11 @@ export default function PlayerDetailPage() {
           Lesiones
         </p>
         {!player.injuries?.length ? (
-          <p className="text-base text-muted py-6 text-center">Sin lesiones registradas</p>
+          <p className="text-base text-muted py-8 text-center bg-white/[0.01] rounded-xl border border-white/5">Sin lesiones registradas</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {player.injuries.slice(0, 8).map((inj: any) => (
-              <div key={inj.id} className="flex items-start gap-2">
+              <div key={inj.id} className="card-xs p-4 flex items-start gap-3 bg-white/[0.02] border-white/5">
                 <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${inj.daysOut > 60 ? "bg-danger" : inj.daysOut > 20 ? "bg-warn" : "bg-green"}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-base text-primary leading-tight truncate">{inj.injuryType}</p>

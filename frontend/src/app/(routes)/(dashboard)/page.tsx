@@ -6,11 +6,12 @@ import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
 import { Select, SelectItem, Button, Input } from "@nextui-org/react";
 import AppButton from "@/components/ui/AppButton";
+import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 
 // Components
 import PlayerGrid from "@/components/home/PlayerGrid";
 import PlayerTable from "@/components/home/PlayerTable";
-import FilterSidebar from "@/components/home/FilterSidebar";
+import FilterSidebar, { POSITIONS_LIST } from "@/components/home/FilterSidebar";
 import Pagination from "@/components/home/Pagination";
 
 function HomeContent() {
@@ -32,6 +33,9 @@ function HomeContent() {
     foot: "",
     ageMin: "",
     ageMax: "",
+    heightMin: "",
+    heightMax: "",
+    minRating: "6.0",
     marketValueMax: "",
     sortBy: "rating_desc",
   });
@@ -61,6 +65,9 @@ function HomeContent() {
     if (filters.foot) params.set("foot", filters.foot);
     if (filters.ageMin) params.set("ageMin", filters.ageMin);
     if (filters.ageMax) params.set("ageMax", filters.ageMax);
+    if (filters.heightMin) params.set("heightMin", filters.heightMin);
+    if (filters.heightMax) params.set("heightMax", filters.heightMax);
+    if (filters.minRating) params.set("minRating", filters.minRating);
     if (filters.marketValueMax) params.set("valueMax", filters.marketValueMax);
     if (filters.sortBy) params.set("sortBy", filters.sortBy);
 
@@ -76,7 +83,11 @@ function HomeContent() {
 
   useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
 
-  const activeFilterCount = Object.values(filters).filter(v => v !== "" && v !== undefined).length;
+  const activeFilterCount = Object.entries(filters).filter(([key, val]) => {
+    if (key === "sortBy") return false;
+    if (key === "minRating" && val === "6.0") return false;
+    return val !== "" && val !== undefined;
+  }).length;
   const totalItems = 55; // Placeholder for total count
   const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -104,13 +115,32 @@ function HomeContent() {
             </Button>
           </div>
 
+          {activeFilterCount > 0 && (
+            <Button
+              isIconOnly
+              onClick={() => {
+                setFilters({
+                  q: "", position: "", teamId: "", foot: "",
+                  ageMin: "", ageMax: "", heightMin: "", heightMax: "",
+                  minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
+                });
+                setInputQ("");
+                setPage(1);
+              }}
+              className="h-10 w-10 min-w-10 md:h-12 md:w-12 md:min-w-12 rounded-xl bg-[#e05a5a]/10 text-[#e05a5a] border border-[#e05a5a]/25 hover:bg-[#e05a5a]/20 transition-all shadow-[0_0_15px_rgba(224,90,90,0.1)]"
+              aria-label="Limpiar filtros"
+            >
+              <X size={18} strokeWidth={2.5} />
+            </Button>
+          )}
+
           <AppButton
             onClick={() => setFilterPanelOpen(true)}
             variant={activeFilterCount > 0 ? "primary" : "secondary"}
-            className="h-12 px-6 gap-3"
+            className="h-10 md:h-12 px-4 md:px-6 gap-2 md:gap-3"
           >
             <SlidersHorizontal size={18} />
-            Filtros
+            <span className="hidden sm:inline">Filtros</span>
             {activeFilterCount > 0 && (
               <span className="w-5 h-5 rounded-lg bg-mainBg text-green text-xs font-black flex items-center justify-center">
                 {activeFilterCount}
@@ -137,7 +167,7 @@ function HomeContent() {
             }
             variant="flat"
             classNames={{
-              inputWrapper: " h-12 bg-card border border-white/[0.05] rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
+              inputWrapper: " h-12 bg-card border border-white/10 rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
               input: "text-base text-primary placeholder:text-secondary"
             }}
           />
@@ -147,6 +177,7 @@ function HomeContent() {
         <div className="w-full max-w-[280px] hidden sm:block">
           <Select
             selectionMode="multiple"
+            items={POSITIONS_LIST}
             placeholder="Filtrar posiciones"
             selectedKeys={filters.position ? new Set(filters.position.split(",")) : new Set()}
             onSelectionChange={(keys: any) => {
@@ -154,30 +185,25 @@ function HomeContent() {
               setFilters(prev => ({ ...prev, position: arr }));
               setPage(1);
             }}
-            variant="flat"
             classNames={{
-              trigger: "h-12 bg-card border border-white/[0.05] rounded-xl data-[hover=true]:bg-white/[0.03] transition-all",
-              value: "text-base font-bold text-primary",
-              popoverContent: "bg-card border border-white/[0.05]"
+              trigger: `${sharedSelectClasses.trigger} h-12`,
+              value: sharedSelectClasses.value,
+              popoverContent: sharedSelectClasses.popoverContent,
             }}
             aria-label="Filtro rápido de posiciones"
           >
-            {[
-              { id: "CF", n: "CF - Delantero" },
-              { id: "LW", n: "LW - Extremo Izq" },
-              { id: "RW", n: "RW - Extremo Der" },
-              { id: "CAM", n: "CAM - Ofensivo" },
-              { id: "CM", n: "CM - Medio" },
-              { id: "CDM", n: "CDM - Defensivo" },
-              { id: "CB", n: "CB - Central" },
-              { id: "LB", n: "LB - Lateral Izq" },
-              { id: "RB", n: "RB - Lateral Der" },
-              { id: "GK", n: "GK - Portero" }
-            ].map(p => (
-              <SelectItem key={p.id} textValue={p.id}>
-                {p.n}
+            {(item) => (
+              <SelectItem
+                key={item.id}
+                textValue={item.id}
+                classNames={sharedSelectItemClasses}
+              >
+                <div className="flex gap-2 items-center">
+                  <span className="text-green font-black w-8">{item.id}</span>
+                  <span className="text-xs">{item.name.replace(item.id + " - ", "")}</span>
+                </div>
               </SelectItem>
-            ))}
+            )}
           </Select>
         </div>
 
@@ -187,25 +213,24 @@ function HomeContent() {
             labelPlacement="outside"
             placeholder="Ordenar por"
             selectedKeys={[filters.sortBy]}
-            onChange={(e) => { 
+            onChange={(e) => {
               if (e.target.value) {
                 setFilters(prev => ({ ...prev, sortBy: e.target.value }));
                 setPage(1);
               }
             }}
-            variant="flat"
             classNames={{
-              trigger: "h-12 bg-card border border-white/[0.05] rounded-xl data-[hover=true]:bg-white/[0.03] transition-all",
-              value: "text-base font-bold text-green",
-              popoverContent: "bg-card border border-white/[0.05]"
+              trigger: `${sharedSelectClasses.trigger} h-12`,
+              value: sharedSelectClasses.value,
+              popoverContent: sharedSelectClasses.popoverContent,
             }}
             aria-label="Ordenar por"
           >
-            <SelectItem key="rating_desc" textValue="Rating (Mayor)">Rating (Mayor)</SelectItem>
-            <SelectItem key="value_desc" textValue="Valor (Mayor)">Valor (Mayor)</SelectItem>
-            <SelectItem key="value_asc" textValue="Valor (Menor)">Valor (Menor)</SelectItem>
-            <SelectItem key="age_asc" textValue="Edad (Menor)">Edad (Menor)</SelectItem>
-            <SelectItem key="age_desc" textValue="Edad (Mayor)">Edad (Mayor)</SelectItem>
+            <SelectItem key="rating_desc" textValue="Rating (Mayor)" classNames={sharedSelectItemClasses}>Rating (Mayor)</SelectItem>
+            <SelectItem key="value_desc" textValue="Valor (Mayor)" classNames={sharedSelectItemClasses}>Valor (Mayor)</SelectItem>
+            <SelectItem key="value_asc" textValue="Valor (Menor)" classNames={sharedSelectItemClasses}>Valor (Menor)</SelectItem>
+            <SelectItem key="age_asc" textValue="Edad (Menor)" classNames={sharedSelectItemClasses}>Edad (Menor)</SelectItem>
+            <SelectItem key="age_desc" textValue="Edad (Mayor)" classNames={sharedSelectItemClasses}>Edad (Mayor)</SelectItem>
           </Select>
         </div>
       </div>
@@ -214,15 +239,15 @@ function HomeContent() {
       <div className="min-h-[400px]">
         {view === "grid"
           ? <PlayerGrid players={players} loading={loading} />
-          : <PlayerTable 
-              players={players} 
-              loading={loading} 
-              sortBy={filters.sortBy}
-              onSort={(sort) => {
-                setFilters(prev => ({ ...prev, sortBy: sort }));
-                setPage(1);
-              }}
-            />
+          : <PlayerTable
+            players={players}
+            loading={loading}
+            sortBy={filters.sortBy}
+            onSort={(sort) => {
+              setFilters(prev => ({ ...prev, sortBy: sort }));
+              setPage(1);
+            }}
+          />
         }
       </div>
 
@@ -238,17 +263,17 @@ function HomeContent() {
                 className="w-32"
                 size="md"
                 classNames={{
-                  trigger: "bg-white/[0.03] border border-white/[0.05] data-[hover=true]:border-white/[0.1] data-[focus=true]:border-green/50 data-[open=true]:border-green/50 transition-colors rounded-xl shadow-none",
-                  value: "text-base font-bold text-primary",
-                  popoverContent: "bg-card border border-white/[0.05]"
+                  trigger: `${sharedSelectClasses.trigger} h-[42px]`,
+                  value: sharedSelectClasses.value,
+                  popoverContent: sharedSelectClasses.popoverContent,
                 }}
                 aria-label="Mostrar"
               >
-                <SelectItem key="10" value="10">10</SelectItem>
-                <SelectItem key="20" value="20">20</SelectItem>
-                <SelectItem key="30" value="30">30</SelectItem>
-                <SelectItem key="40" value="40">40</SelectItem>
-                <SelectItem key="50" value="50">50</SelectItem>
+                <SelectItem key="10" value="10" classNames={sharedSelectItemClasses}>10 items</SelectItem>
+                <SelectItem key="20" value="20" classNames={sharedSelectItemClasses}>20 items</SelectItem>
+                <SelectItem key="30" value="30" classNames={sharedSelectItemClasses}>30 items</SelectItem>
+                <SelectItem key="40" value="40" classNames={sharedSelectItemClasses}>40 items</SelectItem>
+                <SelectItem key="50" value="50" classNames={sharedSelectItemClasses}>50 items</SelectItem>
               </Select>
             </div>
             <span className="text-base text-muted font-bold tracking-tight">
@@ -270,7 +295,11 @@ function HomeContent() {
         filters={filters}
         setFilters={setFilters}
         onReset={() => {
-          setFilters({ q: "", position: "", teamId: "", foot: "", ageMin: "", ageMax: "", marketValueMax: "", sortBy: "rating_desc" });
+          setFilters({
+            q: "", position: "", teamId: "", foot: "",
+            ageMin: "", ageMax: "", heightMin: "", heightMax: "",
+            minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
+          });
           setInputQ("");
           setPage(1);
         }}

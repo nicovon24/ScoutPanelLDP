@@ -34,6 +34,7 @@ const config: Config = {
         "card-2": "#222222",
         input: "#252525",
         sidebar: "#131313",
+        popover: "#0e1710",
 
         // Borders
         border: "#2C2C2C",

@@ -31,13 +31,13 @@ const CustomTooltip = ({
   if (!active || !payload) return null;
   return (
     <div className="bg-card border border-border rounded-xl px-4 py-2 shadow-2xl backdrop-blur-md">
-      <p className="font-black text-secondary uppercase tracking-[0.1em] text-[10px] mb-2">{label}</p>
+      <p className="font-black text-primary uppercase tracking-[0.1em] text-[10px] mb-2">{label}</p>
       <div className="space-y-1.5">
         {payload.map((p, i) => (
           <div key={i} className="flex items-center gap-2">
-            <div 
-              className="w-2 h-2 rounded-full" 
-              style={{ backgroundColor: p.name === "playerA" ? (colorA ?? "#00E094") : (colorB ?? "#7533FC") }} 
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: p.name === "playerA" ? (colorA ?? "#00E094") : (colorB ?? "#7533FC") }}
             />
             <p className="text-xs font-bold" style={{ color: p.name === "playerA" ? (colorA ?? "#00E094") : (colorB ?? "#7533FC") }}>
               {p.name === "playerA" ? (nameA ?? "A") : (nameB ?? "B")}: <span className="text-primary ml-1">{p.value.toFixed(0)}</span>
@@ -61,10 +61,10 @@ export default function RadarChartComponent({
   return (
     <ResponsiveContainer width="100%" height={300}>
       <ReRadar data={data} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
-        <PolarGrid gridType="polygon" stroke="#2C2C2C" strokeWidth={1.5} />
+        <PolarGrid gridType="polygon" stroke="var(--border)" strokeWidth={1.5} />
         <PolarAngleAxis
           dataKey="metric"
-          tick={{ fill: "#B8B8B8", fontSize: 10, fontFamily: "Nunito Sans", fontWeight: 900, textAnchor: "middle" }}
+          tick={{ fill: "var(--primary)", fontSize: 11, fontWeight: 900, textAnchor: "middle" }}
           tickLine={false}
           axisLine={false}
         />

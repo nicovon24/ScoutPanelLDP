@@ -6,6 +6,7 @@ import api from "@/lib/api";
 import Image from "next/image";
 import { Select, SelectItem, Input } from "@nextui-org/react";
 import AppButton from "./AppButton";
+import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 
 interface SearchResult {
   players: { id: number; name: string; position: string; photoUrl?: string; nationality?: string }[];
@@ -73,35 +74,35 @@ export default function SearchBar() {
                       transition-all duration-200 focus-within:border-green/40 focus-within:shadow-[0_0_20px_rgba(0,224,148,0.1)] overflow-hidden">
 
         {/* Type Selector */}
-        <div className="w-[140px] border-r border-white/[0.05] bg-white/[0.02] flex items-center">
+        <div className="w-[200px] border-r border-white/[0.05] bg-white/[0.02] flex items-center">
           <Select
             selectedKeys={[type]}
-            onChange={(e) => { if(e.target.value) setType(e.target.value as any) }}
+            onChange={(e) => { if (e.target.value) setType(e.target.value as any) }}
             size="sm"
             classNames={{
-              trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-4 h-12 min-h-12 border-none rounded-none w-full",
-              value: "text-xs font-black uppercase tracking-widest text-secondary group-data-[hover=true]:text-primary",
-              popoverContent: "bg-card border border-white/[0.05]",
+              trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-3 h-12 min-h-12 border-none rounded-none w-full",
+              value: "text-[11px] font-black uppercase tracking-widest text-[#7aab82] group-data-[hover=true]:text-primary leading-none",
+              popoverContent: sharedSelectClasses.popoverContent,
               innerWrapper: "gap-1",
               selectorIcon: "text-muted"
             }}
             aria-label="Filtro"
           >
-            <SelectItem key="all" value="all">Todo</SelectItem>
-            <SelectItem key="players" value="players">Jugadores</SelectItem>
-            <SelectItem key="clubs" value="clubs">Clubes</SelectItem>
+            <SelectItem key="all" value="all" classNames={sharedSelectItemClasses}>Todo</SelectItem>
+            <SelectItem key="players" value="players" classNames={sharedSelectItemClasses}>Jugadores</SelectItem>
+            <SelectItem key="clubs" value="clubs" classNames={sharedSelectItemClasses}>Clubes</SelectItem>
           </Select>
         </div>
 
         {/* Input */}
         <div className="flex-1">
-          <Input 
+          <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => results && setOpen(true)}
             placeholder={type === "players" ? "Buscar jugador..." : type === "clubs" ? "Buscar club..." : "Buscar jugador o club..."}
             startContent={
-              loading 
+              loading
                 ? <div className="w-4 h-4 border-2 border-green/30 border-t-green rounded-full animate-spin flex-shrink-0" />
                 : <Search size={16} className="text-muted flex-shrink-0" />
             }

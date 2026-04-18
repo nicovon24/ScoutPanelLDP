@@ -82,6 +82,7 @@ router.get("/", async (req, res) => {
       position, nationality, teamId, foot,
       ageMin, ageMax,
       valueMin, valueMax,
+      heightMin, heightMax, minRating,
       q,
       page = "1", limit = "20",
     } = req.query;
@@ -112,6 +113,8 @@ router.get("/", async (req, res) => {
 
     if (valueMin) conditions.push(gte(players.marketValueM, valueMin as string) as any);
     if (valueMax) conditions.push(lte(players.marketValueM, valueMax as string) as any);
+    if (heightMin) conditions.push(gte(players.heightCm, Number(heightMin)) as any);
+    if (heightMax) conditions.push(lte(players.heightCm, Number(heightMax)) as any);
 
     // Age filters
     if (ageMin || ageMax) {
@@ -186,6 +189,10 @@ router.get("/", async (req, res) => {
         whereClauses.push(`p.date_of_birth >= $${idx++}`);
         vals.push(maxDate.toISOString().split("T")[0]);
       }
+
+      if (heightMin) { whereClauses.push(`p.height_cm >= $${idx++}`); vals.push(Number(heightMin)); }
+      if (heightMax) { whereClauses.push(`p.height_cm <= $${idx++}`); vals.push(Number(heightMax)); }
+      if (minRating) { whereClauses.push(`ps.sofascore_rating >= $${idx++}`); vals.push(Number(minRating)); }
 
       const whereStr = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
       const sidVal = sid ?? 0;
