@@ -1,7 +1,10 @@
 //initial data.ts / seed.ts
 
 import * as dotenv from "dotenv";
-dotenv.config({ path: "../../.env" });
+import path from "path";
+
+// Busca el .env en la raíz del monorepo
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -50,6 +53,10 @@ const INJURY_TYPES: Record<string, string[]> = {
 };
 
 const SEASON_START: Record<number, string> = {
+  2020: "2020-01-18",
+  2021: "2021-01-23",
+  2022: "2022-01-22",
+  2023: "2023-01-21",
   2024: "2024-01-20",
   2025: "2025-01-18",
   2026: "2026-01-17",
@@ -84,6 +91,16 @@ const BASE_STATS: Record<string, BaseStats> = {
 // MAIN
 // ─────────────────────────────────────────────────────────────────────────────
 async function main() {
+  console.log("🧹 Limpiando base de datos...");
+  // Borramos en orden inverso a las FK para que no explote
+  await db.delete(playerInjuries);
+  await db.delete(playerRatings);
+  await db.delete(playerStats);
+  await db.delete(players);
+  await db.delete(seasons);
+  await db.delete(teams);
+  // Nota: El usuario demo no hace falta borrarlo si tiene onConflictDoNothing
+  
   console.log("🌱 Iniciando seed V5...");
 
   // ── 1. EQUIPOS ─────────────────────────────────────────────────────────────
@@ -101,6 +118,12 @@ async function main() {
     { name: "Chelsea", country: "England", logoUrl: "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg" },
     { name: "Inter Milan", country: "Italy", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/0/05/FC_Internazionale_Milano_2021.svg" },
     { name: "Borussia Dortmund", country: "Germany", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/6/67/Borussia_Dortmund_logo.svg" },
+    { name: "Al-Nassr", country: "Saudi Arabia", logoUrl: "https://upload.wikimedia.org/wikipedia/en/2/2b/Al_Nassr_FC_Logo.svg" },
+    { name: "Al-Hilal", country: "Saudi Arabia", logoUrl: "https://upload.wikimedia.org/wikipedia/en/f/fa/Al-Hilal_Logo.svg" },
+    { name: "River Plate", country: "Argentina", logoUrl: "https://upload.wikimedia.org/wikipedia/en/a/ac/Club_Atl%C3%A9tico_River_Plate_crest.svg" },
+    { name: "Talleres", country: "Argentina", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/f/fe/Escudo_Club_Atl%C3%A9tico_Talleres.svg" },
+    { name: "Belgrano", country: "Argentina", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/1/13/Escudo_del_Club_Atl%C3%A9tico_Belgrano.svg" },
+    { name: "Instituto", country: "Argentina", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/a/af/Logotipo_del_Instituto_Atl%C3%A9tico_Central_C%C3%B3rdoba.svg" },
   ]).returning();
 
   const teamMap: Record<string, typeof insertedTeams[0]> = {};
@@ -108,6 +131,10 @@ async function main() {
 
   // ── 2. TEMPORADAS ──────────────────────────────────────────────────────────
   const insertedSeasons = await db.insert(seasons).values([
+    { name: "2020", year: 2020 },
+    { name: "2021", year: 2021 },
+    { name: "2022", year: 2022 },
+    { name: "2023", year: 2023 },
     { name: "2024", year: 2024 },
     { name: "2025", year: 2025 },
     { name: "2026", year: 2026 },
@@ -115,30 +142,67 @@ async function main() {
 
   // ── 3. JUGADORES ──────────────────────────────────────────────────────────
   const playersData = [
-    { name: "Lionel Messi", position: "SS", marketValueM: "25.00", dateOfBirth: "1987-06-24", heightCm: 170, weightKg: 72, preferredFoot: "Left", nationality: "Argentina", teamId: teamMap["Inter Miami"].id, photoUrl: "https://ui-avatars.com/api/?name=Lionel+Messi&background=random" },
-    { name: "Kylian Mbappe", position: "CF", marketValueM: "180.00", dateOfBirth: "1998-12-20", heightCm: 178, weightKg: 73, preferredFoot: "Right", nationality: "France", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Kylian+Mbappe&background=random" },
-    { name: "Jude Bellingham", position: "CAM", marketValueM: "180.00", dateOfBirth: "2003-06-29", heightCm: 186, weightKg: 83, preferredFoot: "Right", nationality: "England", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Jude+Bellingham&background=random" },
-    { name: "Vinicius Junior", position: "LW", marketValueM: "200.00", dateOfBirth: "2000-07-12", heightCm: 176, weightKg: 73, preferredFoot: "Right", nationality: "Brazil", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Vinicius+Junior&background=random" },
-    { name: "Federico Valverde", position: "CM", marketValueM: "120.00", dateOfBirth: "1998-07-22", heightCm: 182, weightKg: 78, preferredFoot: "Right", nationality: "Uruguay", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Federico+Valverde&background=random" },
-    { name: "Erling Haaland", position: "CF", marketValueM: "200.00", dateOfBirth: "2000-07-21", heightCm: 194, weightKg: 88, preferredFoot: "Left", nationality: "Norway", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Erling+Haaland&background=random" },
-    { name: "Kevin De Bruyne", position: "CAM", marketValueM: "60.00", dateOfBirth: "1991-06-28", heightCm: 181, weightKg: 70, preferredFoot: "Right", nationality: "Belgium", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Kevin+De+Bruyne&background=random" },
-    { name: "Rodri", position: "CDM", marketValueM: "150.00", dateOfBirth: "1996-06-22", heightCm: 191, weightKg: 82, preferredFoot: "Right", nationality: "Spain", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Rodri&background=random" },
-    { name: "Phil Foden", position: "CAM", marketValueM: "150.00", dateOfBirth: "2000-05-28", heightCm: 171, weightKg: 70, preferredFoot: "Left", nationality: "England", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Phil+Foden&background=random" },
-    { name: "Mohamed Salah", position: "RW", marketValueM: "50.00", dateOfBirth: "1992-06-15", heightCm: 175, weightKg: 71, preferredFoot: "Left", nationality: "Egypt", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Mohamed+Salah&background=random" },
-    { name: "Virgil van Dijk", position: "CB", marketValueM: "45.00", dateOfBirth: "1991-07-08", heightCm: 193, weightKg: 92, preferredFoot: "Right", nationality: "Netherlands", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Virgil+van+Dijk&background=random" },
-    { name: "Trent Alexander-Arnold", position: "RB", marketValueM: "80.00", dateOfBirth: "1998-10-07", heightCm: 175, weightKg: 69, preferredFoot: "Right", nationality: "England", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Trent+Alexander-Arnold&background=random" },
-    { name: "Alisson Becker", position: "GK", marketValueM: "50.00", dateOfBirth: "1992-10-02", heightCm: 191, weightKg: 91, preferredFoot: "Right", nationality: "Brazil", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Alisson+Becker&background=random" },
-    { name: "Alexis Mac Allister", position: "CM", marketValueM: "80.00", dateOfBirth: "1998-12-24", heightCm: 174, weightKg: 70, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Alexis+Mac+Allister&background=random" },
-    { name: "Harry Kane", position: "CF", marketValueM: "100.00", dateOfBirth: "1993-07-28", heightCm: 188, weightKg: 86, preferredFoot: "Right", nationality: "England", teamId: teamMap["Bayern Munich"].id, photoUrl: "https://ui-avatars.com/api/?name=Harry+Kane&background=random" },
-    { name: "Jamal Musiala", position: "CAM", marketValueM: "150.00", dateOfBirth: "2003-02-26", heightCm: 180, weightKg: 70, preferredFoot: "Right", nationality: "Germany", teamId: teamMap["Bayern Munich"].id, photoUrl: "https://ui-avatars.com/api/?name=Jamal+Musiala&background=random" },
-    { name: "Julian Alvarez", position: "CF", marketValueM: "90.00", dateOfBirth: "2000-01-31", heightCm: 170, weightKg: 70, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Atletico Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Julian+Alvarez&background=random" },
-    { name: "Emiliano Martinez", position: "GK", marketValueM: "40.00", dateOfBirth: "1992-09-02", heightCm: 195, weightKg: 88, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Aston Villa"].id, photoUrl: "https://ui-avatars.com/api/?name=Emiliano+Martinez&background=random" },
-    { name: "Cristian Romero", position: "CB", marketValueM: "70.00", dateOfBirth: "1998-04-27", heightCm: 185, weightKg: 79, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Tottenham"].id, photoUrl: "https://ui-avatars.com/api/?name=Cristian+Romero&background=random" },
-    { name: "Bukayo Saka", position: "RW", marketValueM: "150.00", dateOfBirth: "2001-09-05", heightCm: 178, weightKg: 72, preferredFoot: "Left", nationality: "England", teamId: teamMap["Arsenal"].id, photoUrl: "https://ui-avatars.com/api/?name=Bukayo+Saka&background=random" },
-    { name: "Lamine Yamal", position: "RW", marketValueM: "180.00", dateOfBirth: "2007-07-13", heightCm: 176, weightKg: 65, preferredFoot: "Left", nationality: "Spain", teamId: teamMap["Barcelona"].id, photoUrl: "https://ui-avatars.com/api/?name=Lamine+Yamal&background=random" },
-    { name: "Raphinha", position: "RW", marketValueM: "80.00", dateOfBirth: "1996-12-14", heightCm: 176, weightKg: 68, preferredFoot: "Left", nationality: "Brazil", teamId: teamMap["Barcelona"].id, photoUrl: "https://ui-avatars.com/api/?name=Raphinha&background=random" },
-    { name: "Enzo Fernandez", position: "CM", marketValueM: "60.00", dateOfBirth: "2001-01-17", heightCm: 178, weightKg: 74, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Chelsea"].id, photoUrl: "https://ui-avatars.com/api/?name=Enzo+Fernandez&background=random" },
-    { name: "Lautaro Martinez", position: "CF", marketValueM: "110.00", dateOfBirth: "1997-08-22", heightCm: 174, weightKg: 72, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Inter Milan"].id, photoUrl: "https://ui-avatars.com/api/?name=Lautaro+Martinez&background=random" },
+    { name: "Lionel Messi", position: "SS", marketValueM: "25.00", dateOfBirth: "1987-06-24", heightCm: 170, weightKg: 72, preferredFoot: "Left", nationality: "Argentina", teamId: teamMap["Inter Miami"].id, photoUrl: "https://ui-avatars.com/api/?name=Lionel+Messi&background=random", debutYear: 2004 },
+    { name: "Cristiano Ronaldo", position: "CF", marketValueM: "15.00", dateOfBirth: "1985-02-05", heightCm: 187, weightKg: 83, preferredFoot: "Right", nationality: "Portugal", teamId: teamMap["Al-Nassr"].id, photoUrl: "https://ui-avatars.com/api/?name=Cristiano+Ronaldo&background=random", debutYear: 2002 },
+    { name: "Kylian Mbappe", position: "CF", marketValueM: "180.00", dateOfBirth: "1998-12-20", heightCm: 178, weightKg: 73, preferredFoot: "Right", nationality: "France", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Kylian+Mbappe&background=random", debutYear: 2015 },
+    { name: "Jude Bellingham", position: "CAM", marketValueM: "180.00", dateOfBirth: "2003-06-29", heightCm: 186, weightKg: 83, preferredFoot: "Right", nationality: "England", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Jude+Bellingham&background=random", debutYear: 2019 },
+    { name: "Vinicius Junior", position: "LW", marketValueM: "200.00", dateOfBirth: "2000-07-12", heightCm: 176, weightKg: 73, preferredFoot: "Right", nationality: "Brazil", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Vinicius+Junior&background=random", debutYear: 2017 },
+    { name: "Erling Haaland", position: "CF", marketValueM: "200.00", dateOfBirth: "2000-07-21", heightCm: 194, weightKg: 88, preferredFoot: "Left", nationality: "Norway", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Erling+Haaland&background=random", debutYear: 2016 },
+    { name: "Lamine Yamal", position: "RW", marketValueM: "180.00", dateOfBirth: "2007-07-13", heightCm: 176, weightKg: 65, preferredFoot: "Left", nationality: "Spain", teamId: teamMap["Barcelona"].id, photoUrl: "https://ui-avatars.com/api/?name=Lamine+Yamal&background=random", debutYear: 2023 },
+    { name: "Julian Alvarez", position: "CF", marketValueM: "90.00", dateOfBirth: "2000-01-31", heightCm: 170, weightKg: 70, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Atletico Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Julian+Alvarez&background=random", debutYear: 2018 },
+    { name: "Enzo Fernandez", position: "CM", marketValueM: "60.00", dateOfBirth: "2001-01-17", heightCm: 178, weightKg: 74, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Chelsea"].id, photoUrl: "https://ui-avatars.com/api/?name=Enzo+Fernandez&background=random", debutYear: 2019 },
+
+    // ── Real Madrid ───────────────────────────────────────────────────────────
+    { name: "Federico Valverde", position: "CM", marketValueM: "120.00", dateOfBirth: "1998-07-22", heightCm: 182, weightKg: 78, preferredFoot: "Right", nationality: "Uruguay", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Federico+Valverde&background=random", debutYear: 2016 },
+    { name: "Rodrygo Goes", position: "RW", marketValueM: "90.00", dateOfBirth: "2001-01-09", heightCm: 174, weightKg: 64, preferredFoot: "Left", nationality: "Brazil", teamId: teamMap["Real Madrid"].id, photoUrl: "https://ui-avatars.com/api/?name=Rodrygo+Goes&background=random", debutYear: 2018 },
+
+    // ── Manchester City ───────────────────────────────────────────────────────
+    { name: "Kevin De Bruyne", position: "CAM", marketValueM: "60.00", dateOfBirth: "1991-06-28", heightCm: 181, weightKg: 70, preferredFoot: "Right", nationality: "Belgium", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Kevin+De+Bruyne&background=random", debutYear: 2008 },
+    { name: "Rodri", position: "CDM", marketValueM: "150.00", dateOfBirth: "1996-06-22", heightCm: 191, weightKg: 82, preferredFoot: "Right", nationality: "Spain", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Rodri&background=random", debutYear: 2015 },
+    { name: "Phil Foden", position: "CAM", marketValueM: "150.00", dateOfBirth: "2000-05-28", heightCm: 171, weightKg: 70, preferredFoot: "Left", nationality: "England", teamId: teamMap["Manchester City"].id, photoUrl: "https://ui-avatars.com/api/?name=Phil+Foden&background=random", debutYear: 2017 },
+
+    // ── Liverpool ─────────────────────────────────────────────────────────────
+    { name: "Mohamed Salah", position: "RW", marketValueM: "50.00", dateOfBirth: "1992-06-15", heightCm: 175, weightKg: 71, preferredFoot: "Left", nationality: "Egypt", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Mohamed+Salah&background=random", debutYear: 2010 },
+    { name: "Virgil van Dijk", position: "CB", marketValueM: "45.00", dateOfBirth: "1991-07-08", heightCm: 193, weightKg: 92, preferredFoot: "Right", nationality: "Netherlands", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Virgil+van+Dijk&background=random", debutYear: 2010 },
+    { name: "Alexis Mac Allister", position: "CM", marketValueM: "80.00", dateOfBirth: "1998-12-24", heightCm: 174, weightKg: 70, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Alexis+Mac+Allister&background=random", debutYear: 2016 },
+    { name: "Alisson Becker", position: "GK", marketValueM: "50.00", dateOfBirth: "1992-10-02", heightCm: 191, weightKg: 91, preferredFoot: "Right", nationality: "Brazil", teamId: teamMap["Liverpool"].id, photoUrl: "https://ui-avatars.com/api/?name=Alisson+Becker&background=random", debutYear: 2012 },
+    { name: "Florian Wirtz", position: "CAM", marketValueM: "150.00", dateOfBirth: "2003-05-03", heightCm: 176, weightKg: 70, preferredFoot: "Right", nationality: "Germany", teamId: teamMap["Borussia Dortmund"].id, photoUrl: "https://ui-avatars.com/api/?name=Florian+Wirtz&background=random", debutYear: 2020 },
+
+    // ── Bayern Munich ─────────────────────────────────────────────────────────
+    { name: "Harry Kane", position: "CF", marketValueM: "100.00", dateOfBirth: "1993-07-28", heightCm: 188, weightKg: 86, preferredFoot: "Right", nationality: "England", teamId: teamMap["Bayern Munich"].id, photoUrl: "https://ui-avatars.com/api/?name=Harry+Kane&background=random", debutYear: 2011 },
+    { name: "Jamal Musiala", position: "CAM", marketValueM: "150.00", dateOfBirth: "2003-02-26", heightCm: 180, weightKg: 70, preferredFoot: "Right", nationality: "Germany", teamId: teamMap["Bayern Munich"].id, photoUrl: "https://ui-avatars.com/api/?name=Jamal+Musiala&background=random", debutYear: 2020 },
+    { name: "Leroy Sane", position: "LW", marketValueM: "40.00", dateOfBirth: "1996-01-11", heightCm: 183, weightKg: 75, preferredFoot: "Right", nationality: "Germany", teamId: teamMap["Bayern Munich"].id, photoUrl: "https://ui-avatars.com/api/?name=Leroy+Sane&background=random", debutYear: 2014 },
+
+    // ── Arsenal ───────────────────────────────────────────────────────────────
+    { name: "Bukayo Saka", position: "RW", marketValueM: "150.00", dateOfBirth: "2001-09-05", heightCm: 178, weightKg: 72, preferredFoot: "Left", nationality: "England", teamId: teamMap["Arsenal"].id, photoUrl: "https://ui-avatars.com/api/?name=Bukayo+Saka&background=random", debutYear: 2018 },
+    { name: "Martin Odegaard", position: "CAM", marketValueM: "90.00", dateOfBirth: "1998-12-17", heightCm: 178, weightKg: 68, preferredFoot: "Right", nationality: "Norway", teamId: teamMap["Arsenal"].id, photoUrl: "https://ui-avatars.com/api/?name=Martin+Odegaard&background=random", debutYear: 2014 },
+
+    // ── Barcelona ─────────────────────────────────────────────────────────────
+    { name: "Raphinha", position: "RW", marketValueM: "80.00", dateOfBirth: "1996-12-14", heightCm: 176, weightKg: 68, preferredFoot: "Left", nationality: "Brazil", teamId: teamMap["Barcelona"].id, photoUrl: "https://ui-avatars.com/api/?name=Raphinha&background=random", debutYear: 2014 },
+    { name: "Pedri", position: "CM", marketValueM: "100.00", dateOfBirth: "2002-11-25", heightCm: 174, weightKg: 60, preferredFoot: "Right", nationality: "Spain", teamId: teamMap["Barcelona"].id, photoUrl: "https://ui-avatars.com/api/?name=Pedri&background=random", debutYear: 2020 },
+
+    // ── Tottenham ─────────────────────────────────────────────────────────────
+    { name: "Cristian Romero", position: "CB", marketValueM: "70.00", dateOfBirth: "1998-04-27", heightCm: 185, weightKg: 79, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Tottenham"].id, photoUrl: "https://ui-avatars.com/api/?name=Cristian+Romero&background=random", debutYear: 2016 },
+
+    // ── Aston Villa ───────────────────────────────────────────────────────────
+    { name: "Emiliano Martinez", position: "GK", marketValueM: "40.00", dateOfBirth: "1992-09-02", heightCm: 195, weightKg: 88, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Aston Villa"].id, photoUrl: "https://ui-avatars.com/api/?name=Emiliano+Martinez&background=random", debutYear: 2010 },
+
+    // ── Inter Milan ───────────────────────────────────────────────────────────
+    { name: "Lautaro Martinez", position: "CF", marketValueM: "110.00", dateOfBirth: "1997-08-22", heightCm: 174, weightKg: 72, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Inter Milan"].id, photoUrl: "https://ui-avatars.com/api/?name=Lautaro+Martinez&background=random", debutYear: 2015 },
+    { name: "Nicolo Barella", position: "CM", marketValueM: "80.00", dateOfBirth: "1997-02-07", heightCm: 172, weightKg: 68, preferredFoot: "Right", nationality: "Italy", teamId: teamMap["Inter Milan"].id, photoUrl: "https://ui-avatars.com/api/?name=Nicolo+Barella&background=random", debutYear: 2015 },
+
+
+    // ── Al-Hilal ─────────────────────────────────────────────────────────────
+    { name: "Neymar Jr", position: "LW", marketValueM: "20.00", dateOfBirth: "1992-02-05", heightCm: 175, weightKg: 68, preferredFoot: "Right", nationality: "Brazil", teamId: teamMap["Al-Hilal"].id, photoUrl: "https://ui-avatars.com/api/?name=Neymar+Jr&background=random", debutYear: 2009 },
+
+    // ── River Plate ───────────────────────────────────────────────────────────
+    { name: "Franco Mastantuono", position: "CAM", marketValueM: "35.00", dateOfBirth: "2008-08-10", heightCm: 177, weightKg: 70, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["River Plate"].id, photoUrl: "https://ui-avatars.com/api/?name=Franco+Mastantuono&background=random", debutYear: 2024 },
+
+    // ── Talleres (Córdoba) ────────────────────────────────────────────────────
+    { name: "Ronaldo Martinez", position: "CF", marketValueM: "2.00", dateOfBirth: "1998-04-24", heightCm: 178, weightKg: 74, preferredFoot: "Right", nationality: "Paraguay", teamId: teamMap["Talleres"].id, photoUrl: "https://ui-avatars.com/api/?name=Ronaldo+Martinez&background=random", debutYear: 2017 },
+
+    // ── Belgrano (Córdoba) ────────────────────────────────────────────────────
+    { name: "Lucas Zelarayan", position: "CAM", marketValueM: "4.00", dateOfBirth: "1992-06-20", heightCm: 178, weightKg: 73, preferredFoot: "Right", nationality: "Argentina", teamId: teamMap["Belgrano"].id, photoUrl: "https://ui-avatars.com/api/?name=Lucas+Zelarayan&background=random", debutYear: 2011 },
   ];
 
   const insertedPlayers = await db.insert(players).values(playersData).returning();
@@ -151,14 +215,38 @@ async function main() {
     const base = BASE_STATS[player.position] ?? BASE_STATS["CM"];
 
     for (const season of insertedSeasons) {
+      if (season.year < (player.debutYear ?? 0)) continue;
+
       const matches = rnd(28, 38);
       const rating = parseFloat((base.sofascoreRating + rnd(-4, 4) / 10).toFixed(1));
+
+      // --- Lógica Dinámica de Valor de Mercado ---
+      const birthYear = new Date(player.dateOfBirth!).getFullYear();
+      const age = season.year - birthYear;
+      let currentVal = parseFloat(player.marketValueM ?? "0");
+
+      if (season.year > 2024) {
+        if (age < 23) {
+          // Jóvenes: Crecen mucho con buen rating
+          currentVal *= (rating > 7.0 ? 1.30 : 1.05);
+        } else if (age < 30) {
+          // Prime: Crecimiento balanceado
+          currentVal *= (rating > 7.2 ? 1.15 : 0.95);
+        } else if (age < 34) {
+          // Veteranos: Empiezan a bajar salvo que sean cracks
+          currentVal *= (rating > 7.4 ? 1.05 : 0.85);
+        } else {
+          // Seniors: Bajan casi siempre por edad
+          currentVal *= (rating > 7.5 ? 0.95 : 0.80);
+        }
+      }
 
       statsData.push({
         playerId: player.id,
         seasonId: season.id,
         matchesPlayed: matches,
         minutesPlayed: matches * rnd(70, 90),
+        marketValueM: currentVal.toFixed(2),
         goals: varyInt(base.goals),
         xgPerGame: vary(base.xgPerGame),
         shotsPerGame: vary(base.shotsPerGame),
@@ -208,6 +296,8 @@ async function main() {
     const injuryPool = INJURY_TYPES[player.position] ?? INJURY_TYPES["CM"];
 
     for (const season of insertedSeasons) {
+      if (season.year < (player.debutYear ?? 0)) continue;
+
       const injuryChance = season.year === 2026 ? 0.25 : 0.40;
       if (Math.random() > injuryChance) continue;
 
@@ -254,7 +344,7 @@ async function main() {
     email: "scout@demo.com",
     passwordHash,
     name: "Scout Demo",
-  });
+  }).onConflictDoNothing();
 
   console.log("✅ Seed V5 completado:");
   console.log(`   ${insertedTeams.length}  equipos`);

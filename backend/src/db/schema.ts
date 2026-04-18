@@ -47,6 +47,7 @@ export const players = pgTable("players", {
   weightKg: smallint("weight_kg"),
   preferredFoot: varchar("preferred_foot", { length: 10 }), // "Left" | "Right" | "Both"
   nationality: varchar("nationality", { length: 100 }),
+  debutYear: integer("debut_year"),
   photoUrl: text("photo_url"),
   teamId: integer("team_id").references(() => teams.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -94,6 +95,7 @@ export const playerStats = pgTable(
     goalsConceded: smallint("goals_conceded"),
 
     // Rating y disciplina
+    marketValueM: decimal("market_value_m", { precision: 6, scale: 2 }), // Histórico
     sofascoreRating: decimal("sofascore_rating", { precision: 3, scale: 1 }).default("0.0"),
     yellowCards: smallint("yellow_cards").default(0),
     redCards: smallint("red_cards").default(0),
