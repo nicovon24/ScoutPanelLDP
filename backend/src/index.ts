@@ -14,8 +14,8 @@ app.use(express.json());
 // Routes Públicas
 app.use("/api/auth", authRoutes);
 
-// Middleware de Protección Global
-app.use(requireAuth);
+// Middleware de Protección Global (Deshabilitado temporalmente)
+// app.use(requireAuth);
 
 // Routes Protegidas (necesitan token)
 app.use("/api/players", playerRoutes);

@@ -1,25 +1,242 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Paleta de Colores LDP */
-  --background: #0F0F0F;
-  --foreground: #F2F2F2;
-  --primary: #00E094;
-  --secondary-a: #0C65D4;
-  --secondary-b: #7533FC;
-  --alert-injury: #E53E3E;
-}
+@layer base {
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: "Nunito Sans", sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  html,
+  body {
+    @apply bg-base text-primary font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.65;
   }
+
+  * {
+    @apply box-border;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-border-h;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(0, 224, 148, 0.2);
+    color: #F2F2F2;
+  }
+}
+
+@layer components {
+
+  /* ── Cards ──────────────────────────── */
+  .card {
+    @apply bg-card border border-border rounded-lg p-5 shadow-card transition-colors duration-150;
+  }
+
+  .card:hover {
+    @apply border-border-h;
+  }
+
+  .card-xs {
+    @apply bg-card border border-border rounded-md p-3 shadow-card;
+  }
+
+  .card-glass {
+    @apply border border-border rounded-lg;
+    background: rgba(28, 28, 28, 0.85);
+    backdrop-filter: blur(14px);
+  }
+
+  /* ── Buttons ─────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-[13px] font-semibold transition-all duration-150 cursor-pointer select-none whitespace-nowrap border-0 outline-none;
+  }
+
+  .btn-primary {
+    @apply bg-green text-base font-semibold;
+  }
+
+  .btn-primary:hover {
+    @apply bg-green-dark -translate-y-px;
+    box-shadow: 0 4px 18px rgba(0, 224, 148, 0.3);
+  }
+
+  .btn-primary:active {
+    @apply translate-y-0;
+  }
+
+  .btn-blue {
+    @apply bg-blue text-white;
+  }
+
+  .btn-blue:hover {
+    @apply bg-blue-dark -translate-y-px;
+    box-shadow: 0 4px 18px rgba(12, 101, 212, 0.3);
+  }
+
+  .btn-purple {
+    @apply bg-purple text-white;
+  }
+
+  .btn-purple:hover {
+    @apply bg-purple-dark -translate-y-px;
+    box-shadow: 0 4px 18px rgba(117, 51, 252, 0.3);
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-secondary border border-border;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-input border-border-h text-primary;
+  }
+
+  .btn-danger {
+    @apply text-danger border border-danger/25;
+    background: rgba(240, 68, 68, 0.08);
+  }
+
+  .btn-danger:hover {
+    background: rgba(240, 68, 68, 0.18);
+  }
+
+  /* ── Badges / Tags ──────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .badge-green {
+    background: rgba(0, 224, 148, 0.12);
+    @apply text-green;
+  }
+
+  .badge-blue {
+    background: rgba(12, 101, 212, 0.15);
+    @apply text-blue-light;
+  }
+
+  .badge-purple {
+    background: rgba(117, 51, 252, 0.15);
+    @apply text-purple-light;
+  }
+
+  .badge-gold {
+    background: rgba(232, 168, 56, 0.15);
+    @apply text-gold;
+  }
+
+  .badge-red {
+    background: rgba(240, 68, 68, 0.12);
+    @apply text-danger;
+  }
+
+  .badge-muted {
+    background: rgba(255, 255, 255, 0.06);
+    @apply text-secondary;
+  }
+
+  /* ── Position colors ────────────────── */
+  /* Attack (CF/SS/LW/RW) */
+  .pos-attack {
+    background: rgba(240, 68, 68, 0.12);
+    color: #F47575;
+  }
+
+  /* Midfield (CAM/CM/CDM) */
+  .pos-mid {
+    background: rgba(12, 101, 212, 0.15);
+    @apply text-blue-light;
+  }
+
+  /* Defense (CB/LB/RB) */
+  .pos-def {
+    background: rgba(117, 51, 252, 0.15);
+    @apply text-purple-light;
+  }
+
+  /* GK */
+  .pos-gk {
+    background: rgba(232, 168, 56, 0.15);
+    @apply text-gold;
+  }
+
+  /* ── Input / Select ─────────────────── */
+  .field {
+    @apply w-full bg-input border border-border rounded-md text-primary px-3.5 py-2 text-[13px] outline-none transition-colors duration-150 placeholder:text-muted;
+  }
+
+  .field:focus {
+    @apply border-green;
+  }
+
+  .select-field {
+    @apply bg-input border border-border rounded-md text-primary pl-3 pr-8 py-[7px] text-[13px] outline-none cursor-pointer transition-colors duration-150 appearance-none;
+  }
+
+  .select-field:focus {
+    @apply border-green;
+  }
+
+  /* ── Section header ─────────────────── */
+  .section-title {
+    @apply flex items-center gap-2 text-[13px] font-semibold text-primary mb-3;
+  }
+
+  .section-title::before {
+    content: "";
+    @apply w-1 h-4 bg-green rounded-full flex-shrink-0;
+  }
+
+  /* ── Divider ────────────────────────── */
+  .divider {
+    @apply h-px bg-border my-4;
+  }
+
+  /* ── Skeleton ──────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #1c1c1c 25%, #262626 50%, #1c1c1c 75%);
+    background-size: 600px 100%;
+    @apply animate-shimmer rounded-md;
+  }
+
+  /* ── Table ──────────────────────────── */
+  .stat-row {
+    @apply flex items-center justify-between py-2 border-b border-border last:border-0;
+  }
+
+  .stat-row-label {
+    @apply text-[13px] text-secondary;
+  }
+
+  .stat-row-value {
+    @apply text-[13px] font-semibold text-primary;
+  }
+}
+
+/* ── Box sizing fix ─────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
