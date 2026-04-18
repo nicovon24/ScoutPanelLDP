@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Paleta de Colores LDP */
+  --background: #0F0F0F;
+  --foreground: #F2F2F2;
+  --primary: #00E094;
+  --secondary-a: #0C65D4;
+  --secondary-b: #7533FC;
+  --alert-injury: #E53E3E;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Nunito Sans", sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

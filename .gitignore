@@ -1,4 +1,21 @@
-/doc
-.env
-node_modules/
+#IA
 .claude
+.anthropic/
+.cursor/
+.cursorrules (opcional, algunos prefieren subirlo para compartir reglas)
+
+# Dependencias y Build
+node_modules/
+dist/
+.next/
+out/
+build/
+
+# Variables de entorno (¡MUY IMPORTANTE!)
+.env
+.env.local
+.env.example (este sí se sube, pero vacío)
+
+# Otros
+
+/doc
