@@ -6,6 +6,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import RadarChartComponent from "@/components/charts/RadarChart";
 import HeatmapField from "@/components/player/HeatmapField";
+import PlayerStatsTable, { getCompareColsStyle } from "@/components/player/PlayerStatsTable";
 import { useScoutStore } from "@/store/useScoutStore";
 import { Select, SelectItem } from "@nextui-org/react";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
@@ -25,11 +26,6 @@ function posStyle(pos: string) {
   if (["CAM", "CM", "CDM"].includes(p)) return "pos-mid";
   if (["CB", "LB", "RB"].includes(p)) return "pos-def";
   return "pos-gk";
-}
-function fmtVal(v: any, dec = 0) {
-  if (v == null || v === "") return "—";
-  const n = typeof v === "string" ? parseFloat(v) : v;
-  return isNaN(n) ? "—" : dec > 0 ? n.toFixed(dec) : String(n);
 }
 const num = (v: any) => { const f = parseFloat(String(v ?? "0")); return isNaN(f) ? 0 : f; };
 
@@ -103,83 +99,16 @@ function PlayerSearch({ onSelect, excludeIds = [] }: { onSelect: (p: SearchHit) 
   );
 }
 
-// ─── Layout constants ─────────────────────────────────────────────────────────
-const LABEL_W = 130; // px – left label column
-const VS_W    = 44;  // px – VS separator column
-
-// ─── Row components (now receive arrays indexed by slot position) ──────────────
+// ─── Section header (only used for heatmap / radar in compare) ────────────────
 function SectionHeader({ label, colsStyle }: { label: string; colsStyle: string }) {
   return (
     <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: colsStyle }}>
-      <div style={{ gridColumn: "1 / -1" }}
-        className="px-4 py-2.5 text-[9.5px] font-black tracking-[0.16em] uppercase text-muted">
+      <div
+        style={{ gridColumn: "1 / -1" }}
+        className="px-4 py-2.5 text-[9.5px] font-black tracking-[0.16em] uppercase text-muted"
+      >
         {label}
       </div>
-    </div>
-  );
-}
-
-function StatRow({
-  label, vals, nums, colors, unit = "", higherIsBetter = true, colsStyle, slotCount,
-}: {
-  label: string; vals: string[]; nums: number[]; colors: string[]; unit?: string;
-  higherIsBetter?: boolean; colsStyle: string; slotCount: number;
-}) {
-  const maxAbs = Math.max(...nums, 0.001);
-  const winVal = higherIsBetter ? Math.max(...nums) : Math.min(...nums);
-  const isTie = nums.every(n => n === nums[0]);
-
-  return (
-    <div className="grid border-t border-border hover:bg-white/[0.016] transition-colors"
-      style={{ gridTemplateColumns: colsStyle }}>
-      {/* label */}
-      <div className="flex items-center px-4 py-2.5 border-r border-border text-[11px] font-bold text-muted">
-        {label}
-      </div>
-      {Array.from({ length: slotCount }).map((_, i) => {
-        const v = vals[i] ?? "—";
-        const n = nums[i] ?? 0;
-        const win = !isTie && n === winVal && n !== 0;
-        const colorCls = colors[i] ?? "";
-        const bgCls = colorCls.replace("text-", "bg-");
-        const pct = Math.min(100, (n / maxAbs) * 100);
-        return (
-          <Fragment key={i}>
-            {i > 0 && <div className="border-r border-border" />}
-            <div className="flex items-center gap-2 px-4 py-2.5 border-r border-border last:border-0">
-              <span className={`text-[15px] font-black tracking-[-0.01em] min-w-[38px]
-                ${win ? colorCls : isTie ? "text-primary" : "text-primary/60"}`}>
-                {v}{unit}
-              </span>
-              {win && <span className={`text-[9px] font-black ${colorCls}`}>▲</span>}
-              <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden max-w-[72px] ml-auto">
-                <div className={`h-full rounded-full transition-all duration-500 ${bgCls}`} style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          </Fragment>
-        );
-      })}
-    </div>
-  );
-}
-
-function GeneralStatRow({
-  label, vals, colsStyle, slotCount,
-}: { label: string; vals: string[]; colsStyle: string; slotCount: number }) {
-  return (
-    <div className="grid border-t border-border hover:bg-white/[0.016] transition-colors"
-      style={{ gridTemplateColumns: colsStyle }}>
-      <div className="flex items-center px-4 py-2.5 border-r border-border text-[11px] font-bold text-muted">
-        {label}
-      </div>
-      {Array.from({ length: slotCount }).map((_, i) => (
-        <Fragment key={i}>
-          {i > 0 && <div className="border-r border-border" />}
-          <div className="flex items-center px-4 py-2.5 border-r border-border last:border-0">
-            <span className="text-[13px] font-black text-primary">{vals[i] ?? "—"}</span>
-          </div>
-        </Fragment>
-      ))}
     </div>
   );
 }
@@ -253,78 +182,14 @@ export default function ComparePage() {
   };
 
   // ── Grid column definitions ─────────────────────────────────────────────────
-  // Player slots: 1fr for each, VS_W px between them
-  const playerColsTemplate = slots
-    .map((_, i) => (i === 0 ? "1fr" : `${VS_W}px 1fr`))
-    .join(" ");
-
-  // Shared content grid (label + player cols)
-  const contentCols = `${LABEL_W}px ${playerColsTemplate}`;
-
+  // Shared content grid matches PlayerStatsTable internal layout (130px label + 44px VS + 1fr slots)
+  const contentCols = getCompareColsStyle(slotCount);
   // Header grid: same as content + optional Add button column
-  const headerCols  = `${LABEL_W}px ${playerColsTemplate}${canAdd ? ` 64px` : ""}`;
+  const headerCols  = `${contentCols}${canAdd ? ` 64px` : ""}`;
 
   // Heatmap canvas sizes (approximate, accounting for label + VS cols + padding)
   const hmW = slotCount >= 3 ? 420 : 640;
   const hmH = slotCount >= 3 ? 250 : 380;
-
-  // ── Sections definition ─────────────────────────────────────────────────────
-  type StatRowDef   = { l: string; k: string; d?: number; u?: string; lower?: boolean };
-  type GeneralRowDef = { l: string; fn: (vi: number) => string };
-  type Section =
-    | { label: string; type: "general"; rows: GeneralRowDef[] }
-    | { label: string; type: "stat";    rows: StatRowDef[] }
-    | { label: string; type: "heatmap" }
-    | { label: string; type: "radar" };
-
-  const sections: Section[] = [
-    {
-      label: "Info General", type: "general", rows: [
-        { l: "Edad",         fn: vi => calcAge(playersData[vi]?.dateOfBirth) },
-        { l: "Valor Mercado",fn: vi => playersData[vi]?.marketValueM ? `€${fmtVal(playersData[vi].marketValueM, 1)}M` : "—" },
-        { l: "Altura",       fn: vi => playersData[vi]?.heightCm ? `${playersData[vi].heightCm} cm` : "—" },
-        { l: "Pie hábil",    fn: vi => playersData[vi]?.preferredFoot || "—" },
-      ],
-    },
-    { label: "Mapas de calor", type: "heatmap" },
-    {
-      label: "Ataque", type: "stat", rows: [
-        { l: "Goles", k: "goals" }, { l: "Asistencias", k: "assists" },
-        { l: "xG / Partido", k: "xgPerGame", d: 2 }, { l: "Tiros / Partido", k: "shotsPerGame", d: 2 },
-        { l: "Tiros al arco %", k: "shotsOnTargetPct", d: 1, u: "%" },
-      ],
-    },
-    {
-      label: "Pases & Creación", type: "stat", rows: [
-        { l: "xA / Partido", k: "xaPerGame", d: 2 }, { l: "Pases clave / PJ", k: "keyPassesPerGame", d: 2 },
-        { l: "Precisión pases %", k: "passAccuracyPct", d: 1, u: "%" },
-      ],
-    },
-    {
-      label: "Defensa", type: "stat", rows: [
-        { l: "Tackles", k: "tackles" }, { l: "Intercepciones", k: "interceptions" },
-        { l: "Recuperaciones", k: "recoveries" }, { l: "Duelos aéreos %", k: "aerialDuelsWonPct", d: 1, u: "%" },
-      ],
-    },
-    {
-      label: "Regates", type: "stat", rows: [
-        { l: "Regates exitosos/PJ", k: "successfulDribblesPerGame", d: 2 },
-        { l: "Tasa de éxito %", k: "dribbleSuccessRate", d: 1, u: "%" },
-      ],
-    },
-    {
-      label: "Disciplina", type: "stat", rows: [
-        { l: "Tarjetas amarillas", k: "yellowCards", lower: true },
-        { l: "Tarjetas rojas", k: "redCards", lower: true },
-      ],
-    },
-    {
-      label: "Participación", type: "stat", rows: [
-        { l: "Partidos jugados", k: "matchesPlayed" }, { l: "Minutos jugados", k: "minutesPlayed" },
-      ],
-    },
-    { label: "Radar de Rendimiento", type: "radar" },
-  ];
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -491,104 +356,64 @@ export default function ComparePage() {
               ))}
             </div>
 
-            {/* Sections */}
-            {sections.map((sec, sIdx) => {
-              if (sec.type === "heatmap") {
-                return (
-                  <div key={sIdx}>
-                    <SectionHeader label={sec.label} colsStyle={contentCols} />
-                    {/* heatmap row: empty label cell + one HeatmapField per player column */}
-                    <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: contentCols }}>
-                      <div className="border-r border-border" />
-                      {slots.map((_, i) => (
-                        <Fragment key={i}>
-                          {i > 0 && <div className="border-r border-border" />}
-                          <div className="p-3 border-r border-border last:border-0">
-                            {playersData[i] && !loadings[i] ? (
-                              <HeatmapField
-                                grid={getStat(i).heatmapData as number[][] | undefined}
-                                width={hmW}
-                                height={hmH}
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center rounded-xl border border-border/40 bg-white/[0.02]"
-                                style={{ minHeight: hmH / 2 }}>
-                                {loadings[i]
-                                  ? <Loader2 size={20} className={`animate-spin ${COLORS[i].text}`} />
-                                  : <p className="text-[11px] text-muted">—</p>}
-                              </div>
-                            )}
-                          </div>
-                        </Fragment>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
+            {/* Stats comparison table */}
+            <PlayerStatsTable
+              entries={validIndices.map(i => ({
+                player: playersData[i],
+                stat: getStat(i),
+                color: COLORS[i],
+              }))}
+            />
 
-              if (sec.type === "radar") {
-                return (
-                  <div key={sIdx}>
-                    <SectionHeader label={sec.label} colsStyle={contentCols} />
-                    <div className="border-t border-border bg-surface-2 p-6 sm:p-10 flex justify-center">
-                      <div className="w-full max-w-[min(100%,880px)] px-1 sm:px-2">
-                        <RadarChartComponent
-                          data={[
-                            { metric: "Goles",    playerA: Math.min(100, num(getStat(0).goals) * 6), playerB: Math.min(100, num(getStat(1).goals) * 6),    playerC: slotCount > 2 ? Math.min(100, num(getStat(2).goals) * 6) : undefined },
-                            { metric: "Asist.",   playerA: Math.min(100, num(getStat(0).assists) * 10), playerB: Math.min(100, num(getStat(1).assists) * 10), playerC: slotCount > 2 ? Math.min(100, num(getStat(2).assists) * 10) : undefined },
-                            { metric: "xG",       playerA: Math.min(100, num(getStat(0).xgPerGame) * 150), playerB: Math.min(100, num(getStat(1).xgPerGame) * 150), playerC: slotCount > 2 ? Math.min(100, num(getStat(2).xgPerGame) * 150) : undefined },
-                            { metric: "Pases%",   playerA: Math.min(100, num(getStat(0).passAccuracyPct)), playerB: Math.min(100, num(getStat(1).passAccuracyPct)), playerC: slotCount > 2 ? Math.min(100, num(getStat(2).passAccuracyPct)) : undefined },
-                            { metric: "Tackles",  playerA: Math.min(100, num(getStat(0).tackles) * 2), playerB: Math.min(100, num(getStat(1).tackles) * 2), playerC: slotCount > 2 ? Math.min(100, num(getStat(2).tackles) * 2) : undefined },
-                            { metric: "Recup.",   playerA: Math.min(100, num(getStat(0).recoveries) * 1.5), playerB: Math.min(100, num(getStat(1).recoveries) * 1.5), playerC: slotCount > 2 ? Math.min(100, num(getStat(2).recoveries) * 1.5) : undefined },
-                            { metric: "Regates%", playerA: Math.min(100, num(getStat(0).dribbleSuccessRate)), playerB: Math.min(100, num(getStat(1).dribbleSuccessRate)), playerC: slotCount > 2 ? Math.min(100, num(getStat(2).dribbleSuccessRate)) : undefined },
-                            { metric: "Aéreos%",  playerA: Math.min(100, num(getStat(0).aerialDuelsWonPct)), playerB: Math.min(100, num(getStat(1).aerialDuelsWonPct)), playerC: slotCount > 2 ? Math.min(100, num(getStat(2).aerialDuelsWonPct)) : undefined },
-                          ]}
-                          nameA={playersData[0]?.name} nameB={playersData[1]?.name} nameC={playersData[2]?.name}
-                          colorA={COLORS[0].hex} colorB={COLORS[1].hex} colorC={COLORS[2].hex}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              if (sec.type === "general") {
-                return (
-                  <div key={sIdx}>
-                    <SectionHeader label={sec.label} colsStyle={contentCols} />
-                    {sec.rows.map((r, rIdx) => (
-                      <GeneralStatRow
-                        key={rIdx}
-                        label={r.l}
-                        vals={slots.map((_, vi) => r.fn(vi))}
-                        colsStyle={contentCols}
-                        slotCount={slotCount}
+            {/* Heatmap section */}
+            <SectionHeader label="Mapas de calor" colsStyle={contentCols} />
+            <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: contentCols }}>
+              <div className="border-r border-border" />
+              {slots.map((_, i) => (
+                <Fragment key={i}>
+                  {i > 0 && <div className="border-r border-border" />}
+                  <div className="p-3 border-r border-border last:border-0">
+                    {playersData[i] && !loadings[i] ? (
+                      <HeatmapField
+                        grid={getStat(i).heatmapData as number[][] | undefined}
+                        width={hmW}
+                        height={hmH}
                       />
-                    ))}
+                    ) : (
+                      <div
+                        className="flex items-center justify-center rounded-xl border border-border/40 bg-white/[0.02]"
+                        style={{ minHeight: hmH / 2 }}
+                      >
+                        {loadings[i]
+                          ? <Loader2 size={20} className={`animate-spin ${COLORS[i].text}`} />
+                          : <p className="text-[11px] text-muted">—</p>}
+                      </div>
+                    )}
                   </div>
-                );
-              }
+                </Fragment>
+              ))}
+            </div>
 
-              // type === "stat"
-              return (
-                <div key={sIdx}>
-                  <SectionHeader label={sec.label} colsStyle={contentCols} />
-                  {sec.rows.map((r: StatRowDef, rIdx) => (
-                    <StatRow
-                      key={rIdx}
-                      label={r.l}
-                      vals={slots.map((_, vi) => fmtVal(getStat(vi)[r.k], r.d))}
-                      nums={slots.map((_, vi) => num(getStat(vi)[r.k]))}
-                      colors={slots.map((_, vi) => COLORS[vi].text)}
-                      unit={r.u}
-                      higherIsBetter={!r.lower}
-                      colsStyle={contentCols}
-                      slotCount={slotCount}
-                    />
-                  ))}
-                </div>
-              );
-            })}
+            {/* Radar section */}
+            <SectionHeader label="Radar de Rendimiento" colsStyle={contentCols} />
+            <div className="border-t border-border bg-surface-2 p-6 sm:p-10 flex justify-center">
+              <div className="w-full max-w-[min(100%,880px)] px-1 sm:px-2">
+                <RadarChartComponent
+                  data={[
+                    { metric: "Goles",    playerA: Math.min(100, num(getStat(0).goals) * 6),             playerB: Math.min(100, num(getStat(1).goals) * 6),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).goals) * 6) : undefined },
+                    { metric: "Asist.",   playerA: Math.min(100, num(getStat(0).assists) * 10),           playerB: Math.min(100, num(getStat(1).assists) * 10),           playerC: slotCount > 2 ? Math.min(100, num(getStat(2).assists) * 10) : undefined },
+                    { metric: "xG",       playerA: Math.min(100, num(getStat(0).xgPerGame) * 150),        playerB: Math.min(100, num(getStat(1).xgPerGame) * 150),        playerC: slotCount > 2 ? Math.min(100, num(getStat(2).xgPerGame) * 150) : undefined },
+                    { metric: "Pases%",   playerA: Math.min(100, num(getStat(0).passAccuracyPct)),        playerB: Math.min(100, num(getStat(1).passAccuracyPct)),        playerC: slotCount > 2 ? Math.min(100, num(getStat(2).passAccuracyPct)) : undefined },
+                    { metric: "Tackles",  playerA: Math.min(100, num(getStat(0).tackles) * 2),            playerB: Math.min(100, num(getStat(1).tackles) * 2),            playerC: slotCount > 2 ? Math.min(100, num(getStat(2).tackles) * 2) : undefined },
+                    { metric: "Recup.",   playerA: Math.min(100, num(getStat(0).recoveries) * 1.5),       playerB: Math.min(100, num(getStat(1).recoveries) * 1.5),       playerC: slotCount > 2 ? Math.min(100, num(getStat(2).recoveries) * 1.5) : undefined },
+                    { metric: "Regates%", playerA: Math.min(100, num(getStat(0).dribbleSuccessRate)),     playerB: Math.min(100, num(getStat(1).dribbleSuccessRate)),     playerC: slotCount > 2 ? Math.min(100, num(getStat(2).dribbleSuccessRate)) : undefined },
+                    { metric: "Aéreos%",  playerA: Math.min(100, num(getStat(0).aerialDuelsWonPct)),      playerB: Math.min(100, num(getStat(1).aerialDuelsWonPct)),      playerC: slotCount > 2 ? Math.min(100, num(getStat(2).aerialDuelsWonPct)) : undefined },
+                  ]}
+                  nameA={playersData[0]?.name} nameB={playersData[1]?.name} nameC={playersData[2]?.name}
+                  colorA={COLORS[0].hex} colorB={COLORS[1].hex} colorC={COLORS[2].hex}
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>

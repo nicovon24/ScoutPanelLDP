@@ -26,7 +26,12 @@ function Logo() {
 }
 
 export default function Topbar() {
-  const { user } = useScoutStore();
+  const { user, clearAuth } = useScoutStore();
+
+  const handleLogout = () => {
+    clearAuth();
+    window.location.href = "/login";
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-mainBg/80 backdrop-blur-xl border-b border-white/[0.04]
@@ -50,8 +55,12 @@ export default function Topbar() {
             <span className="text-base font-bold text-primary">{user?.name ?? "Scout"}</span>
             <span className="text-2xs text-muted uppercase font-black tracking-widest">PRO Account</span>
           </div>
-          <button className="w-10 h-10 rounded-xl flex items-center justify-center
-                             text-danger hover:bg-danger/10 transition-all border border-danger/10">
+          <button
+            onClick={handleLogout}
+            title="Cerrar sesión"
+            className="w-10 h-10 rounded-xl flex items-center justify-center
+                       text-danger hover:bg-danger/10 transition-all border border-danger/10"
+          >
             <LogOut size={18} />
           </button>
         </div>

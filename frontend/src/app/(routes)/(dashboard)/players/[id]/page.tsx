@@ -13,6 +13,7 @@ import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sh
 import EvolutionBarChart from "@/components/charts/EvolutionBarChart";
 import MarketValueChart from "@/components/charts/MarketValueChart";
 import HeatmapField from "@/components/player/HeatmapField";
+import PlayerStatsTable from "@/components/player/PlayerStatsTable";
 
 /* ── Helpers ─────────────────────────────── */
 function calcAge(dob?: string) {
@@ -73,114 +74,6 @@ function DonutCircle({ value, label, color = "#00E094" }: { value: number; label
   );
 }
 
-/* ── Stat Bar Row (SofaScore style) ─────── */
-function StatBarRow({
-  label, value, maxValue = 100, color = "#00E094", isPercent = false
-}: {
-  label: string;
-  value: string | number | null | undefined;
-  maxValue?: number;
-  color?: string;
-  isPercent?: boolean;
-}) {
-  const raw = value == null || value === "" ? null : parseFloat(String(value));
-  const pct = raw == null || isNaN(raw) ? 0 : Math.min(100, (raw / maxValue) * 100);
-  const display = raw == null || isNaN(raw) ? "—" : isPercent ? `${raw.toFixed(1)}%` : fmt(raw, String(value).includes(".") ? 2 : 0);
-
-  return (
-    <div className="flex items-center gap-3 py-[7px] border-b border-border/40 last:border-0">
-      <span className="text-base text-secondary font-medium flex-1 min-w-0">{label}</span>
-      <span className="text-base font-black text-primary w-[56px] text-right flex-shrink-0">{display}</span>
-      <div className="w-[160px] flex-shrink-0 h-[5px] rounded-full bg-input">
-        <div className="h-full rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(255,255,255,0.05)]" style={{ width: `${pct}%`, backgroundColor: color }} />
-      </div>
-    </div>
-  );
-}
-
-/* ── Section Divider ─────────────────────── */
-function StatSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="flex items-center gap-3 mb-1 mt-5 first:mt-0">
-        <span className="text-xs font-black uppercase tracking-widest text-green">{title}</span>
-        <div className="flex-1 h-px bg-border/50" />
-      </div>
-      {children}
-    </div>
-  );
-}
-
-/* ── All Stats Panel ─────────────────────── */
-function AllStatsPanel({ player, stat }: { player: any; stat: any }) {
-  const pos = player.position?.toUpperCase();
-  const isGK = pos === "GK";
-  const isDEF = ["CB", "LB", "RB"].includes(pos);
-  const isMID = ["CAM", "CM", "CDM"].includes(pos);
-  const isATT = ["CF", "SS", "LW", "RW"].includes(pos);
-
-  return (
-    <div className="card shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
-      <div className="flex items-center justify-between mb-6">
-        <p className="section-title mb-0">Estadísticas completas</p>
-        <span className="text-2xs text-secondary font-black bg-white/5 border border-white/10 px-2.5 py-1 rounded-md uppercase tracking-widest">{player.position}</span>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
-
-        {/* GK Specific Section */}
-        {isGK && (
-          <StatSection title="Portería">
-            <StatBarRow label="Efectividad en paradas" value={stat.savePct} maxValue={100} color="#E8A838" isPercent />
-            <StatBarRow label="Vallas invictas" value={stat.cleanSheets} maxValue={20} color="#00E094" />
-            <StatBarRow label="Goles recibidos" value={stat.goalsConceded} maxValue={50} color="#F04444" />
-          </StatSection>
-        )}
-
-        {/* Attack Section */}
-        {(isATT || !isGK) && (
-          <StatSection title="Ataque">
-            <StatBarRow label="Goles" value={stat.goals} maxValue={30} color="#00E094" />
-            <StatBarRow label="xG por partido" value={stat.xgPerGame} maxValue={1.5} color="#00E094" />
-            <StatBarRow label="Tiros por partido" value={stat.shotsPerGame} maxValue={6} color="#0C65D4" />
-            <StatBarRow label="Tiros al arco %" value={stat.shotsOnTargetPct} maxValue={100} color="#0C65D4" isPercent />
-          </StatSection>
-        )}
-
-        {/* Passing / Creation Section */}
-        <StatSection title="Pases y Creación">
-          <StatBarRow label="Asistencias" value={stat.assists} maxValue={20} color="#00E094" />
-          <StatBarRow label="xA por partido" value={stat.xaPerGame} maxValue={1} color="#00E094" />
-          <StatBarRow label="Pases clave por partido" value={stat.keyPassesPerGame} maxValue={3} color="#00E094" />
-          <StatBarRow label="Precisión de pases %" value={stat.passAccuracyPct} maxValue={100} color="#0C65D4" isPercent />
-        </StatSection>
-
-        {/* Defense Section */}
-        <StatSection title="Defensa">
-          <StatBarRow label="Tackles" value={stat.tackles} maxValue={80} color="#00E094" />
-          <StatBarRow label="Intercepciones" value={stat.interceptions} maxValue={50} color="#00E094" />
-          <StatBarRow label="Recuperaciones" value={stat.recoveries} maxValue={80} color="#0C65D4" />
-          <StatBarRow label="Duelos aéreos ganados %" value={stat.aerialDuelsWonPct} maxValue={100} color="#7533FC" isPercent />
-        </StatSection>
-
-        {/* Possession Section */}
-        {!isGK && (
-          <StatSection title="Posesión y Regate">
-            <StatBarRow label="Regates exitosos / PJ" value={stat.successfulDribblesPerGame} maxValue={5} color="#00E094" />
-            <StatBarRow label="Tasa de regates %" value={stat.dribbleSuccessRate} maxValue={100} color="#0C65D4" isPercent />
-          </StatSection>
-        )}
-
-        {/* Discipline Section */}
-        <StatSection title="Disciplina">
-          <StatBarRow label="Tarjetas amarillas" value={stat.yellowCards} maxValue={15} color="#E8A838" />
-          <StatBarRow label="Tarjetas rojas" value={stat.redCards} maxValue={5} color="#F04444" />
-        </StatSection>
-
-      </div>
-    </div>
-  );
-}
 
 /* ── Main Page ───────────────────────────── */
 export default function PlayerDetailPage() {
@@ -294,7 +187,13 @@ export default function PlayerDetailPage() {
         if (s?.marketValueM) targetVal = parseFloat(s.marketValueM);
       }
       const suf = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-      return suf.map((m, i) => ({ month: m, year: targetYear.toString(), value: targetVal + (Math.sin(i) * 0.05 * targetVal) }));
+      const today = new Date();
+      return suf.map((m, i) => ({
+        month: m,
+        year: targetYear.toString(),
+        value: targetVal + (Math.sin(i) * 0.05 * targetVal),
+        future: new Date(targetYear as number, i, 1) > today,
+      }));
     }
   })();
 
@@ -565,43 +464,51 @@ export default function PlayerDetailPage() {
       ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 auto-rows-fr">
 
-        <div className="card h-full">
-          <p className="section-title">Perfil de scouting</p>
-          <div className="space-y-5">
-            <div>
-              <p className="text-2xs font-black uppercase tracking-widest text-green mb-2">Fortalezas</p>
-              {(player.strengths?.length ?? 0) === 0 ? (
-                <p className="text-base text-muted">Sin datos.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {(player.strengths as string[]).map((s: string) => (
-                    <span
-                      key={s}
-                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-green/15 text-green border border-green/25"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              )}
+        <div className="card h-full flex flex-col gap-6">
+          <p className="section-title mb-0">Perfil de scouting</p>
+
+          {/* Fortalezas */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-green flex-shrink-0" />
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-green">Fortalezas</p>
             </div>
-            <div>
-              <p className="text-2xs font-black uppercase tracking-widest text-warn mb-2">Debilidades</p>
-              {(player.weaknesses?.length ?? 0) === 0 ? (
-                <p className="text-base text-muted">Sin datos.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {(player.weaknesses as string[]).map((w: string) => (
-                    <span
-                      key={w}
-                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-danger/10 text-danger border border-danger/20"
-                    >
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              )}
+            {(player.strengths?.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted italic">Sin datos registrados.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(player.strengths as string[]).map((s: string) => (
+                  <span
+                    key={s}
+                    className="text-sm font-bold px-3 py-1.5 rounded-lg bg-green/15 text-green border border-green/20 leading-none"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Debilidades */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-danger flex-shrink-0" />
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-danger">Áreas a mejorar</p>
             </div>
+            {(player.weaknesses?.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted italic">Sin datos registrados.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(player.weaknesses as string[]).map((w: string) => (
+                  <span
+                    key={w}
+                    className="text-sm font-bold px-3 py-1.5 rounded-lg bg-danger/10 text-danger border border-danger/20 leading-none"
+                  >
+                    {w}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -626,9 +533,24 @@ export default function PlayerDetailPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════
-          ROW 4: ALL STATS  —  full width, all sections together
+          ROW 4: ALL STATS — tabla compartida con compare
       ══════════════════════════════════════════════════════════════ */}
-      {curStat && <AllStatsPanel player={player} stat={curStat} />}
+      {curStat && (
+        <div className="card shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
+          <div className="flex items-center justify-between mb-6">
+            <p className="section-title mb-0">Estadísticas completas</p>
+            <span className="text-2xs text-secondary font-black bg-white/5 border border-white/10 px-2.5 py-1 rounded-md uppercase tracking-widest">
+              {player.position}
+            </span>
+          </div>
+          <PlayerStatsTable
+            entries={[{ player, stat: curStat }]}
+            showGeneralInfo={false}
+            position={player.position}
+            columns={3}
+          />
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════
           ROW 5: Injuries — full width

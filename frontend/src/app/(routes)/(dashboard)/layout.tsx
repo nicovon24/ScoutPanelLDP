@@ -7,7 +7,23 @@ import Topbar from "@/components/layout/Topbar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { token, sidebarExpanded } = useScoutStore();
+  const { token, sidebarExpanded, _hasHydrated } = useScoutStore();
+
+  useEffect(() => {
+    if (_hasHydrated && !token) {
+      router.replace("/login");
+    }
+  }, [_hasHydrated, token, router]);
+
+  if (!_hasHydrated) {
+    return (
+      <div className="flex min-h-screen bg-mainBg items-center justify-center">
+        <div className="w-10 h-10 border-4 border-green/30 border-t-green rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!token) return null;
 
   return (
     <div className="flex min-h-screen bg-mainBg overflow-x-hidden">
