@@ -4,30 +4,8 @@ import Link from "next/link";
 import { Card } from "@nextui-org/react";
 import { Star } from "lucide-react";
 import { useShortlist } from "@/hooks/useShortlist";
-
-interface Player {
-  id: number;
-  name: string;
-  position: string;
-  nationality?: string;
-  dateOfBirth?: string;
-  photoUrl?: string;
-  marketValueM?: string;
-  team?: { name: string; logoUrl?: string };
-  stats?: {
-    sofascoreRating?: string;
-    goals?: number;
-    assists?: number;
-    matchesPlayed?: number;
-    tackles?: number;
-    interceptions?: number;
-    cleanSheets?: number;
-    savePct?: number;
-    passAccuracyPct?: number;
-    xgPerGame?: string;
-    xaPerGame?: string;
-  }[];
-}
+import { calcAge } from "@/lib/utils";
+import type { Player } from "@/types";
 
 function getPositionStyle(pos: string) {
   const p = pos?.toUpperCase();
@@ -52,10 +30,6 @@ function getFlagUrl(nationality?: string) {
   return `https://flagcdn.com/w40/${code}.png`;
 }
 
-function calcAge(dob?: string) {
-  if (!dob) return null;
-  return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
-}
 
 export default function PlayerCardV2({ player }: { player: Player }) {
   const { isFavorite, addFavorite, removeFavorite } = useShortlist();
@@ -80,7 +54,9 @@ export default function PlayerCardV2({ player }: { player: Player }) {
     }
   };
   const stat = player.stats?.[0];
-  const rating = stat?.sofascoreRating ? parseFloat(stat.sofascoreRating) : null;
+  const rating = stat?.sofascoreRating != null && stat.sofascoreRating !== ""
+    ? parseFloat(String(stat.sofascoreRating))
+    : null;
 
   const ratingColor = rating
     ? rating >= 7.5 ? "text-green border-green/30" : rating >= 7.0 ? "text-yellow-400 border-yellow-400/30" : "text-primary/70 border-white/10"

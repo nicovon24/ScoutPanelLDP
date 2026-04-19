@@ -1,25 +1,18 @@
 "use client";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useScoutStore } from "@/store/useScoutStore";
 import api from "@/lib/api";
-
-export interface ShortlistPlayer {
-  id: number;
-  name: string;
-  position: string;
-  photoUrl?: string;
-  marketValueM?: string;
-  nationality?: string;
-  team?: { name: string; logoUrl?: string };
-}
+import type { ShortlistPlayer } from "@/types";
 
 /**
  * Hook unificado de favoritos.
  * - Con sesión (token): usa el backend /api/shortlist (persistido por usuario).
  * - Sin sesión: usa el store local de Zustand.
  *
- * El estado se almacena en Zustand (shortlistIds) para que todos los componentes
- * compartan los mismos IDs sin hacer fetches duplicados.
+ * Fixes:
+ * WR-02: en fallo de API no se setea shortlistFetched=true → se reintenta en el
+ *        próximo montaje en lugar de quedar bloqueado para toda la sesión.
+ * WR-06: pendingRef evita race conditions por doble click rápido.
  */
 export function useShortlist() {
   const {
@@ -36,17 +29,20 @@ export function useShortlist() {
     setShortlistFetched,
   } = useScoutStore();
 
-  // Carga los IDs del servidor solo una vez por sesión
+  // WR-06: track in-flight mutations to prevent race conditions
+  const pendingIds = useRef<Set<number>>(new Set());
+
+  // Carga los IDs del servidor solo una vez por sesión exitosa
   useEffect(() => {
     if (!token || shortlistFetched) return;
     api.get<number[]>("/shortlist/ids")
       .then(({ data }) => {
         setShortlistIds(data);
-        setShortlistFetched(true);
+        setShortlistFetched(true); // solo en éxito
       })
       .catch(() => {
-        // Si falla (token expirado, etc.) no bloqueamos
-        setShortlistFetched(true);
+        // WR-02: en fallo NO marcamos como fetched → se reintentará al remontar
+        console.warn("useShortlist: fallo al cargar shortlist, se reintentará.");
       });
   }, [token, shortlistFetched, setShortlistIds, setShortlistFetched]);
 
@@ -57,12 +53,16 @@ export function useShortlist() {
 
   const addFavorite = useCallback(
     async (player: ShortlistPlayer) => {
+      if (pendingIds.current.has(player.id)) return; // WR-06: guard
       if (token) {
+        pendingIds.current.add(player.id);
         try {
           await api.post(`/shortlist/${player.id}`);
           addShortlistId(player.id);
         } catch (e) {
           console.error("Error agregando a shortlist", e);
+        } finally {
+          pendingIds.current.delete(player.id);
         }
       } else {
         localAdd(player);
@@ -73,12 +73,16 @@ export function useShortlist() {
 
   const removeFavorite = useCallback(
     async (id: number) => {
+      if (pendingIds.current.has(id)) return; // WR-06: guard
       if (token) {
+        pendingIds.current.add(id);
         try {
           await api.delete(`/shortlist/${id}`);
           removeShortlistId(id);
         } catch (e) {
           console.error("Error quitando de shortlist", e);
+        } finally {
+          pendingIds.current.delete(id);
         }
       } else {
         localRemove(id);

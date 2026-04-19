@@ -8,7 +8,7 @@ interface Player {
   photoUrl?: string;
   marketValueM?: string;
   nationality?: string;
-  team?: { name: string; logoUrl?: string };
+  team?: { name: string; logoUrl?: string | null };
 }
 
 interface SearchFilters {
@@ -25,7 +25,7 @@ interface SearchFilters {
   sortBy: string;
 }
 
-const DEFAULT_FILTERS: SearchFilters = {
+export const DEFAULT_FILTERS: SearchFilters = {
   q: "",
   position: "",
   teamId: "",

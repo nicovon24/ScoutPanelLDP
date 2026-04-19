@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Star, Loader2 } from "lucide-react";
+import { Star } from "lucide-react";
+import { PlayerGridSkeleton } from "@/components/ui/Skeleton";
 import { useScoutStore } from "@/store/useScoutStore";
 import { useShortlist } from "@/hooks/useShortlist";
 import api from "@/lib/api";
@@ -73,9 +74,7 @@ export default function FavoritesPage() {
           </Link>
         </div>
       ) : loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 size={28} className="animate-spin text-green" />
-        </div>
+        <PlayerGridSkeleton count={4} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {players.map((p) => (

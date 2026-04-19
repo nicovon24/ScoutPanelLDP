@@ -1,5 +1,7 @@
 "use client";
 import { Fragment } from "react";
+import { fmtNum, asNum, SECTIONS, reorderSections } from "@/lib/playerStats";
+import type { SectionDef } from "@/types";
 
 // ── Public types ───────────────────────────────────────────────────────────────
 export interface PlayerEntry {
@@ -33,99 +35,6 @@ const DEFAULT_COLORS = [
   { text: "text-[#f59e0b]", bg: "bg-[#f59e0b]", hex: "#f59e0b" },
 ];
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-function fmtNum(v: any, dec = 0): string {
-  if (v == null || v === "") return "—";
-  const n = typeof v === "string" ? parseFloat(v) : v;
-  return isNaN(n) ? "—" : dec > 0 ? n.toFixed(dec) : String(n);
-}
-
-function asNum(v: any): number {
-  const f = parseFloat(String(v ?? "0"));
-  return isNaN(f) ? 0 : f;
-}
-
-function calcAgeStr(dob?: string): string {
-  if (!dob) return "—";
-  try {
-    const d = new Date(dob);
-    return isNaN(d.getTime())
-      ? "—"
-      : `${Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25))} años`;
-  } catch { return "—"; }
-}
-
-// ── Section definition types ───────────────────────────────────────────────────
-type StatDef = {
-  l: string;
-  k: string;
-  d?: number;
-  u?: string;
-  lower?: boolean;
-  max: number;
-  accent: string;
-};
-type GeneralDef  = { l: string; fn: (player: any, stat: any) => string };
-type SectionDef  =
-  | { label: string; type: "general"; rows: GeneralDef[] }
-  | { label: string; type: "stat";    rows: StatDef[] };
-
-// ── Section definitions ────────────────────────────────────────────────────────
-const SECTIONS: SectionDef[] = [
-  {
-    label: "Info General", type: "general", rows: [
-      { l: "Edad",          fn: (p)    => calcAgeStr(p.dateOfBirth) },
-      { l: "Valor Mercado", fn: (p)    => p.marketValueM ? `€${parseFloat(p.marketValueM).toFixed(1)}M` : "—" },
-      { l: "Altura",        fn: (p)    => p.heightCm ? `${p.heightCm} cm` : "—" },
-      { l: "Pie hábil",     fn: (p)    => p.preferredFoot || "—" },
-      { l: "Partidos",      fn: (_, s) => fmtNum(s.matchesPlayed) },
-      { l: "Minutos",       fn: (_, s) => s.minutesPlayed ? `${s.minutesPlayed}'` : "—" },
-    ],
-  },
-  {
-    label: "Ataque", type: "stat", rows: [
-      { l: "Goles",            k: "goals",             max: 30,  accent: "#00E094" },
-      { l: "Asistencias",      k: "assists",            max: 20,  accent: "#00E094" },
-      { l: "xG / Partido",     k: "xgPerGame",     d: 2, max: 1.5, accent: "#00E094" },
-      { l: "Tiros / PJ",       k: "shotsPerGame",  d: 2, max: 6,   accent: "#0C65D4" },
-      { l: "Tiros al arco %",  k: "shotsOnTargetPct", d: 1, u: "%", max: 100, accent: "#0C65D4" },
-    ],
-  },
-  {
-    label: "Pases & Creación", type: "stat", rows: [
-      { l: "xA / Partido",       k: "xaPerGame",        d: 2, max: 1,   accent: "#00E094" },
-      { l: "Pases clave / PJ",   k: "keyPassesPerGame", d: 2, max: 3,   accent: "#00E094" },
-      { l: "Precisión pases %",  k: "passAccuracyPct",  d: 1, u: "%", max: 100, accent: "#0C65D4" },
-    ],
-  },
-  {
-    label: "Defensa", type: "stat", rows: [
-      { l: "Tackles",           k: "tackles",            max: 80,  accent: "#00E094" },
-      { l: "Intercepciones",    k: "interceptions",      max: 50,  accent: "#00E094" },
-      { l: "Recuperaciones",    k: "recoveries",         max: 80,  accent: "#0C65D4" },
-      { l: "Duelos aéreos %",   k: "aerialDuelsWonPct", d: 1, u: "%", max: 100, accent: "#7533FC" },
-    ],
-  },
-  {
-    label: "Portería", type: "stat", rows: [
-      { l: "Paradas %",         k: "savePct",       d: 1, u: "%", max: 100, accent: "#E8A838" },
-      { l: "Vallas invictas",   k: "cleanSheets",   max: 20, accent: "#00E094" },
-      { l: "Goles recibidos",   k: "goalsConceded", max: 50, accent: "#F04444", lower: true },
-    ],
-  },
-  {
-    label: "Regates", type: "stat", rows: [
-      { l: "Regates exitosos/PJ", k: "successfulDribblesPerGame", d: 2, max: 5,   accent: "#00E094" },
-      { l: "Tasa de éxito %",     k: "dribbleSuccessRate",        d: 1, u: "%", max: 100, accent: "#0C65D4" },
-    ],
-  },
-  {
-    label: "Disciplina", type: "stat", rows: [
-      { l: "Tarjetas amarillas", k: "yellowCards", max: 15, accent: "#E8A838", lower: true },
-      { l: "Tarjetas rojas",     k: "redCards",    max: 5,  accent: "#F04444", lower: true },
-    ],
-  },
-];
 
 // ── Single-player sub-components ───────────────────────────────────────────────
 function SingleSectionHeader({ label }: { label: string }) {
@@ -243,35 +152,6 @@ function MultiGeneralRow({
       ))}
     </div>
   );
-}
-
-// ── Position-based section ordering ───────────────────────────────────────────
-const SECTION_ORDER: Record<string, string[]> = {
-  GK:  ["Portería", "Defensa", "Pases & Creación", "Regates", "Ataque", "Disciplina"],
-  DEF: ["Defensa",  "Pases & Creación", "Regates", "Ataque", "Disciplina"],
-  MID: ["Pases & Creación", "Defensa", "Regates", "Ataque", "Disciplina"],
-  ATT: ["Ataque", "Pases & Creación", "Regates", "Defensa", "Disciplina"],
-};
-
-function posGroup(pos?: string): keyof typeof SECTION_ORDER {
-  const p = pos?.toUpperCase() ?? "";
-  if (p === "GK") return "GK";
-  if (["CB", "LB", "RB"].includes(p)) return "DEF";
-  if (["CAM", "CM", "CDM"].includes(p)) return "MID";
-  return "ATT";
-}
-
-function reorderSections(sections: SectionDef[], pos?: string): SectionDef[] {
-  const group = posGroup(pos);
-  const order = SECTION_ORDER[group];
-  return [...sections].sort((a, b) => {
-    const ai = order.indexOf(a.label);
-    const bi = order.indexOf(b.label);
-    if (ai === -1 && bi === -1) return 0;
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
 }
 
 // ── Single-column section renderer ────────────────────────────────────────────

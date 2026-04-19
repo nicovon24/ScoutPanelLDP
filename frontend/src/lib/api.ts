@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useScoutStore } from "@/store/useScoutStore";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api",
@@ -20,10 +21,10 @@ api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
-      // Solo redirigir si no estamos ya en /login o /register
       const path = window.location.pathname;
       if (path !== "/login" && path !== "/register") {
-        localStorage.removeItem("accessToken");
+        // Limpia el localStorage como el estado persistido de Zustand,
+        useScoutStore.getState().clearAuth();
         window.location.href = "/login";
       }
     }

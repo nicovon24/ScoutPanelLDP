@@ -5,74 +5,35 @@ import { Loader2, Star, BarChart2, AlertTriangle, ArrowLeft } from "lucide-react
 import { Select, SelectItem } from "@nextui-org/react";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
 import { useShortlist } from "@/hooks/useShortlist";
-import RadarChartComponent from "@/components/charts/RadarChart";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
-import EvolutionBarChart from "@/components/charts/EvolutionBarChart";
-import MarketValueChart from "@/components/charts/MarketValueChart";
-import HeatmapField from "@/components/player/HeatmapField";
 import PlayerStatsTable from "@/components/player/PlayerStatsTable";
+import { ChartSkeleton } from "@/components/ui/Skeleton";
 
-/* ── Helpers ─────────────────────────────── */
-function calcAge(dob?: string) {
-  if (!dob) return null;
-  return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
-}
-function posStyle(pos: string) {
-  const p = pos?.toUpperCase();
-  if (["CF", "SS", "LW", "RW"].includes(p)) return "pos-attack";
-  if (["CAM", "CM", "CDM"].includes(p)) return "pos-mid";
-  if (["CB", "LB", "RB"].includes(p)) return "pos-def";
-  return "pos-gk";
-}
-function fmt(v: string | number | undefined | null, decimals = 0) {
-  if (v == null || v === "") return "—";
-  const n = typeof v === "string" ? parseFloat(v) : v;
-  if (isNaN(n)) return "—";
-  return decimals > 0 ? n.toFixed(decimals) : String(n);
-}
-function fmtPct(v: string | number | undefined | null) {
-  const s = fmt(v, 1);
-  return s === "—" ? "—" : `${s}%`;
-}
-
-function contractTypeLabel(t?: string | null) {
-  if (t === "LOAN") return "Préstamo";
-  if (t === "FREE") return "Libre";
-  if (t === "PERMANENT") return "Definitivo";
-  return t ?? "—";
-}
-
-function careerYearKey(yearRange: string): number {
-  const m = yearRange.match(/^(\d{4})/);
-  return m ? parseInt(m[1], 10) : 0;
-}
-
-
-/* ── Donut Circle ────────────────────────── */
-function DonutCircle({ value, label, color = "#00E094" }: { value: number; label: string; color?: string }) {
-  const r = 40, circ = 2 * Math.PI * r;
-  const pct = Math.min(100, Math.max(0, value));
-  const dash = (pct / 100) * circ;
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative w-[100px] h-[100px]">
-        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-          <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border)" strokeWidth="6" />
-          <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="6"
-            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-            style={{ transition: "stroke-dasharray 0.8s ease-out" }} />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-primary">
-          {pct.toFixed(0)}%
-        </span>
-      </div>
-      <span className="text-2xs text-secondary text-center font-bold uppercase tracking-widest leading-tight max-w-[90px]">{label}</span>
-    </div>
-  );
-}
+// Lazy-loaded — reducen el bundle inicial y se cargan solo cuando el jugador se muestra
+const RadarChartComponent = dynamic(() => import("@/components/charts/RadarChart"), {
+  loading: () => <ChartSkeleton height={320} />,
+  ssr: false,
+});
+const EvolutionBarChart = dynamic(() => import("@/components/charts/EvolutionBarChart"), {
+  loading: () => <ChartSkeleton height={160} />,
+  ssr: false,
+});
+const MarketValueChart = dynamic(() => import("@/components/charts/MarketValueChart"), {
+  loading: () => <ChartSkeleton height={160} />,
+  ssr: false,
+});
+const HeatmapField = dynamic(() => import("@/components/player/HeatmapField"), {
+  loading: () => <ChartSkeleton height={180} />,
+  ssr: false,
+});
+import { calcAge, posStyle, fmt, contractTypeLabel, careerYearKey } from "@/lib/utils";
+import { buildSingleRadar } from "@/lib/radarNorm";
+import { buildRatingHistory, buildValueHistory } from "@/lib/playerStats";
+import DonutCircle from "@/components/player/DonutCircle";
 
 
 /* ── Main Page ───────────────────────────── */
@@ -85,7 +46,6 @@ export default function PlayerDetailPage() {
   const [ratingMode, setRatingMode] = useState<"year" | "month">("month");
   const [valueMode, setValueMode] = useState<"year" | "month">("month");
 
-  const { addToCompare, isInCompare, removeFromCompare } = useScoutStore();
   const { isFavorite, addFavorite, removeFavorite } = useShortlist();
 
   useEffect(() => {
@@ -109,110 +69,16 @@ export default function PlayerDetailPage() {
   if (!player) return <p className="text-center text-muted py-32">Jugador no encontrado.</p>;
 
   const fav = isFavorite(player.id);
-  const compare = isInCompare(player.id);
   const age = calcAge(player.dateOfBirth);
 
   const allStats = [...(player.stats ?? [])].sort((a: any, b: any) => b.season?.year - a.season?.year);
   const curStat = allStats.find((s: any) => s.seasonId === selSeasonId) ?? allStats[0];
 
-  const ratingHistory = (() => {
-    const monthlyRaw: Map<string, number> = new Map();
-    const monthlyRatingSource = selSeasonId
-      ? (player.ratings ?? []).filter((r: any) => r.seasonId === selSeasonId)
-      : (player.ratings ?? []);
-    monthlyRatingSource.forEach((r: any) => {
-      if (r.ratingByMonth) Object.entries(r.ratingByMonth as Record<string, number>).forEach(([m, v]) => monthlyRaw.set(m, v));
-    });
-
-    if (ratingMode === "year") {
-      const yearlyMap: Record<string, { sum: number; count: number; injured: boolean }> = {};
-      (player.ratings ?? []).forEach((r: any) => {
-        if (r.ratingByMonth) {
-          Object.entries(r.ratingByMonth as Record<string, number>).forEach(([month, val]) => {
-            const y = month.split("-")[0];
-            if (!yearlyMap[y]) yearlyMap[y] = { sum: 0, count: 0, injured: false };
-            yearlyMap[y].sum += val; yearlyMap[y].count++;
-            const isInjured = player.injuries?.some((inj: any) => {
-              const start = new Date(inj.startedAt);
-              const end = new Date(start);
-              end.setDate(start.getDate() + (inj.daysOut || 0));
-              const current = new Date(parseInt(y), parseInt(month.split("-")[1]) - 1, 15);
-              return current >= start && current <= end;
-            });
-            if (isInjured) yearlyMap[y].injured = true;
-          });
-        }
-      });
-      return Object.entries(yearlyMap).sort(([a], [b]) => a.localeCompare(b)).map(([y, d]) => ({ month: y, rating: d.sum / d.count, injured: d.injured }));
-    } else {
-      let targetYear = 2026;
-      if (selSeasonId) {
-        const s = player.stats?.find((st: any) => st.seasonId === selSeasonId);
-        if (s?.season?.year) targetYear = s.season.year;
-      }
-      const res = [];
-      const suf = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-      for (let m = 0; m < 12; m++) {
-        const key = `${targetYear}-${(m + 1).toString().padStart(2, '0')}`;
-        const isInjured = player.injuries?.some((inj: any) => {
-          const start = new Date(inj.startedAt);
-          const end = new Date(start);
-          end.setDate(start.getDate() + (inj.daysOut || 0));
-          const current = new Date(targetYear as number, m, 15);
-          return current >= start && current <= end;
-        });
-        res.push({ month: suf[m], year: targetYear.toString(), rating: monthlyRaw.get(key) ?? 0, injured: isInjured });
-      }
-      return res;
-    }
-  })();
-
-  const valueHistory = (() => {
-    if (valueMode === "year") {
-      const allYears = Array.from(new Set([
-        ... (player.stats ?? []).map((s: any) => s.season?.year?.toString()),
-        ... (player.ratings ?? []).flatMap((r: any) => Object.keys(r.ratingByMonth || {}).map(m => m.split("-")[0]))
-      ])).filter(Boolean).sort();
-      let lastVal = parseFloat(player.marketValueM ?? "0");
-      return allYears.map(y => {
-        const s = player.stats?.find((st: any) => st.season?.year?.toString() === y);
-        if (s?.marketValueM) lastVal = parseFloat(s.marketValueM);
-        return { month: y, value: lastVal };
-      });
-    } else {
-      let targetYear = 2026, targetVal = parseFloat(player.marketValueM ?? "0");
-      if (selSeasonId) {
-        const s = player.stats?.find((st: any) => st.seasonId === selSeasonId);
-        if (s?.season?.year) targetYear = s.season.year;
-        if (s?.marketValueM) targetVal = parseFloat(s.marketValueM);
-      }
-      const suf = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-      const today = new Date();
-      return suf.map((m, i) => ({
-        month: m,
-        year: targetYear.toString(),
-        value: targetVal + (Math.sin(i) * 0.05 * targetVal),
-        future: new Date(targetYear as number, i, 1) > today,
-      }));
-    }
-  })();
+  const ratingHistory = buildRatingHistory(player, selSeasonId, ratingMode);
+  const valueHistory  = buildValueHistory(player, selSeasonId, valueMode);
 
 
-  const n = (v: any) => { const f = parseFloat(String(v ?? "0")); return isNaN(f) ? 0 : f; };
-  const radarData = curStat ? [
-    { metric: "Goles",       playerA: Math.min(100, n(curStat.goals) * 5) },
-    { metric: "xG/PJ",       playerA: Math.min(100, n(curStat.xgPerGame) * 100) },
-    { metric: "Asistencias", playerA: Math.min(100, n(curStat.assists) * 8) },
-    { metric: "xA/PJ",       playerA: Math.min(100, n(curStat.xaPerGame) * 100) },
-    { metric: "Pases clave", playerA: Math.min(100, n(curStat.keyPassesPerGame) * 35) },
-    { metric: "Pases%",      playerA: Math.min(100, n(curStat.passAccuracyPct)) },
-    { metric: "Regates%",    playerA: Math.min(100, n(curStat.dribbleSuccessRate)) },
-    { metric: "Tackles",     playerA: Math.min(100, n(curStat.tackles) * 1.5) },
-    { metric: "Intercep.",   playerA: Math.min(100, n(curStat.interceptions) * 2) },
-    { metric: "Recuper.",    playerA: Math.min(100, n(curStat.recoveries) * 0.8) },
-    { metric: "Aéreos%",     playerA: Math.min(100, n(curStat.aerialDuelsWonPct)) },
-    { metric: "Rating",      playerA: Math.min(100, n(curStat.sofascoreRating) * 11) },
-  ] : [];
+  const radarData = curStat ? buildSingleRadar(curStat as Record<string, unknown>) : [];
 
 
   const mainRating = curStat ? parseFloat(curStat.sofascoreRating ?? "0") : null;
@@ -399,12 +265,18 @@ export default function PlayerDetailPage() {
           <div className="card h-full">
             <p className="section-title">Rendimiento Técnico</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-10 items-center justify-items-center h-full py-2">
+              <DonutCircle
+                value={player.position === "GK"
+                  ? parseFloat(curStat.savePct ?? "0")
+                  : Math.min(100, parseFloat(curStat.sofascoreRating ?? "0") * 10)}
+                label={player.position === "GK" ? "Paradas" : "Rating"}
+                color="var(--blue)"
+              />
               <DonutCircle value={parseFloat(curStat.passAccuracyPct ?? "0")} label="Pases" color="var(--green)" />
               <DonutCircle value={parseFloat(curStat.shotsOnTargetPct ?? "0")} label="Tiros arco" color="var(--blue)" />
               <DonutCircle value={Math.min(100, (curStat.goals ?? 0) / Math.max(1, curStat.matchesPlayed ?? 1) * 100 * 4)} label="Conversión" color="var(--purple)" />
               <DonutCircle value={parseFloat(curStat.dribbleSuccessRate ?? "0")} label="Regates" color="var(--gold)" />
               <DonutCircle value={parseFloat(curStat.aerialDuelsWonPct ?? "0")} label="Aéreos" color="var(--green)" />
-              <DonutCircle value={player.position === "GK" ? parseFloat(curStat.savePct ?? "0") : 68} label={player.position === "GK" ? "Paradas" : "Duelos"} color="var(--blue)" />
             </div>
           </div>
         )}

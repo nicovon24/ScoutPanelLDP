@@ -1,103 +1,30 @@
 "use client";
-import { useState, useRef, useEffect, useCallback, Fragment } from "react";
-import { Loader2, X, Search, Plus, RotateCcw, Calendar } from "lucide-react";
+import { useState, useEffect, useCallback, Fragment } from "react";
+import { Loader2, X, Plus, RotateCcw, Calendar, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import api from "@/lib/api";
-import RadarChartComponent from "@/components/charts/RadarChart";
-import HeatmapField from "@/components/player/HeatmapField";
+import dynamic from "next/dynamic";
+import { ChartSkeleton } from "@/components/ui/Skeleton";
+
+const RadarChartComponent = dynamic(() => import("@/components/charts/RadarChart"), {
+  loading: () => <ChartSkeleton height={320} />,
+  ssr: false,
+});
+const HeatmapField = dynamic(() => import("@/components/player/HeatmapField"), {
+  loading: () => <ChartSkeleton height={180} />,
+  ssr: false,
+});
 import PlayerStatsTable, { getCompareColsStyle } from "@/components/player/PlayerStatsTable";
+import PlayerSearch from "@/components/compare/PlayerSearch";
 import { useScoutStore } from "@/store/useScoutStore";
 import { Select, SelectItem } from "@nextui-org/react";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
+import { buildMultiRadar } from "@/lib/radarNorm";
+import { PLAYER_COLORS } from "@/lib/playerStats";
+import api from "@/lib/api";
+import type { SearchHit } from "@/types";
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-function calcAge(dob?: string) {
-  if (!dob) return "—";
-  try {
-    const d = new Date(dob);
-    if (isNaN(d.getTime())) return "—";
-    return `${Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25))} años`;
-  } catch { return "—"; }
-}
-function posStyle(pos: string) {
-  const p = pos?.toUpperCase();
-  if (["CF", "SS", "LW", "RW"].includes(p)) return "pos-attack";
-  if (["CAM", "CM", "CDM"].includes(p)) return "pos-mid";
-  if (["CB", "LB", "RB"].includes(p)) return "pos-def";
-  return "pos-gk";
-}
-const num = (v: any) => { const f = parseFloat(String(v ?? "0")); return isNaN(f) ? 0 : f; };
-
-// ─── colors ───────────────────────────────────────────────────────────────────
-const COLORS = [
-  { text: "text-[#00e87a]", bg: "bg-[#00e87a]", glow: "bg-[#00e87a]/5", hex: "#00e87a" },
-  { text: "text-[#8b5cf6]", bg: "bg-[#8b5cf6]", glow: "bg-[#8b5cf6]/5", hex: "#8b5cf6" },
-  { text: "text-[#f59e0b]", bg: "bg-[#f59e0b]", glow: "bg-[#f59e0b]/5", hex: "#f59e0b" },
-];
-
-interface SearchHit { id: number; name: string; position: string; photoUrl?: string; nationality?: string; }
-
-// ─── PlayerSearch ─────────────────────────────────────────────────────────────
-function PlayerSearch({ onSelect, excludeIds = [] }: { onSelect: (p: SearchHit) => void; excludeIds?: number[] }) {
-  const [q, setQ] = useState("");
-  const [results, setRes] = useState<SearchHit[]>([]);
-  const [loading, setLoad] = useState(false);
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-
-  const fetch = useCallback(async (val: string) => {
-    setLoad(true);
-    try {
-      const { data } = await api.get<{ players: SearchHit[] }>(`/players/search?q=${encodeURIComponent(val)}`);
-      setRes(data.players.filter(p => !excludeIds.includes(p.id)));
-      setOpen(true);
-    } catch { setRes([]); } finally { setLoad(false); }
-  }, [excludeIds]);
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
-
-  useEffect(() => {
-    if (q.length >= 2) { clearTimeout(timer.current); timer.current = setTimeout(() => fetch(q), 280); }
-    else if (q.length > 0) setRes([]);
-    return () => clearTimeout(timer.current);
-  }, [q, fetch]);
-
-  return (
-    <div ref={wrapperRef} className="relative w-full text-left">
-      <div className="flex items-center gap-2 bg-input border border-border rounded-lg px-3 py-[9px]">
-        {loading ? <Loader2 size={13} className="animate-spin text-muted" /> : <Search size={13} className="text-muted" />}
-        <input value={q} onChange={e => setQ(e.target.value)}
-          onFocus={() => { if (!q && !results.length) fetch(""); else setOpen(true); }}
-          placeholder="Buscar jugador…"
-          className="flex-1 bg-transparent text-[12px] font-bold text-primary placeholder:text-muted outline-none"
-        />
-        {q && <button onClick={() => { setQ(""); setOpen(false); }}><X size={12} className="text-muted" /></button>}
-      </div>
-      {open && results.length > 0 && (
-        <div className="absolute top-full left-0 mt-1 bg-surface-2 border border-border rounded-[10px] shadow-xl z-50 max-h-[280px] overflow-y-auto w-[260px]">
-          {results.map(p => (
-            <button key={p.id} onClick={() => { onSelect(p); setQ(""); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 border-b border-border hover:bg-white/[0.04] transition-colors text-left last:border-0">
-              <div className="w-7 h-7 rounded-full bg-input flex items-center justify-center text-[10px] font-black text-secondary shrink-0 overflow-hidden">
-                {p.photoUrl ? <Image src={p.photoUrl} alt={p.name} width={28} height={28} className="object-cover" unoptimized /> : p.name[0]}
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-extrabold text-primary truncate">{p.name}</p>
-                <p className="text-[10px] text-muted truncate">{p.position} · {p.nationality}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+const COLORS = PLAYER_COLORS;
 
 // ─── Section header (only used for heatmap / radar in compare) ────────────────
 function SectionHeader({ label, colsStyle }: { label: string; colsStyle: string }) {
@@ -414,20 +341,11 @@ export default function ComparePage() {
             <div className="border-t border-border bg-surface-2 p-6 sm:p-10 flex justify-center">
               <div className="w-full max-w-[min(100%,880px)] px-1 sm:px-2">
                 <RadarChartComponent
-                  data={[
-                    { metric: "Goles",      playerA: Math.min(100, num(getStat(0).goals) * 5),                     playerB: Math.min(100, num(getStat(1).goals) * 5),                     playerC: slotCount > 2 ? Math.min(100, num(getStat(2).goals) * 5) : undefined },
-                    { metric: "xG/PJ",      playerA: Math.min(100, num(getStat(0).xgPerGame) * 100),               playerB: Math.min(100, num(getStat(1).xgPerGame) * 100),               playerC: slotCount > 2 ? Math.min(100, num(getStat(2).xgPerGame) * 100) : undefined },
-                    { metric: "Asistencias", playerA: Math.min(100, num(getStat(0).assists) * 8),                  playerB: Math.min(100, num(getStat(1).assists) * 8),                   playerC: slotCount > 2 ? Math.min(100, num(getStat(2).assists) * 8) : undefined },
-                    { metric: "xA/PJ",      playerA: Math.min(100, num(getStat(0).xaPerGame) * 100),               playerB: Math.min(100, num(getStat(1).xaPerGame) * 100),               playerC: slotCount > 2 ? Math.min(100, num(getStat(2).xaPerGame) * 100) : undefined },
-                    { metric: "Pases clave", playerA: Math.min(100, num(getStat(0).keyPassesPerGame) * 35),         playerB: Math.min(100, num(getStat(1).keyPassesPerGame) * 35),         playerC: slotCount > 2 ? Math.min(100, num(getStat(2).keyPassesPerGame) * 35) : undefined },
-                    { metric: "Pases%",     playerA: Math.min(100, num(getStat(0).passAccuracyPct)),               playerB: Math.min(100, num(getStat(1).passAccuracyPct)),               playerC: slotCount > 2 ? Math.min(100, num(getStat(2).passAccuracyPct)) : undefined },
-                    { metric: "Regates%",   playerA: Math.min(100, num(getStat(0).dribbleSuccessRate)),             playerB: Math.min(100, num(getStat(1).dribbleSuccessRate)),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).dribbleSuccessRate)) : undefined },
-                    { metric: "Tackles",    playerA: Math.min(100, num(getStat(0).tackles) * 1.5),                 playerB: Math.min(100, num(getStat(1).tackles) * 1.5),                 playerC: slotCount > 2 ? Math.min(100, num(getStat(2).tackles) * 1.5) : undefined },
-                    { metric: "Intercep.",  playerA: Math.min(100, num(getStat(0).interceptions) * 2),             playerB: Math.min(100, num(getStat(1).interceptions) * 2),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).interceptions) * 2) : undefined },
-                    { metric: "Recuper.",   playerA: Math.min(100, num(getStat(0).recoveries) * 0.8),              playerB: Math.min(100, num(getStat(1).recoveries) * 0.8),              playerC: slotCount > 2 ? Math.min(100, num(getStat(2).recoveries) * 0.8) : undefined },
-                    { metric: "Aéreos%",    playerA: Math.min(100, num(getStat(0).aerialDuelsWonPct)),             playerB: Math.min(100, num(getStat(1).aerialDuelsWonPct)),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).aerialDuelsWonPct)) : undefined },
-                    { metric: "Rating",     playerA: Math.min(100, num(getStat(0).sofascoreRating) * 11),          playerB: Math.min(100, num(getStat(1).sofascoreRating) * 11),          playerC: slotCount > 2 ? Math.min(100, num(getStat(2).sofascoreRating) * 11) : undefined },
-                  ]}
+                  data={buildMultiRadar(
+                    getStat(0),
+                    getStat(1),
+                    slotCount > 2 ? getStat(2) : undefined,
+                  )}
                   nameA={playersData[0]?.name} nameB={playersData[1]?.name} nameC={playersData[2]?.name}
                   colorA={COLORS[0].hex} colorB={COLORS[1].hex} colorC={COLORS[2].hex}
                 />

@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { Users, SlidersHorizontal, LayoutGrid, List, Search, X } from "lucide-react";
 import api from "@/lib/api";
-import { useScoutStore } from "@/store/useScoutStore";
+import { useScoutStore, DEFAULT_FILTERS } from "@/store/useScoutStore";
 import { Select, SelectItem, Button, Input } from "@nextui-org/react";
 import AppButton from "@/components/ui/AppButton";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
@@ -15,7 +14,6 @@ import FilterSidebar, { POSITIONS_LIST } from "@/components/home/FilterSidebar";
 import Pagination from "@/components/home/Pagination";
 
 function HomeContent() {
-  const searchParams = useSearchParams();
   const { setFilterPanelOpen, pageSize, setPageSize, searchFilters, setSearchFilters, _hasHydrated } = useScoutStore();
 
   // Data State
@@ -26,20 +24,6 @@ function HomeContent() {
   const [totalItems, setTotalItems] = useState(0);
   const [view, setView] = useState<"grid" | "table">("grid");
 
-  const DEFAULT_FILTERS = {
-    q: "",
-    position: "",
-    teamId: "",
-    foot: "",
-    ageMin: "",
-    ageMax: "",
-    heightMin: "",
-    heightMax: "",
-    minRating: "6.0",
-    marketValueMax: "",
-    sortBy: "rating_desc",
-  };
-  
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [inputQ, setInputQ] = useState("");
 
@@ -61,15 +45,16 @@ function HomeContent() {
     }
   }, [searchFilters]);
 
-  const updateFiltersAndStore = (updates: any) => {
+  // WR-04: memoizado para evitar closure stale en el debounce
+  const updateFiltersAndStore = useCallback((updates: Partial<typeof DEFAULT_FILTERS>) => {
     if (!_hasHydrated) return;
     setFilters(prev => {
-      const n = { ...prev, ...updates };
-      setSearchFilters(n);
-      return n;
+      const next = { ...prev, ...updates };
+      setSearchFilters(next);
+      return next;
     });
     setPage(1);
-  };
+  }, [_hasHydrated, setSearchFilters]);
 
   // Debounced search
   useEffect(() => {
@@ -80,7 +65,7 @@ function HomeContent() {
       }
     }, 500);
     return () => clearTimeout(t);
-  }, [inputQ]);
+  }, [inputQ, _hasHydrated, filters.q, updateFiltersAndStore]);
 
   // Initial load
   useEffect(() => {
