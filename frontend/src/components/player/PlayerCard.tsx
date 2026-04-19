@@ -1,32 +1,11 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useScoutStore } from "@/store/useScoutStore";
 import { Card } from "@nextui-org/react";
-
-interface Player {
-  id: number;
-  name: string;
-  position: string;
-  nationality?: string;
-  dateOfBirth?: string;
-  photoUrl?: string;
-  marketValueM?: string;
-  team?: { name: string; logoUrl?: string };
-  stats?: {
-    sofascoreRating?: string;
-    goals?: number;
-    assists?: number;
-    matchesPlayed?: number;
-    tackles?: number;
-    interceptions?: number;
-    cleanSheets?: number;
-    savePct?: number;
-    passAccuracyPct?: number;
-    xgPerGame?: string;
-    xaPerGame?: string;
-  }[];
-}
+import { Star } from "lucide-react";
+import { useShortlist } from "@/hooks/useShortlist";
+import { calcAge } from "@/lib/utils";
+import type { Player } from "@/types";
 
 function getPositionStyle(pos: string) {
   const p = pos?.toUpperCase();
@@ -51,17 +30,33 @@ function getFlagUrl(nationality?: string) {
   return `https://flagcdn.com/w40/${code}.png`;
 }
 
-function calcAge(dob?: string) {
-  if (!dob) return null;
-  return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
-}
 
 export default function PlayerCardV2({ player }: { player: Player }) {
-  const { isFavorite, addFavorite, removeFavorite } = useScoutStore();
+  const { isFavorite, addFavorite, removeFavorite } = useShortlist();
   const fav = isFavorite(player.id);
   const age = calcAge(player.dateOfBirth);
+
+  const handleFavToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (fav) {
+      removeFavorite(player.id);
+    } else {
+      addFavorite({
+        id: player.id,
+        name: player.name,
+        position: player.position,
+        photoUrl: player.photoUrl,
+        marketValueM: player.marketValueM,
+        nationality: player.nationality,
+        team: player.team,
+      });
+    }
+  };
   const stat = player.stats?.[0];
-  const rating = stat?.sofascoreRating ? parseFloat(stat.sofascoreRating) : null;
+  const rating = stat?.sofascoreRating != null && stat.sofascoreRating !== ""
+    ? parseFloat(String(stat.sofascoreRating))
+    : null;
 
   const ratingColor = rating
     ? rating >= 7.5 ? "text-green border-green/30" : rating >= 7.0 ? "text-yellow-400 border-yellow-400/30" : "text-primary/70 border-white/10"
@@ -94,12 +89,25 @@ export default function PlayerCardV2({ player }: { player: Player }) {
             )}
           </div>
 
-          {player.marketValueM && (
-            <div className="flex flex-col items-end">
-              <span className="text-2xs text-primary/40 uppercase font-bold tracking-widest mb-0.5">Valor</span>
-              <span className="text-yellow-500/90 font-black text-md leading-none">€{parseFloat(player.marketValueM).toFixed(1)}M</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {player.marketValueM && (
+              <div className="flex flex-col items-end">
+                <span className="text-2xs text-primary/40 uppercase font-bold tracking-widest mb-0.5">Valor</span>
+                <span className="text-yellow-500/90 font-black text-md leading-none">€{parseFloat(player.marketValueM).toFixed(1)}M</span>
+              </div>
+            )}
+            <button
+              onClick={handleFavToggle}
+              title={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 border
+                ${fav
+                  ? "bg-yellow-500/15 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/25"
+                  : "bg-white/[0.03] border-white/[0.06] text-white/20 hover:text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-500/20"
+                }`}
+            >
+              <Star size={14} fill={fav ? "currentColor" : "none"} />
+            </button>
+          </div>
         </div>
 
         {/* MID: Avatar & Main Info */}

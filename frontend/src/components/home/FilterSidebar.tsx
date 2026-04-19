@@ -4,7 +4,6 @@ import { X, Filter, Trash2, CheckCircle2 } from "lucide-react";
 import { useScoutStore } from "@/store/useScoutStore";
 import SoccerFieldPositions from "./SoccerFieldPositions";
 import { Select, SelectItem, Input, Avatar } from "@nextui-org/react";
-import AppButton from "../ui/AppButton";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 
 export const POSITIONS_LIST = [

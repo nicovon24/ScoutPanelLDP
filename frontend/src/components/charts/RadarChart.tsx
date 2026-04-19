@@ -12,6 +12,10 @@ interface DataPoint {
   playerC?: number;
 }
 
+/** Same aspect as `HeatmapField` defaults (880×480) so both scale together in grids. */
+const HEATMAP_W = 880;
+const HEATMAP_H = 480;
+
 interface Props {
   data: DataPoint[];
   nameA?: string;
@@ -20,6 +24,9 @@ interface Props {
   colorA?: string;
   colorB?: string;
   colorC?: string;
+  /** Max width in px (default 880, same cap as heatmap detail view). */
+  maxWidth?: number;
+  className?: string;
 }
 
 const CustomTooltip = ({
@@ -64,44 +71,55 @@ export default function RadarChartComponent({
   colorA = "#00e87a", // green
   colorB = "#8b5cf6", // purple
   colorC = "#f59e0b", // amber
+  maxWidth = HEATMAP_W,
+  className = "",
 }: Props) {
   const dual = nameB != null;
-  const triple = nameC != null;
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <ReRadar data={data} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
-        <PolarGrid gridType="polygon" stroke="var(--border)" strokeWidth={1.5} />
-        <PolarAngleAxis
-          dataKey="metric"
-          tick={{ fill: "var(--primary)", fontSize: 11, fontWeight: 900, textAnchor: "middle" }}
-          tickLine={false}
-          axisLine={false}
-        />
-        <Radar
-          name="playerA" dataKey="playerA"
-          stroke={colorA} fill={colorA}
-          fillOpacity={dual ? 0.35 : 0.45}
-          strokeWidth={3} dot={{ fill: colorA, r: 4, strokeWidth: 2, stroke: "#000" }}
-        />
-        {dual && (
-          <Radar
-            name="playerB" dataKey="playerB"
-            stroke={colorB} fill={colorB}
-            fillOpacity={0.35} strokeWidth={3}
-            dot={{ fill: colorB, r: 4, strokeWidth: 2, stroke: "#000" }}
-          />
-        )}
-        {triple && (
-          <Radar
-            name="playerC" dataKey="playerC"
-            stroke={colorC} fill={colorC}
-            fillOpacity={0.35} strokeWidth={3}
-            dot={{ fill: colorC, r: 4, strokeWidth: 2, stroke: "#000" }}
-          />
-        )}
-        <Tooltip content={<CustomTooltip nameA={nameA} nameB={nameB} nameC={nameC} colorA={colorA} colorB={colorB} colorC={colorC} />} />
-      </ReRadar>
-    </ResponsiveContainer>
+    <div className={`w-full mx-auto ${className}`} style={{ maxWidth }}>
+      {/* Match `HeatmapField` inner padding so paired cards align visually */}
+      <div className="p-2 sm:p-4">
+        <div
+          className="relative w-full min-h-[200px]"
+          style={{ aspectRatio: `${HEATMAP_W} / ${HEATMAP_H}` }}
+        >
+          <ResponsiveContainer width="100%" height="100%" debounce={32}>
+            <ReRadar data={data} margin={{ top: 28, right: 48, bottom: 28, left: 48 }}>
+              <PolarGrid gridType="polygon" stroke="var(--border)" strokeWidth={1.5} />
+              <PolarAngleAxis
+                dataKey="metric"
+                tick={{ fill: "var(--primary)", fontSize: 12, fontWeight: 900, textAnchor: "middle" }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Radar
+                name="playerA" dataKey="playerA"
+                stroke={colorA} fill={colorA}
+                fillOpacity={dual ? 0.35 : 0.45}
+                strokeWidth={3} dot={{ fill: colorA, r: 4, strokeWidth: 2, stroke: "#000" }}
+              />
+              {dual && (
+                <Radar
+                  name="playerB" dataKey="playerB"
+                  stroke={colorB} fill={colorB}
+                  fillOpacity={0.35} strokeWidth={3}
+                  dot={{ fill: colorB, r: 4, strokeWidth: 2, stroke: "#000" }}
+                />
+              )}
+              {nameC != null && (
+                <Radar
+                  name="playerC" dataKey="playerC"
+                  stroke={colorC} fill={colorC}
+                  fillOpacity={0.35} strokeWidth={3}
+                  dot={{ fill: colorC, r: 4, strokeWidth: 2, stroke: "#000" }}
+                />
+              )}
+              <Tooltip content={<CustomTooltip nameA={nameA} nameB={nameB} nameC={nameC} colorA={colorA} colorB={colorB} colorC={colorC} />} />
+            </ReRadar>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
   );
 }

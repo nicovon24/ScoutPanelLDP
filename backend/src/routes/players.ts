@@ -89,6 +89,7 @@ router.get("/compare", async (req, res) => {
         stats: { where: eq(playerStats.seasonId, sid), with: { season: true } },
         ratings: { where: eq(playerRatings.seasonId, sid) },
         injuries: true,
+        career: true,
       },
     });
 
@@ -345,6 +346,7 @@ router.get("/:id", async (req, res) => {
         stats: { with: { season: true } },
         ratings: true,
         injuries: true,
+        career: true,
       },
     });
 
