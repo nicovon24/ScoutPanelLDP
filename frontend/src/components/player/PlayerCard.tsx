@@ -221,11 +221,6 @@ export default function PlayerCardV2({ player }: { player: Player }) {
                   }}
                 />
               </div>
-              <div className="flex justify-between text-[9px] font-black text-muted uppercase tracking-tighter opacity-50 px-1">
-                <span>Pobre</span>
-                <span>Promedio</span>
-                <span>Elite</span>
-              </div>
             </div>
           )}
         </div>

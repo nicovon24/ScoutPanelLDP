@@ -23,6 +23,7 @@ function HomeContent() {
   const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [view, setView] = useState<"grid" | "table">("grid");
 
   const DEFAULT_FILTERS = {
@@ -107,7 +108,8 @@ function HomeContent() {
 
     try {
       const { data } = await api.get(`/players?${params}`);
-      setPlayers(data);
+      setPlayers(data.items || []);
+      setTotalItems(data.totalItems || 0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -124,7 +126,6 @@ function HomeContent() {
     if (key === "minRating" && val === "6.0") return false;
     return val !== "" && val !== undefined;
   }).length;
-  const totalItems = 55; // Placeholder for total count
   const totalPages = Math.ceil(totalItems / pageSize);
 
   return (
@@ -135,8 +136,8 @@ function HomeContent() {
         <div>
           <h1 className="text-3xl font-black text-primary tracking-tight leading-none">Explorar Jugadores</h1>
           <p className="text-secondary mt-3 font-medium flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full  animate-pulse" />
-            Mostrando talentos activos • Apertura 2026
+            <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
+            {loading ? "Buscando talentos..." : `${totalItems.toLocaleString()} talentos encontrados • Apertura 2026`}
           </p>
         </div>
 
@@ -381,7 +382,7 @@ function HomeContent() {
               </Select>
             </div>
             <span className="text-base text-muted font-bold tracking-tight">
-              {Math.min(page * pageSize, totalItems)} de {totalItems}
+              {totalItems > 0 ? `${(page - 1) * pageSize + 1} - ${Math.min(page * pageSize, totalItems)}` : 0} de {totalItems}
             </span>
           </div>
 

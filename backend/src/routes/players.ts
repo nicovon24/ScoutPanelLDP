@@ -195,18 +195,27 @@ router.get("/", async (req, res) => {
       let idx = 1;
 
       if (q) { whereClauses.push(`p.name ILIKE $${idx++}`); vals.push(`%${(q as string).trim()}%`); }
-      if (position) {
+      if (position && position !== "") {
         const posArr = (position as string).split(",");
         if (posArr.length > 1) {
           whereClauses.push(`p.position = ANY($${idx++})`);
           vals.push(posArr);
         } else {
           whereClauses.push(`p.position = $${idx++}`);
-          vals.push(position);
+          vals.push(posArr[0]);
         }
       }
       if (nationality) { whereClauses.push(`p.nationality = $${idx++}`); vals.push(nationality); }
-      if (teamId) { whereClauses.push(`p.team_id = $${idx++}`); vals.push(Number(teamId)); }
+      if (teamId && teamId !== "") {
+        const teamArr = (teamId as string).split(",").map(Number);
+        if (teamArr.length > 1) {
+          whereClauses.push(`p.team_id = ANY($${idx++})`);
+          vals.push(teamArr);
+        } else {
+          whereClauses.push(`p.team_id = $${idx++}`);
+          vals.push(teamArr[0]);
+        }
+      }
       if (foot) { whereClauses.push(`p.preferred_foot = $${idx++}`); vals.push(foot); }
       if (valueMin) { whereClauses.push(`p.market_value_m >= $${idx++}`); vals.push(Number(valueMin)); }
       if (valueMax) { whereClauses.push(`p.market_value_m <= $${idx++}`); vals.push(Number(valueMax)); }
@@ -253,12 +262,24 @@ router.get("/", async (req, res) => {
         ORDER BY ${orderByClause}, p.id ASC
         LIMIT $${idx++} OFFSET $${idx++}
       `;
-      vals.push(Number(limit), offset);
+      
+      const countQuery = `
+        SELECT COUNT(*) 
+        FROM players p
+        LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
+        ${whereStr}
+      `;
+
+      const dataVals = [...vals, Number(limit), offset];
 
       const { pool } = await import("../db");
-      const { rows } = await pool.query(rawQuery, vals);
+      const [dataRes, countRes] = await Promise.all([
+        pool.query(rawQuery, dataVals),
+        pool.query(countQuery, vals)
+      ]);
 
-      const result = rows.map((r: any) => ({
+      const totalItems = parseInt(countRes.rows[0].count);
+      const items = dataRes.rows.map((r: any) => ({
         id: r.id,
         name: r.name,
         position: r.position,
@@ -287,18 +308,24 @@ router.get("/", async (req, res) => {
         }] : [],
       }));
 
-      return res.json(result);
+      return res.json({ items, totalItems });
     }
 
     // Simple query without stats sort
-    const data = await db.query.players.findMany({
-      where,
-      limit: Number(limit),
-      offset,
-      with: { team: true },
-    });
+    const [data, totalRes] = await Promise.all([
+      db.query.players.findMany({
+        where,
+        limit: Number(limit),
+        offset,
+        with: { team: true },
+      }),
+      db.select({ count: sql<string>`count(*)` }).from(players).where(where)
+    ]);
 
-    res.json(data);
+    res.json({
+      items: data,
+      totalItems: parseInt(totalRes[0].count)
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
