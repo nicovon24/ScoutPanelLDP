@@ -11,8 +11,14 @@ import {
   uniqueIndex,
   index,
   jsonb,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+export const contractTypeEnum = pgEnum("contract_type", ["PERMANENT", "LOAN", "FREE"]);
 
 // ─────────────────────────────────────────
 // TEAMS
@@ -50,6 +56,10 @@ export const players = pgTable("players", {
   debutYear: integer("debut_year"),
   photoUrl: text("photo_url"),
   teamId: integer("team_id").references(() => teams.id),
+  contractType: contractTypeEnum("contract_type").default("PERMANENT"),
+  contractUntil: date("contract_until"),
+  strengths: jsonb("strengths").$type<string[]>().default([]),
+  weaknesses: jsonb("weaknesses").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -94,6 +104,13 @@ export const playerStats = pgTable(
     cleanSheets: smallint("clean_sheets"),
     goalsConceded: smallint("goals_conceded"),
 
+    // Creación avanzada
+    bigChancesCreated: smallint("big_chances_created").default(0),
+    foulsDrawn: smallint("fouls_drawn").default(0),
+
+    // Heatmap posicional (grilla 5×5 de intensidad 0–100)
+    heatmapData: jsonb("heatmap_data").$type<number[][]>(),
+
     // Rating y disciplina
     marketValueM: decimal("market_value_m", { precision: 6, scale: 2 }), // Histórico
     sofascoreRating: decimal("sofascore_rating", { precision: 3, scale: 1 }).default("0.0"),
@@ -102,6 +119,27 @@ export const playerStats = pgTable(
   },
   (t) => ({
     playerSeasonIdx: index("player_stats_player_season_idx").on(t.playerId, t.seasonId),
+  })
+);
+
+// ─────────────────────────────────────────
+// PLAYER_CAREER (Historial de clubes)
+// ─────────────────────────────────────────
+export const playerCareer = pgTable(
+  "player_career",
+  {
+    id: serial("id").primaryKey(),
+    playerId: integer("player_id")
+      .notNull()
+      .references(() => players.id, { onDelete: "cascade" }),
+    teamName: varchar("team_name", { length: 150 }).notNull(),
+    teamLogoUrl: text("team_logo_url"),
+    yearRange: varchar("year_range", { length: 20 }).notNull(), // e.g. "2018–2021"
+    appearances: smallint("appearances").default(0),
+    goals: smallint("goals").default(0),
+  },
+  (t) => ({
+    playerCareerIdx: index("player_career_player_idx").on(t.playerId),
   })
 );
 
@@ -153,7 +191,7 @@ export const users = pgTable(
   },
   (t) => ({
     emailIdx: uniqueIndex("users_email_idx").on(t.email),
-  })
+  }) 
 );
 
 // ─────────────────────────────────────────
@@ -196,6 +234,7 @@ export const playersRelations = relations(players, ({ one, many }) => ({
   stats: many(playerStats),
   ratings: many(playerRatings),
   injuries: many(playerInjuries),
+  career: many(playerCareer),
   shortlistEntries: many(shortlistEntries),
 }));
 
@@ -221,4 +260,8 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const shortlistRelations = relations(shortlistEntries, ({ one }) => ({
   user: one(users, { fields: [shortlistEntries.userId], references: [users.id] }),
   player: one(players, { fields: [shortlistEntries.playerId], references: [players.id] }),
+}));
+
+export const playerCareerRelations = relations(playerCareer, ({ one }) => ({
+  player: one(players, { fields: [playerCareer.playerId], references: [players.id] }),
 }));

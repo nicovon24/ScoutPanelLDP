@@ -8,7 +8,6 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
 import RadarChartComponent from "@/components/charts/RadarChart";
-import LineChartComponent from "@/components/charts/LineChart";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 import EvolutionBarChart from "@/components/charts/EvolutionBarChart";
 import MarketValueChart from "@/components/charts/MarketValueChart";
@@ -34,6 +33,50 @@ function fmt(v: string | number | undefined | null, decimals = 0) {
 function fmtPct(v: string | number | undefined | null) {
   const s = fmt(v, 1);
   return s === "—" ? "—" : `${s}%`;
+}
+
+function contractTypeLabel(t?: string | null) {
+  if (t === "LOAN") return "Préstamo";
+  if (t === "FREE") return "Libre";
+  if (t === "PERMANENT") return "Definitivo";
+  return t ?? "—";
+}
+
+function careerYearKey(yearRange: string): number {
+  const m = yearRange.match(/^(\d{4})/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function HeatmapGrid({ grid }: { grid: number[][] | null | undefined }) {
+  if (!grid?.length || grid.length !== 5 || grid[0]?.length !== 5) {
+    return (
+      <p className="text-base text-muted py-8 text-center bg-white/[0.01] rounded-xl border border-white/5">
+        Sin mapa de calor para esta temporada.
+      </p>
+    );
+  }
+  return (
+    <div>
+      <p className="text-2xs text-secondary mb-3 uppercase tracking-widest font-black">
+        Intensidad por zona (5×5) · fila superior = campo rival
+      </p>
+      <div className="grid grid-cols-5 gap-1 max-w-[260px]">
+        {grid.flatMap((row, ri) =>
+          row.map((cell, ci) => (
+            <div
+              key={`${ri}-${ci}`}
+              className="aspect-square rounded-md min-h-[36px]"
+              style={{
+                backgroundColor: `rgba(0, 224, 148, ${0.12 + (Math.min(100, cell) / 100) * 0.78})`,
+                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+              }}
+              title={`${cell}%`}
+            />
+          )),
+        )}
+      </div>
+    </div>
+  );
 }
 
 /* ── Donut Circle ────────────────────────── */
@@ -313,7 +356,14 @@ export default function PlayerDetailPage() {
     { label: "Debut", value: player.debutYear ?? "—" },
     { label: "Club", value: player.team?.name ?? "—" },
     { label: "Valor", value: `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M` },
+    { label: "Tipo contrato", value: contractTypeLabel(player.contractType) },
+    { label: "Contrato hasta", value: player.contractUntil ?? "—" },
   ];
+
+  const careerSorted = [...(player.career ?? [])].sort(
+    (a: { yearRange: string }, b: { yearRange: string }) =>
+      careerYearKey(b.yearRange) - careerYearKey(a.yearRange),
+  );
 
   return (
     /* 
@@ -479,6 +529,95 @@ export default function PlayerDetailPage() {
               <DonutCircle value={parseFloat(curStat.aerialDuelsWonPct ?? "0")} label="Aéreos" color="var(--green)" />
               <DonutCircle value={player.position === "GK" ? parseFloat(curStat.savePct ?? "0") : 68} label={player.position === "GK" ? "Paradas" : "Duelos"} color="var(--blue)" />
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════
+          Scouting: fortalezas / debilidades + heatmap
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="card h-full">
+          <p className="section-title">Perfil de scouting</p>
+          <div className="space-y-5">
+            <div>
+              <p className="text-2xs font-black uppercase tracking-widest text-green mb-2">Fortalezas</p>
+              {(player.strengths?.length ?? 0) === 0 ? (
+                <p className="text-base text-muted">Sin datos.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {(player.strengths as string[]).map((s: string) => (
+                    <span
+                      key={s}
+                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-green/15 text-green border border-green/25"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-2xs font-black uppercase tracking-widest text-warn mb-2">Debilidades</p>
+              {(player.weaknesses?.length ?? 0) === 0 ? (
+                <p className="text-base text-muted">Sin datos.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {(player.weaknesses as string[]).map((w: string) => (
+                    <span
+                      key={w}
+                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-danger/10 text-danger border border-danger/20"
+                    >
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="card h-full">
+          <p className="section-title">Mapa de calor</p>
+          {curStat ? (
+            <HeatmapGrid grid={curStat.heatmapData as number[][] | undefined} />
+          ) : (
+            <p className="text-base text-muted py-8 text-center">Seleccioná una temporada con estadísticas.</p>
+          )}
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════
+          Trayectoria de clubes
+      ══════════════════════════════════════════════════════════════ */}
+      <div className="card">
+        <p className="section-title">Trayectoria</p>
+        {!careerSorted.length ? (
+          <p className="text-base text-muted py-8 text-center bg-white/[0.01] rounded-xl border border-white/5">
+            Sin historial de clubes.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {careerSorted.map((row: { id: number; teamName: string; teamLogoUrl?: string | null; yearRange: string; appearances: number; goals: number }) => (
+              <div
+                key={row.id}
+                className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/5"
+              >
+                <div className="w-10 h-10 rounded-lg bg-input border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {row.teamLogoUrl ? (
+                    <Image src={row.teamLogoUrl} alt="" width={40} height={40} className="object-contain" unoptimized />
+                  ) : (
+                    <span className="text-xs font-black text-muted">{row.teamName[0]}</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-black text-primary truncate">{row.teamName}</p>
+                  <p className="text-2xs text-secondary font-bold">{row.yearRange}</p>
+                  <p className="text-2xs text-muted mt-0.5">
+                    {row.appearances} PJ · {row.goals} goles
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -1,0 +1,44 @@
+# LDP Challenge - Cursor Rules
+
+You are an expert full-stack developer working on the LDP (Liga de Profesionales) project.
+
+## Tech Stack
+- **Frontend**: Next.js 14 (App Router), TypeScript, NextUI, Tailwind CSS, Recharts, Framer Motion, Zustand.
+- **Backend**: Node.js, Express, TypeScript, Drizzle ORM, Zod.
+- **Database**: PostgreSQL (Supabase / Local Docker).
+- **Design System**: LDP Professional (Refined dark theme, Nunito Sans, premium aesthetics).
+
+## Directory Structure
+- `/app/frontend`: Next.js application.
+- `/app/backend`: Express API and Drizzle schema.
+- `/app/backend/src/db/schema.ts`: Source of truth for the database schema.
+
+## Coding Standards
+### General
+- Write clean, modular, and type-safe TypeScript code.
+- Use descriptive variable and function names.
+- Preference for functional components and hooks.
+
+### Frontend
+- **UI**: Use NextUI components for consistency. Avoid raw HTML tags if a component exists.
+- **Icons**: Use Lucide-react.
+- **Componentes**: Try to write components and subcomponents.
+- **Responsive**: All views must be mobile-first and fully responsive.
+- **Animations**: Use `framer-motion` for transitions and micro-interactions.
+- **State**: Use Zustand for global state management.
+
+### Backend
+- **Validation**: Every request must be validated with **Zod**.
+- **Error Handling**: Use consistent JSON error structures and HTTP status codes.
+- **Logic**: Keep routes clean; move complex business logic to services or utility files.
+- **DB**: Use Drizzle ORM. Any schema change requires updating `schema.ts`.
+
+## Design Guidelines (LDP Pro Style)
+- **Theme**: Dark mode by default. Use deep blacks and grays with vibrant accents (Vibrant Green/Blue).
+- **Typography**: Use Nunito Sans.
+- **Visuals**: Implement glassmorphism, subtle gradients, and rounded corners (NextUI defaults).
+- **No Placeholders**: Use realistic data (Argentine League names/stats) or actual images via absolute URLs.
+
+## Deployment Context
+- **Infrastructure**: Frontend (Vercel), Backend (Render), Database (Supabase).
+- **Config**: Always use `process.env` for `DATABASE_URL`, `JWT_SECRET`, and `NEXT_PUBLIC_API_URL`.
