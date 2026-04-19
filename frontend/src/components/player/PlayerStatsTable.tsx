@@ -16,6 +16,10 @@ interface Props {
   position?: string;
   /** Split single-player view into N columns (default 1) */
   columns?: 1 | 2 | 3;
+  /** Render ONLY these section labels */
+  onlySections?: string[];
+  /** Exclude these section labels */
+  excludeSections?: string[];
 }
 
 // ── Layout constants (matching compare page) ───────────────────────────────────
@@ -306,6 +310,8 @@ export default function PlayerStatsTable({
   showGeneralInfo = true,
   position,
   columns = 1,
+  onlySections,
+  excludeSections,
 }: Props) {
   const isSingle = entries.length === 1;
   const count    = entries.length;
@@ -317,6 +323,8 @@ export default function PlayerStatsTable({
     if (sec.label === "Portería") {
       return entries.some(e => e.player?.position?.toUpperCase() === "GK");
     }
+    if (onlySections) return onlySections.includes(sec.label);
+    if (excludeSections) return !excludeSections.includes(sec.label);
     return true;
   });
 

@@ -198,15 +198,20 @@ export default function PlayerDetailPage() {
   })();
 
 
+  const n = (v: any) => { const f = parseFloat(String(v ?? "0")); return isNaN(f) ? 0 : f; };
   const radarData = curStat ? [
-    { metric: "Goles", playerA: Math.min(100, (curStat.goals ?? 0) * 5) },
-    { metric: "Asist.", playerA: Math.min(100, (curStat.assists ?? 0) * 6) },
-    { metric: "xG", playerA: Math.min(100, parseFloat(curStat.xgPerGame ?? "0") * 150) },
-    { metric: "Pases%", playerA: Math.min(100, parseFloat(curStat.passAccuracyPct ?? "0")) },
-    { metric: "Tackles", playerA: Math.min(100, (curStat.tackles ?? 0) * 0.8) },
-    { metric: "Recup.", playerA: Math.min(100, (curStat.recoveries ?? 0) * 1.0) },
-    { metric: "Regates%", playerA: Math.min(100, parseFloat(curStat.dribbleSuccessRate ?? "0")) },
-    { metric: "Aéreos%", playerA: Math.min(100, parseFloat(curStat.aerialDuelsWonPct ?? "0")) },
+    { metric: "Goles",       playerA: Math.min(100, n(curStat.goals) * 5) },
+    { metric: "xG/PJ",       playerA: Math.min(100, n(curStat.xgPerGame) * 100) },
+    { metric: "Asistencias", playerA: Math.min(100, n(curStat.assists) * 8) },
+    { metric: "xA/PJ",       playerA: Math.min(100, n(curStat.xaPerGame) * 100) },
+    { metric: "Pases clave", playerA: Math.min(100, n(curStat.keyPassesPerGame) * 35) },
+    { metric: "Pases%",      playerA: Math.min(100, n(curStat.passAccuracyPct)) },
+    { metric: "Regates%",    playerA: Math.min(100, n(curStat.dribbleSuccessRate)) },
+    { metric: "Tackles",     playerA: Math.min(100, n(curStat.tackles) * 1.5) },
+    { metric: "Intercep.",   playerA: Math.min(100, n(curStat.interceptions) * 2) },
+    { metric: "Recuper.",    playerA: Math.min(100, n(curStat.recoveries) * 0.8) },
+    { metric: "Aéreos%",     playerA: Math.min(100, n(curStat.aerialDuelsWonPct)) },
+    { metric: "Rating",      playerA: Math.min(100, n(curStat.sofascoreRating) * 11) },
   ] : [];
 
 

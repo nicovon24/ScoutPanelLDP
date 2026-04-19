@@ -193,15 +193,15 @@ export default function ComparePage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-[1500px] mx-auto pb-[80px] pt-[30px] px-[18px] animate-fade-in font-sans">
-      <p className="text-[11px] font-bold text-muted mb-4">Player comparison</p>
+    <div className="max-w-[1500px] mx-auto pb-16 sm:pb-20 pt-4 sm:pt-6 animate-fade-in font-sans">
+      <p className="text-[11px] font-bold text-muted mb-3">Player comparison</p>
 
-      <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
-        <h1 className="text-[20px] font-black tracking-[-0.01em] text-primary uppercase">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 sm:mb-5 gap-3 sm:gap-4">
+        <h1 className="text-lg sm:text-[20px] font-black tracking-[-0.01em] text-primary uppercase">
           Comparación de jugadores
         </h1>
-        <div className="flex items-center gap-3">
-          <div className="w-[180px]">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="w-[160px] sm:w-[180px]">
             <Select aria-label="Seleccionar temporada" placeholder="Temporada"
               selectedKeys={selectedSeasonId ? [selectedSeasonId] : []}
               onSelectionChange={(keys: any) => { const v = Array.from(keys)[0]; if (v) setSeason(String(v)); }}
@@ -213,7 +213,7 @@ export default function ComparePage() {
           {slots.some(Boolean) && (
             <button
               onClick={() => { setSlots([null, null]); setPlayersData([null, null, null]); useScoutStore.getState().clearCompare(); }}
-              className="flex items-center gap-[6px] border border-danger/25 rounded-lg px-4 h-[38px] text-danger text-[12px] font-extrabold hover:bg-danger/10 transition-all">
+              className="flex items-center gap-[6px] border border-danger/25 rounded-lg px-3 sm:px-4 h-[38px] text-danger text-[12px] font-extrabold hover:bg-danger/10 transition-all">
               <RotateCcw size={12} strokeWidth={2.5} /> <span className="hidden sm:inline">Limpiar todo</span>
             </button>
           )}
@@ -221,6 +221,10 @@ export default function ComparePage() {
       </div>
 
       <div className="bg-surface border border-border rounded-[14px] overflow-hidden">
+
+        {/* ── Horizontal scroll wrapper for the comparison table ─────────── */}
+        <div className="overflow-x-auto">
+        <div className="min-w-[540px]">
 
         {/* ── HEADER: player slots ──────────────────────────────────────────── */}
         <div className="grid border-b border-border" style={{ gridTemplateColumns: headerCols }}>
@@ -356,16 +360,17 @@ export default function ComparePage() {
               ))}
             </div>
 
-            {/* Stats comparison table */}
+            {/* Info General */}
             <PlayerStatsTable
               entries={validIndices.map(i => ({
                 player: playersData[i],
                 stat: getStat(i),
                 color: COLORS[i],
               }))}
+              onlySections={["Info General"]}
             />
 
-            {/* Heatmap section */}
+            {/* Heatmap — right after Info General */}
             <SectionHeader label="Mapas de calor" colsStyle={contentCols} />
             <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: contentCols }}>
               <div className="border-r border-border" />
@@ -394,20 +399,34 @@ export default function ComparePage() {
               ))}
             </div>
 
+            {/* Remaining stats (everything except Info General) */}
+            <PlayerStatsTable
+              entries={validIndices.map(i => ({
+                player: playersData[i],
+                stat: getStat(i),
+                color: COLORS[i],
+              }))}
+              excludeSections={["Info General"]}
+            />
+
             {/* Radar section */}
             <SectionHeader label="Radar de Rendimiento" colsStyle={contentCols} />
             <div className="border-t border-border bg-surface-2 p-6 sm:p-10 flex justify-center">
               <div className="w-full max-w-[min(100%,880px)] px-1 sm:px-2">
                 <RadarChartComponent
                   data={[
-                    { metric: "Goles",    playerA: Math.min(100, num(getStat(0).goals) * 6),             playerB: Math.min(100, num(getStat(1).goals) * 6),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).goals) * 6) : undefined },
-                    { metric: "Asist.",   playerA: Math.min(100, num(getStat(0).assists) * 10),           playerB: Math.min(100, num(getStat(1).assists) * 10),           playerC: slotCount > 2 ? Math.min(100, num(getStat(2).assists) * 10) : undefined },
-                    { metric: "xG",       playerA: Math.min(100, num(getStat(0).xgPerGame) * 150),        playerB: Math.min(100, num(getStat(1).xgPerGame) * 150),        playerC: slotCount > 2 ? Math.min(100, num(getStat(2).xgPerGame) * 150) : undefined },
-                    { metric: "Pases%",   playerA: Math.min(100, num(getStat(0).passAccuracyPct)),        playerB: Math.min(100, num(getStat(1).passAccuracyPct)),        playerC: slotCount > 2 ? Math.min(100, num(getStat(2).passAccuracyPct)) : undefined },
-                    { metric: "Tackles",  playerA: Math.min(100, num(getStat(0).tackles) * 2),            playerB: Math.min(100, num(getStat(1).tackles) * 2),            playerC: slotCount > 2 ? Math.min(100, num(getStat(2).tackles) * 2) : undefined },
-                    { metric: "Recup.",   playerA: Math.min(100, num(getStat(0).recoveries) * 1.5),       playerB: Math.min(100, num(getStat(1).recoveries) * 1.5),       playerC: slotCount > 2 ? Math.min(100, num(getStat(2).recoveries) * 1.5) : undefined },
-                    { metric: "Regates%", playerA: Math.min(100, num(getStat(0).dribbleSuccessRate)),     playerB: Math.min(100, num(getStat(1).dribbleSuccessRate)),     playerC: slotCount > 2 ? Math.min(100, num(getStat(2).dribbleSuccessRate)) : undefined },
-                    { metric: "Aéreos%",  playerA: Math.min(100, num(getStat(0).aerialDuelsWonPct)),      playerB: Math.min(100, num(getStat(1).aerialDuelsWonPct)),      playerC: slotCount > 2 ? Math.min(100, num(getStat(2).aerialDuelsWonPct)) : undefined },
+                    { metric: "Goles",      playerA: Math.min(100, num(getStat(0).goals) * 5),                     playerB: Math.min(100, num(getStat(1).goals) * 5),                     playerC: slotCount > 2 ? Math.min(100, num(getStat(2).goals) * 5) : undefined },
+                    { metric: "xG/PJ",      playerA: Math.min(100, num(getStat(0).xgPerGame) * 100),               playerB: Math.min(100, num(getStat(1).xgPerGame) * 100),               playerC: slotCount > 2 ? Math.min(100, num(getStat(2).xgPerGame) * 100) : undefined },
+                    { metric: "Asistencias", playerA: Math.min(100, num(getStat(0).assists) * 8),                  playerB: Math.min(100, num(getStat(1).assists) * 8),                   playerC: slotCount > 2 ? Math.min(100, num(getStat(2).assists) * 8) : undefined },
+                    { metric: "xA/PJ",      playerA: Math.min(100, num(getStat(0).xaPerGame) * 100),               playerB: Math.min(100, num(getStat(1).xaPerGame) * 100),               playerC: slotCount > 2 ? Math.min(100, num(getStat(2).xaPerGame) * 100) : undefined },
+                    { metric: "Pases clave", playerA: Math.min(100, num(getStat(0).keyPassesPerGame) * 35),         playerB: Math.min(100, num(getStat(1).keyPassesPerGame) * 35),         playerC: slotCount > 2 ? Math.min(100, num(getStat(2).keyPassesPerGame) * 35) : undefined },
+                    { metric: "Pases%",     playerA: Math.min(100, num(getStat(0).passAccuracyPct)),               playerB: Math.min(100, num(getStat(1).passAccuracyPct)),               playerC: slotCount > 2 ? Math.min(100, num(getStat(2).passAccuracyPct)) : undefined },
+                    { metric: "Regates%",   playerA: Math.min(100, num(getStat(0).dribbleSuccessRate)),             playerB: Math.min(100, num(getStat(1).dribbleSuccessRate)),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).dribbleSuccessRate)) : undefined },
+                    { metric: "Tackles",    playerA: Math.min(100, num(getStat(0).tackles) * 1.5),                 playerB: Math.min(100, num(getStat(1).tackles) * 1.5),                 playerC: slotCount > 2 ? Math.min(100, num(getStat(2).tackles) * 1.5) : undefined },
+                    { metric: "Intercep.",  playerA: Math.min(100, num(getStat(0).interceptions) * 2),             playerB: Math.min(100, num(getStat(1).interceptions) * 2),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).interceptions) * 2) : undefined },
+                    { metric: "Recuper.",   playerA: Math.min(100, num(getStat(0).recoveries) * 0.8),              playerB: Math.min(100, num(getStat(1).recoveries) * 0.8),              playerC: slotCount > 2 ? Math.min(100, num(getStat(2).recoveries) * 0.8) : undefined },
+                    { metric: "Aéreos%",    playerA: Math.min(100, num(getStat(0).aerialDuelsWonPct)),             playerB: Math.min(100, num(getStat(1).aerialDuelsWonPct)),             playerC: slotCount > 2 ? Math.min(100, num(getStat(2).aerialDuelsWonPct)) : undefined },
+                    { metric: "Rating",     playerA: Math.min(100, num(getStat(0).sofascoreRating) * 11),          playerB: Math.min(100, num(getStat(1).sofascoreRating) * 11),          playerC: slotCount > 2 ? Math.min(100, num(getStat(2).sofascoreRating) * 11) : undefined },
                   ]}
                   nameA={playersData[0]?.name} nameB={playersData[1]?.name} nameC={playersData[2]?.name}
                   colorA={COLORS[0].hex} colorB={COLORS[1].hex} colorC={COLORS[2].hex}
@@ -416,6 +435,10 @@ export default function ComparePage() {
             </div>
           </div>
         )}
+
+        {/* close min-w + overflow wrappers */}
+        </div>
+        </div>
       </div>
     </div>
   );

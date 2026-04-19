@@ -75,6 +75,8 @@ interface ScoutState {
   setPageSize: (size: number) => void;
   sidebarExpanded: boolean;
   setSidebarExpanded: (expanded: boolean) => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
 
   // ─── Filtros de búsqueda ──────────────────────────────────────────────────
   searchFilters: SearchFilters;
@@ -142,6 +144,8 @@ export const useScoutStore = create<ScoutState>()(
       setPageSize: (size) => set({ pageSize: size }),
       sidebarExpanded: false,
       setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
+      mobileMenuOpen: false,
+      setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
 
       // ── Filtros ──────────────────────────────────────────────────────────
       searchFilters: DEFAULT_FILTERS,

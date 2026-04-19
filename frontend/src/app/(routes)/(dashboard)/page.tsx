@@ -129,26 +129,26 @@ function HomeContent() {
   const totalPages = Math.ceil(totalItems / pageSize);
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-5 sm:space-y-7 pb-12">
 
       {/* ── Page Header ── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-primary tracking-tight leading-none">Explorar Jugadores</h1>
-          <p className="text-secondary mt-3 font-medium flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
-            {loading ? "Buscando talentos..." : `${totalItems.toLocaleString()} talentos encontrados • Apertura 2026`}
+          <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight leading-none">Explorar Jugadores</h1>
+          <p className="text-secondary mt-2 sm:mt-3 text-sm sm:text-base font-medium flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green animate-pulse flex-shrink-0" />
+            {loading ? "Buscando talentos..." : `${totalItems.toLocaleString()} talentos • Apertura 2026`}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* View Toggle */}
-          <div className="flex p-1 bg-white/[0.03] border border-white/[0.05] rounded-xl overflow-hidden mr-3">
-            <Button isIconOnly onClick={() => setView("grid")} className={`min-w-10 w-10 h-10 rounded-lg transition-all ${view === "grid" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
-              <LayoutGrid size={18} />
+          <div className="flex p-1 bg-white/[0.03] border border-white/[0.05] rounded-xl overflow-hidden">
+            <Button isIconOnly onClick={() => setView("grid")} className={`min-w-9 w-9 h-9 sm:w-10 sm:h-10 sm:min-w-10 rounded-lg transition-all ${view === "grid" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
+              <LayoutGrid size={16} />
             </Button>
-            <Button isIconOnly onClick={() => setView("table")} className={`min-w-10 w-10 h-10 rounded-lg transition-all ${view === "table" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
-              <List size={18} />
+            <Button isIconOnly onClick={() => setView("table")} className={`min-w-9 w-9 h-9 sm:w-10 sm:h-10 sm:min-w-10 rounded-lg transition-all ${view === "table" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
+              <List size={16} />
             </Button>
           </div>
 
@@ -164,20 +164,20 @@ function HomeContent() {
                 updateFiltersAndStore(resetState);
                 setInputQ("");
               }}
-              className="h-10 w-10 min-w-10 md:h-12 md:w-12 md:min-w-12 rounded-xl bg-[#e05a5a]/10 text-[#e05a5a] border border-[#e05a5a]/25 hover:bg-[#e05a5a]/20 transition-all shadow-[0_0_15px_rgba(224,90,90,0.1)]"
+              className="h-9 w-9 min-w-9 sm:h-11 sm:w-11 sm:min-w-11 rounded-xl bg-[#e05a5a]/10 text-[#e05a5a] border border-[#e05a5a]/25 hover:bg-[#e05a5a]/20 transition-all"
               aria-label="Limpiar filtros"
             >
-              <X size={18} strokeWidth={2.5} />
+              <X size={16} strokeWidth={2.5} />
             </Button>
           )}
 
           <AppButton
             onClick={() => setFilterPanelOpen(true)}
             variant={activeFilterCount > 0 ? "primary" : "secondary"}
-            className="h-10 md:h-12 px-4 md:px-6 gap-2 md:gap-3"
+            className="h-9 sm:h-11 px-3 sm:px-5 gap-1.5 sm:gap-2 text-sm"
           >
-            <SlidersHorizontal size={18} />
-            <span className="hidden sm:inline">Filtros</span>
+            <SlidersHorizontal size={16} />
+            <span className="hidden xs:inline">Filtros</span>
             {activeFilterCount > 0 && (
               <span className="w-5 h-5 rounded-lg bg-mainBg text-green text-xs font-black flex items-center justify-center">
                 {activeFilterCount}
@@ -188,8 +188,8 @@ function HomeContent() {
       </div>
 
       {/* ── Search & Quick Bar ── */}
-      <div className="flex flex-wrap items-center gap-4 bg-white/[0.02] border border-white/[0.05] p-5 rounded-2xl shadow-sm">
-        <div className="w-full max-w-[320px]">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 bg-white/[0.02] border border-white/[0.05] p-3 sm:p-4 rounded-2xl shadow-sm">
+        <div className="w-full sm:w-auto sm:flex-1 sm:max-w-[320px]">
           <Input
             value={inputQ}
             onChange={(e) => { setInputQ(e.target.value); setPage(1); }}
@@ -204,14 +204,14 @@ function HomeContent() {
             }
             variant="flat"
             classNames={{
-              inputWrapper: " h-12 bg-card border border-white/10 rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
-              input: "text-base text-primary placeholder:text-secondary"
+              inputWrapper: "h-11 bg-card border border-white/10 rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
+              input: "text-sm sm:text-base text-primary placeholder:text-secondary"
             }}
           />
         </div>
 
         {/* Quick Position Multi-Select */}
-        <div className="w-full max-w-[280px] hidden sm:block">
+        <div className="w-full sm:w-auto sm:max-w-[280px] hidden sm:block">
           <Select
             selectionMode="multiple"
             items={POSITIONS_LIST}
@@ -358,10 +358,10 @@ function HomeContent() {
 
       {/* ── Footer: Pagination & Limit ── */}
       {!loading && (
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-white/[0.05]">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/[0.05]">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-base text-muted font-black uppercase tracking-widest">Mostrar:</span>
+              <span className="text-sm sm:text-base text-muted font-black uppercase tracking-widest">Mostrar:</span>
               <Select
                 selectedKeys={[String(pageSize)]}
                 onChange={(e) => { if (e.target.value) { setPageSize(Number(e.target.value)); setPage(1); } }}
@@ -381,8 +381,8 @@ function HomeContent() {
                 <SelectItem key="50" value="50" classNames={sharedSelectItemClasses}>50 items</SelectItem>
               </Select>
             </div>
-            <span className="text-base text-muted font-bold tracking-tight">
-              {totalItems > 0 ? `${(page - 1) * pageSize + 1} - ${Math.min(page * pageSize, totalItems)}` : 0} de {totalItems}
+            <span className="text-sm sm:text-base text-muted font-bold tracking-tight">
+              {totalItems > 0 ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalItems)}` : 0} de {totalItems}
             </span>
           </div>
 
