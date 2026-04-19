@@ -65,7 +65,7 @@ export const TEAM_SEED_ROWS = [
   {
     "name": "Newell's Old Boys",
     "country": "Argentina",
-    "logoUrl": "https://images.fotmob.com/image_resources/logo/teamlogo/10085.png"
+    "logoUrl": "https://images.fotmob.com/image_resources/logo/teamlogo/10201.png"
   },
   {
     "name": "Central Córdoba (SdE)",

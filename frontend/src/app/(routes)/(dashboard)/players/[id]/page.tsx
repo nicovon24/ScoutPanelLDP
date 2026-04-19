@@ -11,6 +11,7 @@ import RadarChartComponent from "@/components/charts/RadarChart";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 import EvolutionBarChart from "@/components/charts/EvolutionBarChart";
 import MarketValueChart from "@/components/charts/MarketValueChart";
+import HeatmapField from "@/components/player/HeatmapField";
 
 /* ── Helpers ─────────────────────────────── */
 function calcAge(dob?: string) {
@@ -47,37 +48,6 @@ function careerYearKey(yearRange: string): number {
   return m ? parseInt(m[1], 10) : 0;
 }
 
-function HeatmapGrid({ grid }: { grid: number[][] | null | undefined }) {
-  if (!grid?.length || grid.length !== 5 || grid[0]?.length !== 5) {
-    return (
-      <p className="text-base text-muted py-8 text-center bg-white/[0.01] rounded-xl border border-white/5">
-        Sin mapa de calor para esta temporada.
-      </p>
-    );
-  }
-  return (
-    <div>
-      <p className="text-2xs text-secondary mb-3 uppercase tracking-widest font-black">
-        Intensidad por zona (5×5) · fila superior = campo rival
-      </p>
-      <div className="grid grid-cols-5 gap-1 max-w-[260px]">
-        {grid.flatMap((row, ri) =>
-          row.map((cell, ci) => (
-            <div
-              key={`${ri}-${ci}`}
-              className="aspect-square rounded-md min-h-[36px]"
-              style={{
-                backgroundColor: `rgba(0, 224, 148, ${0.12 + (Math.min(100, cell) / 100) * 0.78})`,
-                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
-              }}
-              title={`${cell}%`}
-            />
-          )),
-        )}
-      </div>
-    </div>
-  );
-}
 
 /* ── Donut Circle ────────────────────────── */
 function DonutCircle({ value, label, color = "#00E094" }: { value: number; label: string; color?: string }) {
@@ -537,52 +507,17 @@ export default function PlayerDetailPage() {
           Scouting: fortalezas / debilidades + heatmap
       ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card h-full">
-          <p className="section-title">Perfil de scouting</p>
-          <div className="space-y-5">
-            <div>
-              <p className="text-2xs font-black uppercase tracking-widest text-green mb-2">Fortalezas</p>
-              {(player.strengths?.length ?? 0) === 0 ? (
-                <p className="text-base text-muted">Sin datos.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {(player.strengths as string[]).map((s: string) => (
-                    <span
-                      key={s}
-                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-green/15 text-green border border-green/25"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <p className="text-2xs font-black uppercase tracking-widest text-warn mb-2">Debilidades</p>
-              {(player.weaknesses?.length ?? 0) === 0 ? (
-                <p className="text-base text-muted">Sin datos.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {(player.weaknesses as string[]).map((w: string) => (
-                    <span
-                      key={w}
-                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-danger/10 text-danger border border-danger/20"
-                    >
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+
+        {/* 1. Radar */}
+        {radarData.length > 0 && (
+          <div className="card h-full">
+            <p className="section-title">Radar de rendimiento</p>
+            <RadarChartComponent data={radarData} nameA={player.name} colorA="#00E094" />
           </div>
-        </div>
+        )}
         <div className="card h-full">
           <p className="section-title">Mapa de calor</p>
-          {curStat ? (
-            <HeatmapGrid grid={curStat.heatmapData as number[][] | undefined} />
-          ) : (
-            <p className="text-base text-muted py-8 text-center">Seleccioná una temporada con estadísticas.</p>
-          )}
+          <HeatmapField grid={curStat?.heatmapData as number[][] | undefined} />
         </div>
       </div>
 
@@ -626,30 +561,63 @@ export default function PlayerDetailPage() {
           ROW 3: Performance Charts Group
       ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 auto-rows-fr">
-        {/* 1. Radar */}
-        {radarData.length > 0 && (
-          <div className="card h-full">
-            <p className="section-title">Radar de rendimiento</p>
-            <RadarChartComponent data={radarData} nameA={player.name} colorA="#00E094" />
+
+        <div className="card h-full">
+          <p className="section-title">Perfil de scouting</p>
+          <div className="space-y-5">
+            <div>
+              <p className="text-2xs font-black uppercase tracking-widest text-green mb-2">Fortalezas</p>
+              {(player.strengths?.length ?? 0) === 0 ? (
+                <p className="text-base text-muted">Sin datos.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {(player.strengths as string[]).map((s: string) => (
+                    <span
+                      key={s}
+                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-green/15 text-green border border-green/25"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-2xs font-black uppercase tracking-widest text-warn mb-2">Debilidades</p>
+              {(player.weaknesses?.length ?? 0) === 0 ? (
+                <p className="text-base text-muted">Sin datos.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {(player.weaknesses as string[]).map((w: string) => (
+                    <span
+                      key={w}
+                      className="text-2xs font-bold px-2.5 py-1 rounded-md bg-danger/10 text-danger border border-danger/20"
+                    >
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* 2. Evolution */}
         <div className="h-full">
-          <EvolutionBarChart 
-            data={ratingHistory} 
-            nameA={player.name} 
-            mode={ratingMode} 
-            onChangeMode={setRatingMode} 
+          <EvolutionBarChart
+            data={ratingHistory}
+            nameA={player.name}
+            mode={ratingMode}
+            onChangeMode={setRatingMode}
           />
         </div>
 
         {/* 3. Market Value */}
         <div className="h-full">
-          <MarketValueChart 
-            data={valueHistory} 
-            mode={valueMode} 
-            onChangeMode={setValueMode} 
+          <MarketValueChart
+            data={valueHistory}
+            mode={valueMode}
+            onChangeMode={setValueMode}
           />
         </div>
       </div>
