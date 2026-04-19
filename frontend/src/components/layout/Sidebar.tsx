@@ -13,7 +13,8 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { compareList, clearAuth, sidebarExpanded, setSidebarExpanded } = useScoutStore();
+  const { compareList, clearAuth, sidebarExpanded, setSidebarExpanded, token, shortlistIds, favorites } = useScoutStore();
+  const favCount = token ? shortlistIds.length : favorites.length;
 
   return (
     <aside className={`fixed left-0 top-0 bottom-0 bg-[#0A0A0A] border-r border-white/[0.05]
@@ -71,6 +72,15 @@ export default function Sidebar() {
                                  shadow-[0_0_10px_rgba(0,224,148,0.3)]
                                  ${sidebarExpanded ? "right-4 w-5 h-5" : "top-1.5 right-1.5 w-4 h-4"}`}>
                   {compareList.length}
+                </span>
+              )}
+
+              {/* Favorites Badge */}
+              {label === "Favoritos" && favCount > 0 && (
+                <span className={`absolute flex items-center justify-center rounded-full bg-gold text-mainBg text-2xs font-black
+                                 shadow-[0_0_10px_rgba(232,168,56,0.35)]
+                                 ${sidebarExpanded ? "right-4 w-5 h-5" : "top-1.5 right-1.5 w-4 h-4"}`}>
+                  {favCount}
                 </span>
               )}
 

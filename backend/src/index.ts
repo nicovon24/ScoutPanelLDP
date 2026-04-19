@@ -4,6 +4,7 @@ import playerRoutes from "./routes/players";
 import teamRoutes from "./routes/teams";
 import seasonRoutes from "./routes/seasons";
 import authRoutes, { requireAuth } from "./routes/auth";
+import shortlistRoutes from "./routes/shortlist";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -21,6 +22,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/players", playerRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/seasons", seasonRoutes);
+app.use("/api/shortlist", shortlistRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

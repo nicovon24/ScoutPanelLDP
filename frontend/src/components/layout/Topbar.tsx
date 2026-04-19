@@ -17,7 +17,7 @@ function Logo() {
       </div>
       <div className="flex flex-col">
         <span className="text-md font-black text-primary leading-tight tracking-[0.02em] uppercase">
-          librodepases
+          ScoutPanel
         </span>
         <span className="text-2xs text-green font-black uppercase tracking-[0.2em] -mt-0.5">Scouting Panel</span>
       </div>

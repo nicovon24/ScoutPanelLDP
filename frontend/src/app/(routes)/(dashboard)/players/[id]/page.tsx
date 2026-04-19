@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
+import { useShortlist } from "@/hooks/useShortlist";
 import RadarChartComponent from "@/components/charts/RadarChart";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 import EvolutionBarChart from "@/components/charts/EvolutionBarChart";
@@ -191,7 +192,8 @@ export default function PlayerDetailPage() {
   const [ratingMode, setRatingMode] = useState<"year" | "month">("month");
   const [valueMode, setValueMode] = useState<"year" | "month">("month");
 
-  const { isFavorite, addFavorite, removeFavorite, addToCompare, isInCompare, removeFromCompare } = useScoutStore();
+  const { addToCompare, isInCompare, removeFromCompare } = useScoutStore();
+  const { isFavorite, addFavorite, removeFavorite } = useShortlist();
 
   useEffect(() => {
     api.get(`/players/${id}`)
@@ -424,6 +426,7 @@ export default function PlayerDetailPage() {
                 <button
                   onClick={() => fav ? removeFavorite(player.id) : addFavorite(player)}
                   className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all border ${fav ? "bg-gold/10 border-gold/30 text-gold" : "bg-input border-border text-muted hover:text-gold hover:border-gold/30"}`}
+                  title={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
                 >
                   <Star size={15} fill={fav ? "currentColor" : "none"} />
                 </button>

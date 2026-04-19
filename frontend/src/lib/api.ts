@@ -7,7 +7,7 @@ const api = axios.create({
 // Inyectar el JWT en cada request
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("scout_token");
+    const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -15,17 +15,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Si el token expiró, redirigir al login
+// Si el token expiró, limpiar sesión y redirigir al login
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    /* 
     if (error.response?.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("scout_token");
-      localStorage.removeItem("scout_user");
-      window.location.href = "/login";
+      // Solo redirigir si no estamos ya en /login o /register
+      const path = window.location.pathname;
+      if (path !== "/login" && path !== "/register") {
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+      }
     }
-    */
     return Promise.reject(error);
   }
 );
