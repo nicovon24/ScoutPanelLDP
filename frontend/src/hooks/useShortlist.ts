@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { useScoutStore } from "@/store/useScoutStore";
 import api from "@/lib/api";
 import type { ShortlistPlayer } from "@/types";
@@ -59,13 +60,16 @@ export function useShortlist() {
         try {
           await api.post(`/shortlist/${player.id}`);
           addShortlistId(player.id);
+          toast.success(`${player.name} agregado a tu lista`);
         } catch (e) {
           console.error("Error agregando a shortlist", e);
+          toast.error("No se pudo agregar el jugador");
         } finally {
           pendingIds.current.delete(player.id);
         }
       } else {
         localAdd(player);
+        toast.success(`${player.name} agregado a tu lista`);
       }
     },
     [token, addShortlistId, localAdd],
@@ -79,8 +83,10 @@ export function useShortlist() {
         try {
           await api.delete(`/shortlist/${id}`);
           removeShortlistId(id);
+          toast("Jugador removido de tu lista", { icon: "✕" });
         } catch (e) {
           console.error("Error quitando de shortlist", e);
+          toast.error("No se pudo quitar el jugador");
         } finally {
           pendingIds.current.delete(id);
         }

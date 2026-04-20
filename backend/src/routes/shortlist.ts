@@ -30,7 +30,7 @@ router.get("/", async (req: Request, res: Response) => {
     res.json(entries.map((e) => ({ ...e.player, addedAt: e.addedAt })));
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -45,7 +45,7 @@ router.get("/ids", async (req: Request, res: Response) => {
     res.json(entries.map((e) => e.playerId));
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -66,7 +66,7 @@ router.post("/:playerId", async (req: Request, res: Response) => {
     res.status(201).json({ ok: true });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -77,19 +77,24 @@ router.delete("/:playerId", async (req: Request, res: Response) => {
     const playerId = parseInt(req.params.playerId);
     if (isNaN(playerId)) return res.status(400).json({ error: "playerId inválido" });
 
-    await db
+    const deleted = await db
       .delete(shortlistEntries)
       .where(
         and(
           eq(shortlistEntries.userId, userId),
           eq(shortlistEntries.playerId, playerId),
         ),
-      );
+      )
+      .returning({ id: shortlistEntries.playerId });
+
+    if (deleted.length === 0) {
+      return res.status(404).json({ error: "El jugador no estaba en tu lista" });
+    }
 
     res.json({ ok: true });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

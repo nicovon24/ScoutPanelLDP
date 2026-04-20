@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
 
@@ -14,18 +15,21 @@ export default function LoginPage() {
   const [password, setPassword] = useState("123456");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    if (!email.trim()) { toast.error("Ingresá tu email"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { toast.error("El email no tiene un formato válido"); return; }
+    if (!password) { toast.error("Ingresá tu contraseña"); return; }
+    setLoading(true);
     try {
       const { data } = await api.post("/auth/login", { email, password });
       setAuth(data.token, data.user);
       router.replace("/");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg ?? "Credenciales incorrectas");
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        ?? "Credenciales incorrectas";
+      toast.error(msg);
     } finally { setLoading(false); }
   };
 
@@ -114,7 +118,7 @@ export default function LoginPage() {
             Iniciar <span className="text-green">sesión</span>
           </h2>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} noValidate className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-muted mb-2 uppercase tracking-[1.5px]">
                 Email
@@ -124,7 +128,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="demo@gmail.com"
                 className="field"
-                required autoComplete="email"
+                autoComplete="email"
               />
             </div>
 
@@ -138,7 +142,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="field pr-11"
-                  required autoComplete="current-password"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -149,12 +153,6 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-
-            {error && (
-              <p className="text-sm text-danger bg-danger/8 border border-danger/20 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
 
             {/* Botón con shimmer */}
             <button

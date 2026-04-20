@@ -35,7 +35,7 @@ router.get("/leaderboard", async (req: Request, res: Response) => {
   const metric    = String(req.query.metric   ?? "rating");
   const seasonId  = req.query.seasonId  ? Number(req.query.seasonId)  : null;
   const positions = req.query.positions ? String(req.query.positions) : null;
-  const limit     = Math.min(50, Math.max(5, Number(req.query.limit ?? 25)));
+  const limit     = Math.min(100, Math.max(5, Number(req.query.limit ?? 25)));
 
   const sortDirParam  = req.query.sortDir     ? String(req.query.sortDir).toLowerCase()  : null;
   const debutYearMax  = req.query.debutYearMax ? Number(req.query.debutYearMax)            : null;
@@ -63,8 +63,17 @@ router.get("/leaderboard", async (req: Request, res: Response) => {
     conditions.push(`ps.season_id = $${params.length}`);
   }
 
+  const VALID_POSITIONS = new Set([
+    "GK", "CB", "LB", "RB", "LWB", "RWB",
+    "CDM", "CM", "CAM", "LM", "RM",
+    "LW", "RW", "SS", "CF", "ST",
+  ]);
+
   if (positions) {
-    const posArr = positions.split(",").map((p: string) => p.trim()).filter(Boolean);
+    const posArr = positions
+      .split(",")
+      .map((p: string) => p.trim().toUpperCase())
+      .filter((p) => VALID_POSITIONS.has(p));
     if (posArr.length > 0) {
       params.push(posArr);
       conditions.push(`p.position = ANY($${params.length})`);
@@ -79,12 +88,7 @@ router.get("/leaderboard", async (req: Request, res: Response) => {
 
   const whereClause  = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  // Para métricas de promedio exigimos un mínimo de partidos
-  const avgMetrics = new Set(["rating", "savePct", "passAccuracyPct", "aerialDuelsWonPct",
-    "keyPassesPerGame", "xgPerGame", "xaPerGame", "shotsOnTargetPct"]);
-  const minMatchesHaving = avgMetrics.has(metric)
-    ? "HAVING SUM(ps.matches_played) >= 3"
-    : "HAVING SUM(ps.matches_played) >= 1";
+  const minMatchesHaving = "HAVING SUM(ps.matches_played) >= 1";
 
   params.push(limit);
 
@@ -158,7 +162,7 @@ router.get("/leaderboard", async (req: Request, res: Response) => {
     res.json(rows);
   } catch (err) {
     console.error("[analytics/leaderboard]", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -198,7 +202,7 @@ router.get("/summary", async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("[analytics/summary]", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

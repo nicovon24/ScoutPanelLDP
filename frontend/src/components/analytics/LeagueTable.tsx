@@ -95,13 +95,16 @@ export default function LeagueTable({ entries, cols, metric, sortDir, onSort, lo
         <table className="w-full border-collapse" style={{ minWidth: 540 }}>
           <thead>
             <tr className="border-b border-white/[0.05]">
-              {/* # */}
-              <th className="bg-white/[0.02] px-3 sm:px-4 py-3 text-left text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted w-10">
+              {/* # — sticky */}
+              <th className="sticky left-0 z-10 bg-[#0e0e0e] px-3 sm:px-4 py-3 text-left
+                             text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted w-10">
                 #
               </th>
 
-              {/* Jugador */}
-              <th className="bg-white/[0.02] px-3 sm:px-4 py-3 text-left text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted">
+              {/* Jugador — sticky */}
+              <th className="sticky left-10 z-10 bg-[#0e0e0e] px-3 sm:px-4 py-3 text-left
+                             text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted
+                             border-r border-white/[0.04]">
                 Jugador
               </th>
 
@@ -131,13 +134,14 @@ export default function LeagueTable({ entries, cols, metric, sortDir, onSort, lo
                 className={`border-b border-white/[0.03] transition-colors hover:bg-white/[0.02] group
                             ${i % 2 === 0 ? "bg-transparent" : "bg-white/[0.01]"}`}
               >
-                {/* Rank */}
-                <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                {/* Rank — sticky */}
+                <td className="sticky left-0 z-10 bg-inherit px-3 sm:px-4 py-2.5 sm:py-3">
                   <RankBadge rank={entry.rank} />
                 </td>
 
-                {/* Player cell */}
-                <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                {/* Player cell — sticky */}
+                <td className="sticky left-10 z-10 bg-inherit px-3 sm:px-4 py-2.5 sm:py-3
+                               border-r border-white/[0.04]">
                   <Link href={`/players/${entry.id}`} className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <div className="flex w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-input border border-white/[0.05]
                                     overflow-hidden items-center justify-center flex-shrink-0">

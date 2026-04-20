@@ -85,6 +85,8 @@ interface ScoutState {
   setSidebarExpanded: (expanded: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
+  searchType: "all" | "players" | "clubs";
+  setSearchType: (type: "all" | "players" | "clubs") => void;
 
   // ─── Filtros de búsqueda ──────────────────────────────────────────────────
   searchFilters: SearchFilters;
@@ -150,6 +152,8 @@ export const useScoutStore = create<ScoutState>()(
       setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
       mobileMenuOpen: false,
       setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
+      searchType: "all",
+      setSearchType: (type) => set({ searchType: type }),
 
       // ── Filtros ──────────────────────────────────────────────────────────
       searchFilters: DEFAULT_FILTERS,

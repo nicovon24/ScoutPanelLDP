@@ -160,7 +160,7 @@ export default function ComparePage() {
 
         {/* ── Horizontal scroll wrapper for the comparison table ─────────── */}
         <div className="overflow-x-auto">
-        <div className="min-w-[360px] sm:min-w-[540px]">
+        <div className="min-w-[560px]">
 
         {/* ── HEADER: player slots ──────────────────────────────────────────── */}
         <div className="grid border-b border-border" style={{ gridTemplateColumns: headerCols }}>
