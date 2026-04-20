@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, Suspense } from "react";
-import { Users, SlidersHorizontal, LayoutGrid, List, Search, X } from "lucide-react";
+import { SlidersHorizontal, LayoutGrid, List, Search, X } from "lucide-react";
 import api from "@/lib/api";
 import { useScoutStore, DEFAULT_FILTERS } from "@/store/useScoutStore";
 import type { Player, Team } from "@/types";

@@ -94,7 +94,7 @@ const CustomMonthTick = ({ x, y, payload, data }: any) => {
   );
 };
 
-export default function EvolutionBarChart({ data, nameA, mode, onChangeMode }: Props) {
+export default function EvolutionBarChart({ data, nameA: _nameA, mode, onChangeMode }: Props) {
   const chartData = data.map(d => ({
     ...d,
     trend: d.rating > 0 && !d.injured ? d.rating : null,
