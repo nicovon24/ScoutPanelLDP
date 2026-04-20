@@ -166,11 +166,11 @@ export default function PlayerDetailPage() {
           HERO — full width
       ══════════════════════════════════════════════════════════════ */}
       <div className="card">
-        <div className="flex flex-col sm:flex-row gap-8 items-start">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 items-start">
 
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            <div className="w-[100px] h-[100px] rounded-xl bg-input border border-border overflow-hidden flex items-center justify-center text-4xl font-black text-muted">
+            <div className="w-[72px] h-[72px] sm:w-[100px] sm:h-[100px] rounded-xl bg-input border border-border overflow-hidden flex items-center justify-center text-3xl sm:text-4xl font-black text-muted">
               {player.photoUrl
                 ? <Image src={player.photoUrl} alt={player.name} width={100} height={100} className="object-cover w-full h-full" unoptimized />
                 : player.name[0]}
@@ -183,29 +183,29 @@ export default function PlayerDetailPage() {
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className={`badge text-2xs ${posStyle(player.position)}`}>{player.position}</span>
-                  {age && <span className="text-base text-muted">{age} años</span>}
-                  {player.preferredFoot && <span className="text-base text-muted">· {player.preferredFoot}</span>}
-                  {player.heightCm && <span className="text-base text-muted">· {player.heightCm} cm</span>}
+                  {age && <span className="text-xs sm:text-sm text-muted">{age} años</span>}
+                  {player.preferredFoot && <span className="text-xs sm:text-sm text-muted">· {player.preferredFoot}</span>}
+                  {player.heightCm && <span className="text-xs sm:text-sm text-muted">· {player.heightCm} cm</span>}
                 </div>
-                <h1 className="text-2xl font-black text-primary leading-tight">{player.name}</h1>
-                <div className="flex items-center gap-3 mt-1 flex-wrap">
+                <h1 className="text-lg sm:text-2xl font-black text-primary leading-tight">{player.name}</h1>
+                <div className="flex items-center gap-2 sm:gap-3 mt-1 flex-wrap">
                   {player.team?.name && (
                     <div className="flex items-center gap-1.5">
-                      {player.team.logoUrl && <Image src={player.team.logoUrl} alt="" width={15} height={15} unoptimized />}
-                      <span className="text-base text-secondary">{player.team.name}</span>
+                      {player.team.logoUrl && <Image src={player.team.logoUrl} alt="" width={14} height={14} unoptimized />}
+                      <span className="text-xs sm:text-sm text-secondary">{player.team.name}</span>
                     </div>
                   )}
                   {player.nationality && (
                     <div className="flex items-center gap-1.5">
                       <span className="text-muted">·</span>
                       <FlagImg nationality={player.nationality} />
-                      <span className="text-base text-secondary">{player.nationality}</span>
+                      <span className="text-xs sm:text-sm text-secondary">{player.nationality}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-wrap mt-1 sm:mt-0">
                 {/* Season selector */}
                 {allStats.length > 1 && (
                   <Select
@@ -214,7 +214,7 @@ export default function PlayerDetailPage() {
                       if (e.target.value) setSelSeason(Number(e.target.value));
                     }}
                     aria-label="Seleccionar Temporada"
-                    className="w-52"
+                    className="w-full xs:w-44 sm:w-52"
                     variant="flat"
                     scrollShadowProps={{ isEnabled: false }}
                     classNames={{
@@ -223,7 +223,7 @@ export default function PlayerDetailPage() {
                       popoverContent: `${sharedSelectClasses.popoverContent} min-w-[200px]`
                     }}
                     startContent={
-                      <span className="text-2xs font-black text-muted uppercase tracking-widest mr-2 shrink-0">Temporada</span>
+                      <span className="text-2xs font-black text-muted uppercase tracking-widest mr-2 shrink-0">Temp.</span>
                     }
                   >
                     {allStats.map((s: any) => (
@@ -240,7 +240,7 @@ export default function PlayerDetailPage() {
 
                 <button
                   onClick={() => fav ? removeFavorite(player.id) : addFavorite(player)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all border ${fav ? "bg-gold/10 border-gold/30 text-gold" : "bg-input border-border text-muted hover:text-gold hover:border-gold/30"}`}
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all border flex-shrink-0 ${fav ? "bg-gold/10 border-gold/30 text-gold" : "bg-input border-border text-muted hover:text-gold hover:border-gold/30"}`}
                   title={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
                 >
                   <Star size={15} fill={fav ? "currentColor" : "none"} />
@@ -250,7 +250,7 @@ export default function PlayerDetailPage() {
                     useScoutStore.setState({ compareList: [player] });
                     router.push('/compare');
                   }}
-                  className={`btn text-mainBg h-9 px-3 btn-primary`}
+                  className="btn text-mainBg h-9 px-3 btn-primary flex-shrink-0"
                 >
                   <BarChart2 size={13} />
                   Comparar
@@ -288,16 +288,16 @@ export default function PlayerDetailPage() {
               }
 
               return (
-                <div className="flex items-center gap-6 mt-4 pt-3 border-t border-border flex-wrap">
+                <div className="flex items-center gap-4 sm:gap-6 mt-3 sm:mt-4 pt-3 border-t border-border flex-wrap">
                   {mainRating != null && mainRating > 0 && (
                     <div className="text-center">
-                      <p className={`text-xl font-black leading-none ${ratingColor}`}>{mainRating.toFixed(1)}</p>
+                      <p className={`text-base sm:text-xl font-black leading-none ${ratingColor}`}>{mainRating.toFixed(1)}</p>
                       <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">Rating</p>
                     </div>
                   )}
                   {quickStats.map(({ label, value }) => (
                     <div key={label} className="text-center">
-                      <p className="text-md font-bold text-primary leading-none">{value}</p>
+                      <p className="text-sm sm:text-md font-bold text-primary leading-none">{value}</p>
                       <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">{label}</p>
                     </div>
                   ))}

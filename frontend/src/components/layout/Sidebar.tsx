@@ -1,14 +1,17 @@
 "use client";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Home, BarChart2, Star, TrendingUp, LogOut, Menu, ChevronLeft, X } from "lucide-react";
+import { Home, BarChart2, Star, TrendingUp, LogOut, Menu, ChevronLeft, X, Shield } from "lucide-react";
 import { useScoutStore } from "@/store/useScoutStore";
 import LinkNext from "next/link";
+import SearchBar from "@/components/ui/SearchBar";
 
 const NAV_ITEMS = [
-  { href: "/",          icon: Home,        label: "Inicio" },
+  { href: "/",          icon: Home,        label: "Jugadores" },
   { href: "/compare",   icon: BarChart2,   label: "Comparar" },
   { href: "/favorites", icon: Star,        label: "Favoritos" },
   { href: "/analytics", icon: TrendingUp,  label: "Reportes" },
+  { href: "/clubs",     icon: Shield,      label: "Clubes" },
 ];
 
 export default function Sidebar() {
@@ -20,6 +23,12 @@ export default function Sidebar() {
     mobileMenuOpen, setMobileMenuOpen,
   } = useScoutStore();
   const favCount = token ? shortlistIds.length : favorites.length;
+
+  // Cerrar el drawer mobile al cambiar de ruta (ej: navegación desde el SearchBar)
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   return (
     <>
@@ -35,23 +44,32 @@ export default function Sidebar() {
         className={`
           fixed left-0 top-0 bottom-0 bg-[#0A0A0A] border-r border-white/[0.05]
           flex flex-col py-6 z-[80] transition-all duration-300 ease-in-out
-          /* Mobile: drawer off-screen when closed */
           ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-          /* Desktop (lg+): always visible, use sidebarExpanded for width */
           lg:translate-x-0
           ${sidebarExpanded ? "w-64 px-4" : "lg:w-20 lg:px-3 lg:items-center w-64 px-4"}
         `}
       >
-        {/* Mobile close button */}
-        <button
-          onClick={() => setMobileMenuOpen(false)}
-          className="mb-6 self-end w-9 h-9 rounded-xl flex items-center justify-center
-                     text-secondary hover:text-primary hover:bg-white/5 transition-all lg:hidden"
-        >
-          <X size={18} />
-        </button>
+        {/* ── Mobile header: close + SearchBar ────────────────────────────────── */}
+        <div className="lg:hidden mb-5 space-y-3">
+          {/* Close button */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted/50">Menú</span>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center
+                         text-secondary hover:text-primary hover:bg-white/5 transition-all"
+            >
+              <X size={18} />
+            </button>
+          </div>
 
-        {/* Desktop toggle button */}
+          {/* SearchBar compacto (píldoras de tipo + input full width) */}
+          <SearchBar compact fullWidth />
+
+          <div className="h-px bg-white/[0.05]" />
+        </div>
+
+        {/* ── Desktop toggle button ────────────────────────────────────────────── */}
         <button
           onClick={() => setSidebarExpanded(!sidebarExpanded)}
           className={`hidden lg:flex mb-10 w-11 h-11 rounded-xl items-center justify-center
@@ -61,7 +79,7 @@ export default function Sidebar() {
           {sidebarExpanded ? <ChevronLeft size={22} /> : <Menu size={22} />}
         </button>
 
-        {/* Nav */}
+        {/* ── Nav ─────────────────────────────────────────────────────────────── */}
         <nav className="flex flex-col gap-2 flex-1 w-full">
           {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));
@@ -79,8 +97,7 @@ export default function Sidebar() {
               >
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} className="flex-shrink-0" />
 
-                {/* Label: always visible on mobile, only when expanded on desktop */}
-                <span className={`text-base font-bold whitespace-nowrap overflow-hidden transition-all duration-300
+                <span className={`text-base font-bold whitespace-nowrap overflow-hidden
                                  block lg:hidden
                                  ${active ? "text-primary" : "text-secondary"}`}>
                   {label}
@@ -92,7 +109,7 @@ export default function Sidebar() {
                   </span>
                 )}
 
-                {/* Tooltip (desktop collapsed only) */}
+                {/* Tooltip desktop collapsed */}
                 {!sidebarExpanded && (
                   <div className="hidden lg:block absolute left-[calc(100%+15px)] px-3 py-2 rounded-lg bg-primary text-mainBg text-sm font-black
                                   whitespace-nowrap opacity-0 scale-90 pointer-events-none group-hover:opacity-100 group-hover:scale-100 
@@ -128,7 +145,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Logout */}
+        {/* ── Logout ──────────────────────────────────────────────────────────── */}
         <button
           onClick={() => { clearAuth(); window.location.href = "/login"; }}
           className={`w-full h-12 rounded-xl flex items-center transition-all group relative

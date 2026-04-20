@@ -2,10 +2,10 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { TrendingUp, User } from "lucide-react";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, type SortDescriptor } from "@nextui-org/react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, TrendingUp, User } from "lucide-react";
 import type { Player } from "@/types";
 import FlagImg from "@/components/ui/FlagImg";
+import { posStyle } from "@/lib/utils";
 
 interface Props {
   players: Player[];
@@ -14,10 +14,25 @@ interface Props {
   onSort?: (sort: string) => void;
 }
 
+function SortIcon({ col, sortBy }: { col: string; sortBy?: string }) {
+  if (!sortBy || !sortBy.startsWith(col)) return <ChevronsUpDown size={11} className="text-muted/40" />;
+  return sortBy.endsWith("asc")
+    ? <ChevronUp size={11} className="text-green" />
+    : <ChevronDown size={11} className="text-green" />;
+}
+
+const COLS: { key: string; label: string; sortable?: boolean; align?: "right" }[] = [
+  { key: "position",    label: "Posición" },
+  { key: "nationality", label: "Nac." },
+  { key: "team",        label: "Club" },
+  { key: "value",       label: "Valor",  sortable: true, align: "right" },
+  { key: "rating",      label: "Rating", sortable: true, align: "right" },
+];
+
 export default function PlayerTable({ players, loading, sortBy, onSort }: Props) {
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="h-16 w-full animate-pulse bg-white/[0.02] rounded-xl" />
         ))}
@@ -27,89 +42,135 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
 
   if (players.length === 0) return null;
 
-  const sortDescriptor: SortDescriptor | undefined = sortBy ? {
-    column: sortBy.split("_")[0],
-    direction: sortBy.split("_")[1] === "asc" ? "ascending" : "descending"
-  } : undefined;
-
-  const handleSortChange = (descriptor: SortDescriptor) => {
-    if (onSort) {
-      const order = descriptor.direction === "ascending" ? "asc" : "desc";
-      onSort(`${descriptor.column}_${order}`);
+  const handleSort = (col: string) => {
+    if (!onSort) return;
+    const current = sortBy ?? "";
+    if (current.startsWith(col)) {
+      onSort(current.endsWith("asc") ? `${col}_desc` : `${col}_asc`);
+    } else {
+      onSort(`${col}_desc`);
     }
   };
 
   return (
-    <Table 
-      aria-label="Tabla de explorador"
-      removeWrapper
-      sortDescriptor={sortDescriptor}
-      onSortChange={handleSortChange}
-      classNames={{
-        base: "overflow-x-auto rounded-2xl border border-white/[0.05] bg-card/30 backdrop-blur-sm",
-        table: "w-full border-collapse",
-        thead: "[&>tr]:first:shadow-none",
-        th: "bg-white/[0.02] border-b border-white/[0.05] px-6 py-4 text-xs font-black uppercase tracking-widest text-muted",
-        td: "px-6 py-4 border-b border-white/[0.03] group-data-[hover=true]:bg-white/[0.02]",
-        tr: "transition-colors group",
-      }}
-    >
-      <TableHeader>
-        <TableColumn key="name" allowsSorting>Abonado / Jugador</TableColumn>
-        <TableColumn key="position">Posición</TableColumn>
-        <TableColumn key="nationality">Nacionalidad</TableColumn>
-        <TableColumn key="team">Club</TableColumn>
-        <TableColumn key="value" align="end" className="text-right" allowsSorting>Valor</TableColumn>
-        <TableColumn key="rating" align="end" className="text-right" allowsSorting>Rating</TableColumn>
-      </TableHeader>
-      <TableBody items={players}>
-        {(p) => {
-          const rating = Number(p.stats?.[0]?.sofascoreRating);
-          const rColor = rating >= 7.5 ? "text-green" : rating >= 7.0 ? "text-gold" : "text-primary";
+    <div className="relative">
+      <div className="overflow-x-auto rounded-2xl border border-white/[0.05] bg-card/30 backdrop-blur-sm">
+        <table className="w-full border-collapse" style={{ minWidth: 580 }}>
+          <thead>
+            <tr className="border-b border-white/[0.05]">
+              {/* Jugador — sticky */}
+              <th
+                className="sticky left-0 z-10 bg-[#0e0e0e] px-4 sm:px-6 py-3.5 text-left
+                           text-[10px] font-black uppercase tracking-widest text-muted
+                           border-r border-white/[0.04]"
+              >
+                Jugador
+              </th>
 
-          return (
-            <TableRow key={p.id} className="cursor-default">
-              <TableCell>
-                <Link href={`/players/${p.id}`} className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-lg bg-input border border-white/[0.05] overflow-hidden flex items-center justify-center shrink-0 shadow-sm transition-all group-hover:border-green/20">
-                    {p.photoUrl
-                      ? <Image src={p.photoUrl} alt={p.name} width={44} height={44} className="object-cover transition-transform group-hover:scale-110" unoptimized />
-                      : <User size={20} className="text-muted" />}
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-primary transition-colors hover:text-green">{p.name}</p>
-                    <p className="text-sm text-muted">Apertura 2026</p>
-                  </div>
-                </Link>
-              </TableCell>
-              <TableCell>
-                <span className="badge text-2xs font-black bg-white/5">{p.position}</span>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  {p.nationality && <FlagImg nationality={p.nationality} size={13} />}
-                  <span className="text-base text-secondary font-medium">{p.nationality ?? "—"}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  {p.team?.logoUrl && <Image src={p.team.logoUrl} alt="" width={18} height={18} className="object-contain" unoptimized />}
-                  <span className="text-base text-secondary font-medium">{p.team?.name}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <span className="text-base font-bold text-primary">€{p.marketValueM}M</span>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className={`flex items-center justify-end gap-1.5 font-black ${rColor}`}>
-                  <TrendingUp size={14} />
-                  {rating || "N/A"}
-                </div>
-              </TableCell>
-            </TableRow>
-          );
-        }}
-      </TableBody>
-    </Table>
+              {COLS.map((col) => (
+                <th
+                  key={col.key}
+                  onClick={() => col.sortable && handleSort(col.key)}
+                  className={`px-3 sm:px-5 py-3.5 text-[10px] font-black uppercase tracking-widest text-muted
+                              bg-white/[0.02] whitespace-nowrap select-none
+                              ${col.align === "right" ? "text-right" : "text-left"}
+                              ${col.sortable ? "cursor-pointer hover:text-primary transition-colors" : ""}
+                              ${sortBy?.startsWith(col.key) ? "text-green" : ""}`}
+                >
+                  <span className={`inline-flex items-center gap-1 ${col.align === "right" ? "float-right" : ""}`}>
+                    {col.label}
+                    {col.sortable && <SortIcon col={col.key} sortBy={sortBy} />}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {players.map((p, i) => {
+              const rating = Number(p.stats?.[0]?.sofascoreRating);
+              const rColor = rating >= 7.5 ? "text-green" : rating >= 7.0 ? "text-gold" : "text-secondary";
+
+              return (
+                <tr
+                  key={p.id}
+                  className={`border-b border-white/[0.03] transition-colors hover:bg-white/[0.02] group
+                              ${i % 2 === 0 ? "bg-transparent" : "bg-white/[0.01]"}`}
+                >
+                  {/* Jugador — sticky */}
+                  <td className="sticky left-0 z-10 bg-inherit px-4 sm:px-6 py-3
+                                 border-r border-white/[0.04]">
+                    <Link href={`/players/${p.id}`} className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-input border border-white/[0.05] overflow-hidden
+                                      flex items-center justify-center flex-shrink-0
+                                      transition-all group-hover:border-green/20">
+                        {p.photoUrl
+                          ? <Image src={p.photoUrl} alt={p.name} width={40} height={40}
+                              className="object-cover transition-transform group-hover:scale-105" unoptimized />
+                          : <User size={18} className="text-muted" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-primary truncate group-hover:text-green transition-colors">
+                          {p.name}
+                        </p>
+                      </div>
+                    </Link>
+                  </td>
+
+                  {/* Posición */}
+                  <td className="px-3 sm:px-5 py-3">
+                    <span className={`badge text-[10px] font-black ${posStyle(p.position)}`}>
+                      {p.position}
+                    </span>
+                  </td>
+
+                  {/* Nacionalidad */}
+                  <td className="px-3 sm:px-5 py-3">
+                    <div className="flex items-center gap-1.5">
+                      {p.nationality && <FlagImg nationality={p.nationality} size={13} />}
+                      <span className="text-sm text-secondary font-medium whitespace-nowrap hidden sm:inline">
+                        {p.nationality ?? "—"}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Club */}
+                  <td className="px-3 sm:px-5 py-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {p.team?.logoUrl && (
+                        <Image src={p.team.logoUrl} alt="" width={18} height={18}
+                          className="object-contain flex-shrink-0" unoptimized />
+                      )}
+                      <span className="text-sm text-secondary font-medium truncate max-w-[120px]">
+                        {p.team?.name ?? "—"}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Valor */}
+                  <td className="px-3 sm:px-5 py-3 text-right">
+                    <span className="text-sm font-black text-green whitespace-nowrap">
+                      {p.marketValueM ? `€${p.marketValueM}M` : "—"}
+                    </span>
+                  </td>
+
+                  {/* Rating */}
+                  <td className="px-3 sm:px-5 py-3 text-right">
+                    <div className={`flex items-center justify-end gap-1 font-black ${rColor}`}>
+                      <TrendingUp size={12} />
+                      <span className="text-sm">{rating > 0 ? rating.toFixed(1) : "—"}</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile scroll gradient hint */}
+      <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-card/80 to-transparent
+                      pointer-events-none rounded-r-2xl sm:hidden" />
+    </div>
   );
 }

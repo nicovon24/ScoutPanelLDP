@@ -25,7 +25,7 @@ function Logo() {
 }
 
 export default function Topbar() {
-  const { user, clearAuth, mobileMenuOpen, setMobileMenuOpen } = useScoutStore();
+  const { user, clearAuth, mobileMenuOpen, setMobileMenuOpen, sidebarExpanded } = useScoutStore();
 
   const handleLogout = () => {
     clearAuth();
@@ -33,8 +33,10 @@ export default function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-mainBg/80 backdrop-blur-xl border-b border-white/[0.04]
-                       flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 lg:h-20 gap-3">
+    <header className={`fixed top-0 right-0 z-[45] bg-mainBg/80 backdrop-blur-xl border-b border-white/[0.04]
+                        flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 lg:h-20 gap-3
+                        transition-[left] duration-300 left-0
+                        ${sidebarExpanded ? "lg:left-64" : "lg:left-20"}`}>
 
       {/* Left: hamburger (mobile) + branding */}
       <div className="flex items-center gap-3 flex-shrink-0">
@@ -49,8 +51,8 @@ export default function Topbar() {
         <Logo />
       </div>
 
-      {/* Center: Search */}
-      <div className="flex justify-center flex-1 min-w-0">
+      {/* Center: Search — oculto en mobile (está en el sidebar) */}
+      <div className="hidden lg:flex justify-center flex-1 min-w-0">
         <SearchBar />
       </div>
 

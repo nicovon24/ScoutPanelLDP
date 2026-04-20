@@ -162,7 +162,7 @@ router.get("/leaderboard", async (req: Request, res: Response) => {
     res.json(rows);
   } catch (err) {
     console.error("[analytics/leaderboard]", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -202,7 +202,7 @@ router.get("/summary", async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("[analytics/summary]", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

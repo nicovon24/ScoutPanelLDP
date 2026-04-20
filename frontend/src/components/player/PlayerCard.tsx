@@ -193,7 +193,6 @@ export default function PlayerCard({ player, hideFavBtn }: { player: Player; hid
               <div className="flex justify-between items-end">
                 <div className="flex flex-col">
                   <span className="text-2xs text-primary/40 uppercase font-black tracking-[0.15em]">Desempeño</span>
-                  <span className="text-secondary font-bold text-[11px]">Temporada 2026</span>
                 </div>
                 <div className={`px-2.5 py-1 rounded-lg font-black text-md bg-black/60 border ${ratingColor} shadow-lg`}>
                   {rating.toFixed(1)}
