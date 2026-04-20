@@ -196,7 +196,7 @@ function HomeContent() {
         </div>
 
         {/* Quick Position Multi-Select */}
-        <div className="w-full sm:w-auto sm:max-w-[280px] hidden sm:block">
+        <div className="w-full sm:w-auto sm:min-w-[200px] sm:max-w-[260px] hidden sm:block">
           <Select
             selectionMode="multiple"
             items={POSITIONS_LIST}
@@ -206,9 +206,20 @@ function HomeContent() {
               const arr = Array.from(keys).join(",");
               updateFiltersAndStore({ position: arr });
             }}
+            renderValue={(items) => {
+              if (items.length === 0) return null;
+              if (items.length === 1) return (
+                <span className="text-primary font-bold text-sm truncate">{items[0].key}</span>
+              );
+              return (
+                <span className="text-primary font-bold text-sm whitespace-nowrap">
+                  {items.map(i => i.key).join(", ")}
+                </span>
+              );
+            }}
             classNames={{
-              trigger: `${sharedSelectClasses.trigger} h-12`,
-              value: sharedSelectClasses.value,
+              trigger: `${sharedSelectClasses.trigger} h-12 min-w-0`,
+              value: "text-secondary font-bold text-sm min-w-0 overflow-hidden",
               popoverContent: sharedSelectClasses.popoverContent,
             }}
             aria-label="Filtro rápido de posiciones"

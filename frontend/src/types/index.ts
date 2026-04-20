@@ -17,16 +17,17 @@ export interface PlayerStat {
   id?: number;
   seasonId?: number;
   matchesPlayed?: number;
+  minutesPlayed?: number;
   goals?: number;
   assists?: number;
-  shots?: number;
+  shotsPerGame?: string | number;
   shotsOnTargetPct?: string | number;
   xgPerGame?: string | number;
   xaPerGame?: string | number;
   passAccuracyPct?: string | number;
   keyPassesPerGame?: string | number;
+  successfulDribblesPerGame?: string | number;
   dribbleSuccessRate?: string | number;
-  dribbles?: number;
   tackles?: number;
   interceptions?: number;
   recoveries?: number;
@@ -57,18 +58,24 @@ export interface Player {
   position: string;
   nationality?: string;
   dateOfBirth?: string;
-  height?: number;
-  weight?: number;
-  foot?: string;
+  /** height_cm */
+  heightCm?: number;
+  /** weight_kg */
+  weightKg?: number;
+  /** preferred_foot */
+  preferredFoot?: string;
   photoUrl?: string;
   marketValueM?: string;
   contractType?: string;
-  contractEnd?: string;
+  /** contract_until */
+  contractUntil?: string;
+  debutYear?: number;
   team?: Team;
   stats?: PlayerStat[];
-  ratings?: Array<{ ratingByMonth?: Record<string, number> }>;
-  injuries?: Array<{ startDate?: string; daysOut?: number; description?: string }>;
-  careerHistory?: CareerEntry[];
+  ratings?: Array<{ seasonId?: number; ratingByMonth?: Record<string, number> }>;
+  injuries?: Array<{ id?: number; injuryType?: string; startedAt?: string; daysOut?: number }>;
+  /** career (player_career table) */
+  career?: CareerEntry[];
   strengths?: string[];
   weaknesses?: string[];
   scoutingNote?: string;

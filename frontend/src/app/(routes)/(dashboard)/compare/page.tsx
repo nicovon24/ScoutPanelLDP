@@ -109,14 +109,16 @@ export default function ComparePage() {
   };
 
   // ── Grid column definitions ─────────────────────────────────────────────────
-  // Shared content grid matches PlayerStatsTable internal layout (130px label + 44px VS + 1fr slots)
-  const contentCols = getCompareColsStyle(slotCount);
-  // Header grid: same as content + optional Add button column
-  const headerCols  = `${contentCols}${canAdd ? ` 64px` : ""}`;
+  // Content grid is based on loaded players only — keeps PlayerStatsTable,
+  // heatmap and SectionHeaders in sync (all use the same column template).
+  const validCount  = validIndices.length;
+  const contentCols = getCompareColsStyle(validCount);
+  // Header grid shows all slots (including empty) + optional Add button
+  const headerCols  = `${getCompareColsStyle(slotCount)}${canAdd ? ` 64px` : ""}`;
 
-  // Heatmap canvas sizes (approximate, accounting for label + VS cols + padding)
-  const hmW = slotCount >= 3 ? 420 : 640;
-  const hmH = slotCount >= 3 ? 250 : 380;
+  // Heatmap canvas sizes scale with the number of loaded players
+  const hmW = validCount >= 3 ? 420 : 640;
+  const hmH = validCount >= 3 ? 250 : 380;
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -301,26 +303,15 @@ export default function ComparePage() {
             <SectionHeader label="Mapas de calor" colsStyle={contentCols} />
             <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: contentCols }}>
               <div className="border-r border-border" />
-              {slots.map((_, i) => (
-                <Fragment key={i}>
-                  {i > 0 && <div className="border-r border-border" />}
+              {validIndices.map((dataIdx, arrIdx) => (
+                <Fragment key={dataIdx}>
+                  {arrIdx > 0 && <div className="border-r border-border" />}
                   <div className="p-3 border-r border-border last:border-0">
-                    {playersData[i] && !loadings[i] ? (
-                      <HeatmapField
-                        grid={getStat(i).heatmapData as number[][] | undefined}
-                        width={hmW}
-                        height={hmH}
-                      />
-                    ) : (
-                      <div
-                        className="flex items-center justify-center rounded-xl border border-border/40 bg-white/[0.02]"
-                        style={{ minHeight: hmH / 2 }}
-                      >
-                        {loadings[i]
-                          ? <Loader2 size={20} className={`animate-spin ${COLORS[i].text}`} />
-                          : <p className="text-[11px] text-muted">—</p>}
-                      </div>
-                    )}
+                    <HeatmapField
+                      grid={getStat(dataIdx).heatmapData as number[][] | undefined}
+                      width={hmW}
+                      height={hmH}
+                    />
                   </div>
                 </Fragment>
               ))}

@@ -1,11 +1,10 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import Image from "next/image";
 import { Select, SelectItem, Input } from "@nextui-org/react";
-import AppButton from "./AppButton";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 
 interface SearchResult {
@@ -77,7 +76,7 @@ export default function SearchBar() {
         <div className="w-[200px] border-r border-white/[0.05] bg-white/[0.02] flex items-center">
           <Select
             selectedKeys={[type]}
-            onChange={(e) => { if (e.target.value) setType(e.target.value as any) }}
+            onChange={(e) => { if (e.target.value) setType(e.target.value as "all" | "players" | "clubs") }}
             size="sm"
             classNames={{
               trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-3 h-12 min-h-12 border-none rounded-none w-full",

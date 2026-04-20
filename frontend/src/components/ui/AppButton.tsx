@@ -6,10 +6,9 @@ interface AppButtonProps extends Omit<ButtonProps, "variant"> {
   variant?: "primary" | "secondary" | "danger" | "ghost" | "light";
   children: React.ReactNode;
   className?: string;
-  size?: "sm" | "md" | "lg";
 }
 
-export default function AppButton({ variant = "primary", size, className = "", children, ...props }: AppButtonProps) {
+export default function AppButton({ variant = "primary", className = "", children, ...props }: AppButtonProps) {
   const variants = {
     primary: "bg-green text-mainBg font-black uppercase tracking-widest hover:brightness-110 shadow-[0_4px_20px_rgba(0,224,148,0.2)]",
     secondary: "bg-white/[0.05] hover:bg-white/[0.08] text-primary font-bold",
