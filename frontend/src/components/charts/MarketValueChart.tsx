@@ -1,6 +1,6 @@
 "use client";
 import {
-  ComposedChart, Area, XAxis, YAxis,
+  ComposedChart, Area, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 
@@ -23,18 +23,20 @@ interface DotProps  { cx?: number; cy?: number; index: number }
 const formatCurrency = (val: number) => `€${val.toFixed(1)}M`;
 
 export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
-  const peak = Math.max(...data.map(d => d.value));
+  // Solo meses con dato real: sin tramo proyectado después del último valor
+  const displayData = data.some(d => d.future)
+    ? data.filter((d) => !d.future)
+    : data;
 
-  // Percentage where "future" starts (for stroke gradient)
-  const firstFutureIdx = data.findIndex(d => d.future);
-  const transitionPct =
-    firstFutureIdx === -1
-      ? 100
-      : Math.round((firstFutureIdx / Math.max(data.length - 1, 1)) * 100);
+  const peak = Math.max(...displayData.map((d) => d.value), 0);
+  const dataWithPeak = displayData.map((d) => ({ ...d, peakLine: peak }));
 
-  // The last "past" month gets the "Hoy" marker
+  // Toda la serie visible es “pasado”: línea y relleno verdes uniformes
+  const transitionPct = 100;
+
+  // “Hoy” en el último mes con dato (si había meses futuros en la fuente, ya los quitamos)
   const lastPastMonth =
-    firstFutureIdx > 0 ? data[firstFutureIdx - 1]?.month : undefined;
+    displayData.length > 0 ? displayData[displayData.length - 1]?.month : undefined;
 
   return (
     <div className="bg-[#1C1C1C] border border-border rounded-xl p-6 shadow-xl relative overflow-hidden h-full flex flex-col">
@@ -66,7 +68,7 @@ export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
 
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 25 }}>
+          <ComposedChart data={dataWithPeak} margin={{ top: 20, right: 10, left: -20, bottom: 25 }}>
             <defs>
               {/* Stroke gradient: solid past → dim future */}
               <linearGradient id="strokeGradientMV" x1="0" y1="0" x2="1" y2="0">
@@ -86,7 +88,7 @@ export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
             <XAxis
               dataKey="month"
               tick={({ x, y, payload, index }: TickProps) => {
-                const entry = data[index];
+                const entry = displayData[index];
                 const fill = entry?.future
                   ? "rgba(255,255,255,0.18)"
                   : "rgba(255,255,255,0.4)";
@@ -121,29 +123,11 @@ export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
                     <span className="text-lg font-black text-[#00E094]">
                       {formatCurrency(d.value)}
                     </span>
-                    {d.future && (
-                      <p className="text-[9px] text-muted mt-1 font-bold uppercase tracking-wider">
-                        Proyectado
-                      </p>
-                    )}
                   </div>
                 );
               }}
             />
 
-            {/* Peak value reference line */}
-            <ReferenceLine
-              y={peak}
-              stroke="rgba(250,204,21,0.25)"
-              strokeDasharray="4 4"
-              label={{
-                value: `Pico ${formatCurrency(peak)}`,
-                position: "insideTopRight",
-                fill: "rgba(250,204,21,0.55)",
-                fontSize: 10,
-                fontWeight: 700,
-              }}
-            />
 
             {/* "Hoy" vertical marker */}
             {lastPastMonth && (
@@ -170,7 +154,7 @@ export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
               fill="url(#fillGradientMV)"
               animationDuration={1500}
               dot={({ cx, cy, index }: DotProps) => {
-                const entry = data[index];
+                const entry = displayData[index];
                 if (!entry) return <circle key={`dot-${index}`} cx={cx} cy={cy} r={0} />;
                 if (entry.future) {
                   return (
