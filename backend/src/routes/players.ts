@@ -129,7 +129,7 @@ router.get("/compare", async (req: Request, res: Response) => {
     res.json(data);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

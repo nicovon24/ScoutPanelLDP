@@ -30,6 +30,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar />
       <div className={`flex flex-col flex-1 transition-all duration-300 min-h-screen ml-0 ${sidebarExpanded ? "lg:ml-64" : "lg:ml-20"}`}>
         <Topbar />
+        {/* Spacer that matches the fixed topbar height so content is not hidden beneath it */}
+        <div className="h-16 lg:h-20 flex-shrink-0" />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full">
           {children}
         </main>

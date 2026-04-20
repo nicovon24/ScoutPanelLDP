@@ -51,10 +51,10 @@ function SingleStatRow({ label, value, pct, accent }: {
   label: string; value: string; pct: number; accent: string;
 }) {
   return (
-    <div className="flex items-center gap-4 py-[10px] border-b border-border/40 last:border-0">
-      <span className="text-[14px] text-secondary font-medium flex-1 min-w-0">{label}</span>
-      <span className="text-[15px] font-black text-primary w-16 text-right flex-shrink-0">{value}</span>
-      <div className="w-[140px] flex-shrink-0 h-[5px] rounded-full bg-input overflow-hidden">
+    <div className="flex items-center gap-3 py-[10px] border-b border-border/40 last:border-0">
+      <span className="text-[13px] sm:text-[14px] text-secondary font-medium flex-1 min-w-0">{label}</span>
+      <span className="text-[14px] sm:text-[15px] font-black text-primary w-12 sm:w-16 text-right flex-shrink-0">{value}</span>
+      <div className="hidden sm:block w-[120px] flex-shrink-0 h-[5px] rounded-full bg-input overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700 shadow-[0_0_6px_rgba(255,255,255,0.06)]"
           style={{ width: `${pct}%`, backgroundColor: accent }}
@@ -257,8 +257,10 @@ export default function PlayerStatsTable({
   }
 
   // ── Multi player ───────────────────────────────────────────────────────────
+  // minmax(140px, 1fr) gives each player column a hard floor so the parent
+  // overflow-x-auto triggers a scrollbar instead of squishing columns.
   const playerColsTemplate = Array.from({ length: count })
-    .map((_, i) => (i === 0 ? "1fr" : `${VS_W}px 1fr`))
+    .map((_, i) => (i === 0 ? "minmax(140px, 1fr)" : `${VS_W}px minmax(140px, 1fr)`))
     .join(" ");
   const colsStyle = `${LABEL_W}px ${playerColsTemplate}`;
 
@@ -303,7 +305,7 @@ export default function PlayerStatsTable({
 // ── Export colsStyle helper for compare page heatmap/radar headers ─────────────
 export function getCompareColsStyle(slotCount: number): string {
   const playerColsTemplate = Array.from({ length: slotCount })
-    .map((_, i) => (i === 0 ? "1fr" : `${VS_W}px 1fr`))
+    .map((_, i) => (i === 0 ? "minmax(140px, 1fr)" : `${VS_W}px minmax(140px, 1fr)`))
     .join(" ");
   return `${LABEL_W}px ${playerColsTemplate}`;
 }
