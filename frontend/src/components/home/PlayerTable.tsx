@@ -53,14 +53,16 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
   };
 
   return (
-    <div className="relative">
-      <div className="overflow-x-auto rounded-2xl border border-white/[0.05] bg-card/30 backdrop-blur-sm">
+    <div className="relative w-full min-w-0">
+      <div
+        className="overflow-x-auto overscroll-x-contain rounded-2xl border border-white/[0.05] bg-card/30 backdrop-blur-sm [-webkit-overflow-scrolling:touch] [touch-action:pan-x_pan-y]"
+      >
         <table className="w-full border-collapse" style={{ minWidth: 580 }}>
           <thead>
             <tr className="border-b border-white/[0.05]">
-              {/* Jugador — sticky */}
+              {/* Jugador — sticky solo en lg+ (móvil: toda la fila scrollea junta) */}
               <th
-                className="sticky left-0 z-10 bg-[#0e0e0e] px-4 sm:px-6 py-3.5 text-left
+                className="z-10 bg-[#0e0e0e] px-4 sm:px-6 py-3.5 text-left lg:sticky lg:left-0
                            text-[10px] font-black uppercase tracking-widest text-muted
                            border-r border-white/[0.04]"
               >
@@ -97,9 +99,8 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
                   className={`border-b border-white/[0.03] transition-colors hover:bg-white/[0.02] group
                               ${i % 2 === 0 ? "bg-transparent" : "bg-white/[0.01]"}`}
                 >
-                  {/* Jugador — sticky */}
-                  <td className="sticky left-0 z-10 bg-inherit px-4 sm:px-6 py-3
-                                 border-r border-white/[0.04]">
+                  {/* Jugador — sticky solo en lg+ */}
+                  <td className="z-10 bg-inherit px-4 sm:px-6 py-3 border-r border-white/[0.04] lg:sticky lg:left-0">
                     <Link href={`/players/${p.id}`} className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-lg bg-input border border-white/[0.05] overflow-hidden
                                       flex items-center justify-center flex-shrink-0

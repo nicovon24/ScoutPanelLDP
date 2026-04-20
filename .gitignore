@@ -23,3 +23,5 @@ build/
 .claude
 .anthropic/
 .coderabbit.yaml
+
+/new_changes

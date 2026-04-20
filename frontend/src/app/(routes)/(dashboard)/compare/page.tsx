@@ -40,6 +40,15 @@ function SectionHeader({ label, colsStyle }: { label: string; colsStyle: string 
   );
 }
 
+/** Ancho mínimo del grid de comparación (alineado con LABEL_W / VS_W / columnas en PlayerStatsTable) */
+function compareGridMinPx(playerColCount: number): number {
+  const LABEL = 130;
+  const PLAYER = 140;
+  const VS = 44;
+  if (playerColCount < 1) return LABEL;
+  return LABEL + playerColCount * PLAYER + Math.max(0, playerColCount - 1) * VS;
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ComparePage() {
   const { compareList } = useScoutStore();
@@ -120,9 +129,15 @@ export default function ComparePage() {
   const hmW = validCount >= 3 ? 420 : 640;
   const hmH = validCount >= 3 ? 250 : 380;
 
+  // Un solo ancho mínimo para header + tablas + heatmap (hmW puede ser 640px; si no entra, el scroll es el de afuera)
+  const headerMinPx = compareGridMinPx(slotCount) + (canAdd ? 64 : 0);
+  const statsMinPx  = bothLoaded && validCount >= 2 ? compareGridMinPx(validCount) : 0;
+  const heatmapRowMinPx = bothLoaded && validCount >= 2 ? 130 + hmW : 0;
+  const innerMinPx  = Math.max(headerMinPx, statsMinPx || headerMinPx, heatmapRowMinPx, 320);
+
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-[1500px] mx-auto pb-16 sm:pb-20 pt-4 sm:pt-6 animate-fade-in font-sans">
+    <div className="max-w-[1500px] mx-auto w-full min-w-0 pb-16 sm:pb-20 pt-4 sm:pt-6 animate-fade-in font-sans">
       <p className="text-[11px] font-bold text-muted mb-3">Player comparison</p>
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 sm:mb-5 gap-3 sm:gap-4">
@@ -156,11 +171,13 @@ export default function ComparePage() {
         <span>←</span> deslizá para ver todo <span>→</span>
       </p>
 
-      <div className="bg-surface border border-border rounded-[14px] overflow-hidden">
-
-        {/* ── Horizontal scroll wrapper for the comparison table ─────────── */}
-        <div className="overflow-x-auto">
-        <div className="min-w-[560px]">
+      {/* overflow-hidden cortaba el scroll; un solo overflow-x-auto para todo el bloque */}
+      <div
+        className="bg-surface border border-border rounded-[14px] w-full min-w-0
+                   overflow-x-auto overflow-y-visible overscroll-x-contain
+                   [-webkit-overflow-scrolling:touch] [touch-action:pan-x_pan-y]"
+      >
+        <div style={{ minWidth: `${innerMinPx}px` }} className="min-w-0">
 
         {/* ── HEADER: player slots ──────────────────────────────────────────── */}
         <div className="grid border-b border-border" style={{ gridTemplateColumns: headerCols }}>
@@ -288,7 +305,7 @@ export default function ComparePage() {
           </div>
         ) : (
           <div className="animate-fade-in">
-            {/* Sticky legend */}
+            {/* Sticky legend — outside scroll so stays fixed while scrolling */}
             <div className="flex items-center justify-center gap-6 p-3.5 border-b border-border bg-surface-2/50 backdrop-blur-sm sticky top-0 z-30">
               {slots.map((s, i) => (
                 <div key={i} className={`flex items-center gap-1.5 text-[11px] font-extrabold transition-opacity ${s ? "text-secondary opacity-100" : "text-muted opacity-40"}`}>
@@ -298,45 +315,51 @@ export default function ComparePage() {
               ))}
             </div>
 
-            {/* Info General */}
-            <PlayerStatsTable
-              entries={validIndices.map(i => ({
-                player: playersData[i],
-                stat: getStat(i),
-                color: COLORS[i],
-              }))}
-              onlySections={["Info General"]}
-            />
+            {/* Stats + heatmap: el scroll horizontal es el del contenedor padre (una sola capa) */}
+            <div className="relative">
+              {/* Info General */}
+              <PlayerStatsTable
+                entries={validIndices.map(i => ({
+                  player: playersData[i],
+                  stat: getStat(i),
+                  color: COLORS[i],
+                }))}
+                onlySections={["Info General"]}
+              />
 
-            {/* Heatmap — right after Info General */}
-            <SectionHeader label="Mapas de calor" colsStyle={contentCols} />
-            <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: contentCols }}>
-              <div className="border-r border-border" />
-              {validIndices.map((dataIdx, arrIdx) => (
-                <Fragment key={dataIdx}>
-                  {arrIdx > 0 && <div className="border-r border-border" />}
-                  <div className="p-3 border-r border-border last:border-0">
-                    <HeatmapField
-                      grid={getStat(dataIdx).heatmapData as number[][] | undefined}
-                      width={hmW}
-                      height={hmH}
-                    />
-                  </div>
-                </Fragment>
-              ))}
+              {/* Heatmap — right after Info General */}
+              <SectionHeader label="Mapas de calor" colsStyle={contentCols} />
+              <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: contentCols }}>
+                <div className="border-r border-border" />
+                {validIndices.map((dataIdx, arrIdx) => (
+                  <Fragment key={dataIdx}>
+                    {arrIdx > 0 && <div className="border-r border-border" />}
+                    <div className="p-3 border-r border-border last:border-0">
+                      <HeatmapField
+                        grid={getStat(dataIdx).heatmapData as number[][] | undefined}
+                        width={hmW}
+                        height={hmH}
+                      />
+                    </div>
+                  </Fragment>
+                ))}
+              </div>
+
+              {/* Remaining stats (everything except Info General) */}
+              <PlayerStatsTable
+                entries={validIndices.map(i => ({
+                  player: playersData[i],
+                  stat: getStat(i),
+                  color: COLORS[i],
+                }))}
+                excludeSections={["Info General"]}
+              />
+
+              <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-l from-[#141414] to-transparent
+                              pointer-events-none sm:hidden rounded-br-[14px]" />
             </div>
 
-            {/* Remaining stats (everything except Info General) */}
-            <PlayerStatsTable
-              entries={validIndices.map(i => ({
-                player: playersData[i],
-                stat: getStat(i),
-                color: COLORS[i],
-              }))}
-              excludeSections={["Info General"]}
-            />
-
-            {/* Radar section */}
+            {/* Radar section — full width, no horizontal scroll needed */}
             <SectionHeader label="Radar de Rendimiento" colsStyle={contentCols} />
             <div className="border-t border-border bg-surface-2 p-6 sm:p-10 flex justify-center">
               <div className="w-full max-w-[min(100%,880px)] px-1 sm:px-2">
@@ -354,10 +377,8 @@ export default function ComparePage() {
           </div>
         )}
 
-        {/* close min-w + overflow wrappers */}
         </div>
         </div>
-      </div>
     </div>
   );
 }

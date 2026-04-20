@@ -138,7 +138,7 @@ export default function AnalyticsPage() {
   const activeColLabel = groupCfg.cols.find((c) => c.key === metric)?.label ?? metric;
 
   return (
-    <div className="max-w-[1400px] mx-auto pb-16 pt-4 animate-fade-in space-y-6">
+    <div className="max-w-[1400px] mx-auto min-w-0 pb-16 pt-4 animate-fade-in space-y-6">
 
       {/* ── Page header ────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -185,7 +185,7 @@ export default function AnalyticsPage() {
       />
 
       {/* ── Leaderboard card ───────────────────────────────────────────────── */}
-      <div className="card space-y-4">
+      <div className="card space-y-4 min-w-0">
 
         {/* Row 1: position tabs */}
         <div className="flex items-center gap-2 flex-wrap">
