@@ -30,7 +30,7 @@ const HeatmapField = dynamic(() => import("@/components/player/HeatmapField"), {
   loading: () => <ChartSkeleton height={180} />,
   ssr: false,
 });
-import { calcAge, posStyle, fmt, contractTypeLabel, careerYearKey } from "@/lib/utils";
+import { calcAge, posStyle, contractTypeLabel, careerYearKey } from "@/lib/utils";
 import FlagImg from "@/components/ui/FlagImg";
 import { buildSingleRadar } from "@/lib/radarNorm";
 import { buildRatingHistory, buildValueHistory } from "@/lib/playerStats";
