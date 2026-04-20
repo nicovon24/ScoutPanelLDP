@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { db } from "../db";
-import { players, playerStats, playerRatings, playerInjuries, teams, seasons } from "../db/schema";
-import { eq, and, gte, lte, sql, inArray, or, ilike, desc, asc } from "drizzle-orm";
+import { db, pool } from "../db";
+import { players, playerStats, playerRatings, teams } from "../db/schema";
+import { eq, inArray, or, ilike, asc } from "drizzle-orm";
 
 const router = Router();
 
@@ -9,7 +9,7 @@ const router = Router();
 router.get("/search", async (req, res) => {
   try {
     const q = (req.query.q as string)?.trim() || "";
-    
+
     if (q === "") {
       const defaultPlayers = await db
         .select({
@@ -69,11 +69,26 @@ router.get("/compare", async (req, res) => {
     const { ids, seasonId } = req.query;
     if (!ids) return res.status(400).json({ error: "ids is required" });
 
-    const playerIds = (ids as string).split(",").map(Number);
+    // F-04: filtrar IDs inválidos (NaN) y limitar cantidad
+    const playerIds = (ids as string)
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n) && n > 0);
 
+    if (playerIds.length === 0) {
+      return res.status(400).json({ error: "No valid player IDs provided" });
+    }
+    if (playerIds.length > 10) {
+      return res.status(400).json({ error: "Maximum 10 players can be compared at once" });
+    }
+
+    // F-06: validar seasonId
     let sid: number;
     if (seasonId) {
-      sid = Number(seasonId);
+      sid = parseInt(seasonId as string, 10);
+      if (isNaN(sid)) {
+        return res.status(400).json({ error: "seasonId must be a valid integer" });
+      }
     } else {
       const latestSeason = await db.query.seasons.findFirst({
         orderBy: (s, { desc }) => [desc(s.year)],
@@ -100,7 +115,7 @@ router.get("/compare", async (req, res) => {
   }
 });
 
-// ─── GET /api/players  - List with filters + sorting ───────────────────────
+// ─── GET /api/players  — List with filters + sorting ───────────────────────
 router.get("/", async (req, res) => {
   try {
     const {
@@ -110,223 +125,176 @@ router.get("/", async (req, res) => {
       heightMin, heightMax, minRating,
       q,
       page = "1", limit = "20",
-    } = req.query;
-
-    const {
       sortBy = "rating_desc",
     } = req.query;
 
-    const offset = (Number(page) - 1) * Number(limit);
+    // F-03 + F-18: validar y acotar page y limit
+    const rawPage  = Math.max(1, parseInt(page as string, 10) || 1);
+    const rawLimit = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
+    const offset   = (rawPage - 1) * rawLimit;
 
-    const conditions: ReturnType<typeof eq>[] = [];
-
-    if (q) {
-      const pattern = `%${(q as string).trim()}%`;
-      conditions.push(ilike(players.name, pattern) as any);
-    }
-    if (position && position !== "") {
-      const posArr = (position as string).split(",").filter(Boolean);
-      if (posArr.length > 0) {
-        if (posArr.length > 1) {
-          conditions.push(inArray(players.position, posArr) as any);
-        } else {
-          conditions.push(eq(players.position, posArr[0]) as any);
-        }
-      }
-    }
-    if (nationality) conditions.push(eq(players.nationality, nationality as string) as any);
-    if (teamId && teamId !== "") {
-      const teamArr = (teamId as string).split(",").filter(Boolean).map(Number);
-      if (teamArr.length > 0) {
-        if (teamArr.length > 1) {
-          conditions.push(inArray(players.teamId, teamArr) as any);
-        } else {
-          conditions.push(eq(players.teamId, teamArr[0]) as any);
-        }
-      }
-    }
-    if (foot) conditions.push(eq(players.preferredFoot, foot as string) as any);
-
-    if (valueMin) conditions.push(gte(players.marketValueM, valueMin as string) as any);
-    if (valueMax) conditions.push(lte(players.marketValueM, valueMax as string) as any);
-    if (heightMin) conditions.push(gte(players.heightCm, Number(heightMin)) as any);
-    if (heightMax) conditions.push(lte(players.heightCm, Number(heightMax)) as any);
-
-    // Age filters
-    if (ageMin || ageMax) {
-      const now = new Date();
-      if (ageMin) {
-        const minDate = new Date(now.getFullYear() - Number(ageMin), now.getMonth(), now.getDate());
-        conditions.push(lte(players.dateOfBirth, minDate.toISOString().split("T")[0]) as any);
-      }
-      if (ageMax) {
-        const maxDate = new Date(now.getFullYear() - Number(ageMax) - 1, now.getMonth(), now.getDate());
-        conditions.push(gte(players.dateOfBirth, maxDate.toISOString().split("T")[0]) as any);
-      }
-    }
-
-    const where = conditions.length > 0 ? and(...(conditions as any)) : undefined;
+    // Build sort order — whitelist prevents SQL injection
+    const ORDER_MAP: Record<string, string> = {
+      name_asc:    "p.name ASC",
+      name_desc:   "p.name DESC",
+      age_asc:     "p.date_of_birth DESC",
+      age_desc:    "p.date_of_birth ASC",
+      value_asc:   "p.market_value_m ASC NULLS LAST",
+      value_desc:  "p.market_value_m DESC NULLS LAST",
+      rating_asc:  "COALESCE(ps.sofascore_rating, 0) ASC",
+      rating_desc: "COALESCE(ps.sofascore_rating, 0) DESC",
+    };
+    const orderByClause = ORDER_MAP[sortBy as string] ?? ORDER_MAP["rating_desc"];
 
     // Get latest season
     const latestSeason = await db.query.seasons.findFirst({
       orderBy: (s, { desc }) => [desc(s.year)],
     });
-    const sid = latestSeason?.id;
+    const sidVal = latestSeason?.id ?? 0;
 
-    // Build sort order for SQL
-    let orderByClause: string;
-    switch (sortBy) {
-      case "name_asc": orderByClause = "p.name ASC"; break;
-      case "name_desc": orderByClause = "p.name DESC"; break;
-      case "age_asc": orderByClause = "p.date_of_birth DESC"; break;
-      case "age_desc": orderByClause = "p.date_of_birth ASC"; break;
-      case "value_asc": orderByClause = "p.market_value_m ASC NULLS LAST"; break;
-      case "value_desc": orderByClause = "p.market_value_m DESC NULLS LAST"; break;
-      case "rating_asc": orderByClause = "COALESCE(ps.sofascore_rating, 0) ASC"; break;
-      default: orderByClause = "COALESCE(ps.sofascore_rating, 0) DESC"; break;
+    // Build parameterized WHERE clauses
+    const whereClauses: string[] = [];
+    const vals: any[] = [];
+    let idx = 1;
+
+    if (q) {
+      whereClauses.push(`p.name ILIKE $${idx++}`);
+      vals.push(`%${(q as string).trim()}%`);
+    }
+    if (position && position !== "") {
+      const posArr = (position as string).split(",").filter(Boolean);
+      if (posArr.length > 1) {
+        whereClauses.push(`p.position = ANY($${idx++})`);
+        vals.push(posArr);
+      } else if (posArr.length === 1) {
+        whereClauses.push(`p.position = $${idx++}`);
+        vals.push(posArr[0]);
+      }
+    }
+    if (nationality) {
+      whereClauses.push(`p.nationality = $${idx++}`);
+      vals.push(nationality);
+    }
+    if (teamId && teamId !== "") {
+      // F-19: filtrar NaN de teamId
+      const teamArr = (teamId as string)
+        .split(",")
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n) && n > 0);
+      if (teamArr.length > 1) {
+        whereClauses.push(`p.team_id = ANY($${idx++})`);
+        vals.push(teamArr);
+      } else if (teamArr.length === 1) {
+        whereClauses.push(`p.team_id = $${idx++}`);
+        vals.push(teamArr[0]);
+      }
+    }
+    if (foot) {
+      whereClauses.push(`p.preferred_foot = $${idx++}`);
+      vals.push(foot);
+    }
+    if (valueMin) {
+      whereClauses.push(`p.market_value_m >= $${idx++}`);
+      vals.push(Number(valueMin));
+    }
+    if (valueMax) {
+      whereClauses.push(`p.market_value_m <= $${idx++}`);
+      vals.push(Number(valueMax));
+    }
+    if (ageMin) {
+      const now = new Date();
+      const minDate = new Date(now.getFullYear() - Number(ageMin), now.getMonth(), now.getDate());
+      whereClauses.push(`p.date_of_birth <= $${idx++}`);
+      vals.push(minDate.toISOString().split("T")[0]);
+    }
+    if (ageMax) {
+      const now = new Date();
+      const maxDate = new Date(now.getFullYear() - Number(ageMax) - 1, now.getMonth(), now.getDate());
+      whereClauses.push(`p.date_of_birth >= $${idx++}`);
+      vals.push(maxDate.toISOString().split("T")[0]);
+    }
+    if (heightMin) {
+      whereClauses.push(`p.height_cm >= $${idx++}`);
+      vals.push(Number(heightMin));
+    }
+    if (heightMax) {
+      whereClauses.push(`p.height_cm <= $${idx++}`);
+      vals.push(Number(heightMax));
+    }
+    if (minRating) {
+      whereClauses.push(`ps.sofascore_rating >= $${idx++}`);
+      vals.push(Number(minRating));
     }
 
-    // We need a raw SQL query to sort by stats fields
-    const needsStatsSort = ["goals_desc", "assists_desc", "rating_desc", "rating_asc"].includes(sortBy as string);
+    const whereStr = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    if (needsStatsSort || sid) {
-      // Use raw SQL join for sorting by stats
-      const whereClauses: string[] = [];
-      const vals: any[] = [];
-      let idx = 1;
+    const rawQuery = `
+      SELECT
+        p.id, p.name, p.position, p.nationality, p.date_of_birth AS "dateOfBirth",
+        p.photo_url AS "photoUrl", p.market_value_m AS "marketValueM",
+        p.preferred_foot AS "preferredFoot", p.height_cm AS "heightCm",
+        p.weight_kg AS "weightKg", p.debut_year AS "debutYear",
+        p.team_id AS "teamId",
+        t.name AS "teamName", t.logo_url AS "teamLogoUrl",
+        ps.sofascore_rating AS "sofascoreRating",
+        ps.goals, ps.assists, ps.matches_played AS "matchesPlayed",
+        ps.tackles, ps.interceptions, ps.clean_sheets AS "cleanSheets",
+        ps.save_pct AS "savePct", ps.pass_accuracy_pct AS "passAccuracyPct",
+        ps.xg_per_game AS "xgPerGame", ps.xa_per_game AS "xaPerGame",
+        ps.recoveries
+      FROM players p
+      LEFT JOIN teams t ON t.id = p.team_id
+      LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
+      ${whereStr}
+      ORDER BY ${orderByClause}, p.id ASC
+      LIMIT $${idx++} OFFSET $${idx++}
+    `;
 
-      if (q) { whereClauses.push(`p.name ILIKE $${idx++}`); vals.push(`%${(q as string).trim()}%`); }
-      if (position && position !== "") {
-        const posArr = (position as string).split(",");
-        if (posArr.length > 1) {
-          whereClauses.push(`p.position = ANY($${idx++})`);
-          vals.push(posArr);
-        } else {
-          whereClauses.push(`p.position = $${idx++}`);
-          vals.push(posArr[0]);
-        }
-      }
-      if (nationality) { whereClauses.push(`p.nationality = $${idx++}`); vals.push(nationality); }
-      if (teamId && teamId !== "") {
-        const teamArr = (teamId as string).split(",").map(Number);
-        if (teamArr.length > 1) {
-          whereClauses.push(`p.team_id = ANY($${idx++})`);
-          vals.push(teamArr);
-        } else {
-          whereClauses.push(`p.team_id = $${idx++}`);
-          vals.push(teamArr[0]);
-        }
-      }
-      if (foot) { whereClauses.push(`p.preferred_foot = $${idx++}`); vals.push(foot); }
-      if (valueMin) { whereClauses.push(`p.market_value_m >= $${idx++}`); vals.push(Number(valueMin)); }
-      if (valueMax) { whereClauses.push(`p.market_value_m <= $${idx++}`); vals.push(Number(valueMax)); }
+    const countQuery = `
+      SELECT COUNT(*)
+      FROM players p
+      LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
+      ${whereStr}
+    `;
 
-      // Age
-      if (ageMin) {
-        const now = new Date();
-        const minDate = new Date(now.getFullYear() - Number(ageMin), now.getMonth(), now.getDate());
-        whereClauses.push(`p.date_of_birth <= $${idx++}`);
-        vals.push(minDate.toISOString().split("T")[0]);
-      }
-      if (ageMax) {
-        const now = new Date();
-        const maxDate = new Date(now.getFullYear() - Number(ageMax) - 1, now.getMonth(), now.getDate());
-        whereClauses.push(`p.date_of_birth >= $${idx++}`);
-        vals.push(maxDate.toISOString().split("T")[0]);
-      }
+    const dataVals = [...vals, rawLimit, offset];
 
-      if (heightMin) { whereClauses.push(`p.height_cm >= $${idx++}`); vals.push(Number(heightMin)); }
-      if (heightMax) { whereClauses.push(`p.height_cm <= $${idx++}`); vals.push(Number(heightMax)); }
-      if (minRating) { whereClauses.push(`ps.sofascore_rating >= $${idx++}`); vals.push(Number(minRating)); }
-
-      const whereStr = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
-      const sidVal = sid ?? 0;
-
-      const rawQuery = `
-        SELECT
-          p.id, p.name, p.position, p.nationality, p.date_of_birth AS "dateOfBirth",
-          p.photo_url AS "photoUrl", p.market_value_m AS "marketValueM",
-           p.preferred_foot AS "preferredFoot", p.height_cm AS "heightCm",
-          p.weight_kg AS "weightKg", p.debut_year AS "debutYear",
-          p.team_id AS "teamId",
-          t.name AS "teamName", t.logo_url AS "teamLogoUrl",
-          ps.sofascore_rating AS "sofascoreRating",
-          ps.goals, ps.assists, ps.matches_played AS "matchesPlayed",
-          ps.tackles, ps.interceptions, ps.clean_sheets AS "cleanSheets",
-          ps.save_pct AS "savePct", ps.pass_accuracy_pct AS "passAccuracyPct",
-          ps.xg_per_game AS "xgPerGame", ps.xa_per_game AS "xaPerGame",
-          ps.recoveries
-        FROM players p
-        LEFT JOIN teams t ON t.id = p.team_id
-        LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
-        ${whereStr}
-        ORDER BY ${orderByClause}, p.id ASC
-        LIMIT $${idx++} OFFSET $${idx++}
-      `;
-      
-      const countQuery = `
-        SELECT COUNT(*) 
-        FROM players p
-        LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
-        ${whereStr}
-      `;
-
-      const dataVals = [...vals, Number(limit), offset];
-
-      const { pool } = await import("../db");
-      const [dataRes, countRes] = await Promise.all([
-        pool.query(rawQuery, dataVals),
-        pool.query(countQuery, vals)
-      ]);
-
-      const totalItems = parseInt(countRes.rows[0].count);
-      const items = dataRes.rows.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        position: r.position,
-        nationality: r.nationality,
-        dateOfBirth: r.dateOfBirth,
-        photoUrl: r.photoUrl,
-        marketValueM: r.marketValueM,
-        preferredFoot: r.preferredFoot,
-        heightCm: r.heightCm,
-        weightKg: r.weightKg,
-        debutYear: r.debutYear,
-        team: r.teamName ? { id: r.teamId, name: r.teamName, logoUrl: r.teamLogoUrl } : null,
-        stats: r.sofascoreRating != null ? [{
-          sofascoreRating: r.sofascoreRating,
-          goals: r.goals,
-          assists: r.assists,
-          matchesPlayed: r.matchesPlayed,
-          tackles: r.tackles,
-          interceptions: r.interceptions,
-          cleanSheets: r.cleanSheets,
-          savePct: r.savePct,
-          passAccuracyPct: r.passAccuracyPct,
-          xgPerGame: r.xgPerGame,
-          xaPerGame: r.xaPerGame,
-          recoveries: r.recoveries,
-        }] : [],
-      }));
-
-      return res.json({ items, totalItems });
-    }
-
-    // Simple query without stats sort
-    const [data, totalRes] = await Promise.all([
-      db.query.players.findMany({
-        where,
-        limit: Number(limit),
-        offset,
-        with: { team: true },
-      }),
-      db.select({ count: sql<string>`count(*)` }).from(players).where(where)
+    const [dataRes, countRes] = await Promise.all([
+      pool.query(rawQuery, dataVals),
+      pool.query(countQuery, vals),
     ]);
 
-    res.json({
-      items: data,
-      totalItems: parseInt(totalRes[0].count)
-    });
+    const totalItems = parseInt(countRes.rows[0].count);
+    const items = dataRes.rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      position: r.position,
+      nationality: r.nationality,
+      dateOfBirth: r.dateOfBirth,
+      photoUrl: r.photoUrl,
+      marketValueM: r.marketValueM,
+      preferredFoot: r.preferredFoot,
+      heightCm: r.heightCm,
+      weightKg: r.weightKg,
+      debutYear: r.debutYear,
+      team: r.teamName ? { id: r.teamId, name: r.teamName, logoUrl: r.teamLogoUrl } : null,
+      stats: r.sofascoreRating != null ? [{
+        sofascoreRating: r.sofascoreRating,
+        goals: r.goals,
+        assists: r.assists,
+        matchesPlayed: r.matchesPlayed,
+        tackles: r.tackles,
+        interceptions: r.interceptions,
+        cleanSheets: r.cleanSheets,
+        savePct: r.savePct,
+        passAccuracyPct: r.passAccuracyPct,
+        xgPerGame: r.xgPerGame,
+        xaPerGame: r.xaPerGame,
+        recoveries: r.recoveries,
+      }] : [],
+    }));
+
+    return res.json({ items, totalItems });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
@@ -336,7 +304,7 @@ router.get("/", async (req, res) => {
 // ─── GET /api/players/:id ───────────────────────────────────────────────────
 router.get("/:id", async (req, res) => {
   try {
-    const id = Number(req.params.id);
+    const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
     const player = await db.query.players.findFirst({

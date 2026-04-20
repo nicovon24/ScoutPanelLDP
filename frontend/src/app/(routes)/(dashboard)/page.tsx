@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState, useCallback, Suspense } from "react";
-import { Users, SlidersHorizontal, LayoutGrid, List, Search, X } from "lucide-react";
+import { SlidersHorizontal, LayoutGrid, List, Search, X } from "lucide-react";
 import api from "@/lib/api";
 import { useScoutStore, DEFAULT_FILTERS } from "@/store/useScoutStore";
-import { Select, SelectItem, Button, Input } from "@nextui-org/react";
+import type { Player, Team } from "@/types";
+import { Select, SelectItem, Button, Input, type Selection } from "@nextui-org/react";
 import AppButton from "@/components/ui/AppButton";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 
@@ -17,8 +18,8 @@ function HomeContent() {
   const { setFilterPanelOpen, pageSize, setPageSize, searchFilters, setSearchFilters, _hasHydrated } = useScoutStore();
 
   // Data State
-  const [players, setPlayers] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -196,19 +197,30 @@ function HomeContent() {
         </div>
 
         {/* Quick Position Multi-Select */}
-        <div className="w-full sm:w-auto sm:max-w-[280px] hidden sm:block">
+        <div className="w-full sm:w-auto sm:min-w-[200px] sm:max-w-[260px] hidden sm:block">
           <Select
             selectionMode="multiple"
             items={POSITIONS_LIST}
             placeholder="Filtrar posiciones"
             selectedKeys={filters.position ? new Set(filters.position.split(",")) : new Set()}
-            onSelectionChange={(keys: any) => {
+            onSelectionChange={(keys: Selection) => {
               const arr = Array.from(keys).join(",");
               updateFiltersAndStore({ position: arr });
             }}
+            renderValue={(items) => {
+              if (items.length === 0) return null;
+              if (items.length === 1) return (
+                <span className="text-primary font-bold text-sm truncate">{items[0].key}</span>
+              );
+              return (
+                <span className="text-primary font-bold text-sm whitespace-nowrap">
+                  {items.map(i => i.key).join(", ")}
+                </span>
+              );
+            }}
             classNames={{
-              trigger: `${sharedSelectClasses.trigger} h-12`,
-              value: sharedSelectClasses.value,
+              trigger: `${sharedSelectClasses.trigger} h-12 min-w-0`,
+              value: "text-secondary font-bold text-sm min-w-0 overflow-hidden",
               popoverContent: sharedSelectClasses.popoverContent,
             }}
             aria-label="Filtro rápido de posiciones"
@@ -271,7 +283,7 @@ function HomeContent() {
           ))}
 
           {filters.teamId && filters.teamId.split(",").map(tid => {
-            const teamName = teams.find(t => t.id.toString() === tid)?.name || "Club";
+            const teamName = teams.find(t => t.id?.toString() === tid)?.name || "Club";
             return (
               <div key={tid} className="flex items-center gap-1.5 bg-[#34d35a]/10 border border-[#34d35a]/20 px-2 py-1 rounded-lg">
                 <span className="text-[10px] font-black text-green uppercase">{teamName}</span>
@@ -383,7 +395,7 @@ function HomeContent() {
       <FilterSidebar
         teams={teams}
         filters={filters}
-        setFilters={(n: any) => updateFiltersAndStore(n)}
+        setFilters={(n) => updateFiltersAndStore(n)}
         onReset={() => {
           const resetState = {
             q: "", position: "", teamId: "", foot: "",

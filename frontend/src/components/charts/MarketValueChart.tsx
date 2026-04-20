@@ -17,6 +17,9 @@ interface Props {
   onChangeMode: (mode: "year" | "month") => void;
 }
 
+interface TickProps { x: string | number; y: string | number; payload: { value: string }; index: number }
+interface DotProps  { cx?: number; cy?: number; index: number }
+
 const formatCurrency = (val: number) => `€${val.toFixed(1)}M`;
 
 export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
@@ -82,13 +85,13 @@ export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
 
             <XAxis
               dataKey="month"
-              tick={({ x, y, payload, index }: any) => {
+              tick={({ x, y, payload, index }: TickProps) => {
                 const entry = data[index];
                 const fill = entry?.future
                   ? "rgba(255,255,255,0.18)"
                   : "rgba(255,255,255,0.4)";
                 return (
-                  <text x={x} y={y + 14} textAnchor="middle" fill={fill} fontSize={11} fontWeight={700}>
+                  <text x={x} y={Number(y) + 14} textAnchor="middle" fill={fill} fontSize={11} fontWeight={700}>
                     {payload.value}
                   </text>
                 );
@@ -166,7 +169,7 @@ export default function MarketValueChart({ data, mode, onChangeMode }: Props) {
               fillOpacity={1}
               fill="url(#fillGradientMV)"
               animationDuration={1500}
-              dot={({ cx, cy, index }: any) => {
+              dot={({ cx, cy, index }: DotProps) => {
                 const entry = data[index];
                 if (!entry) return <circle key={`dot-${index}`} cx={cx} cy={cy} r={0} />;
                 if (entry.future) {

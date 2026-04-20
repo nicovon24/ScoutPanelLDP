@@ -1,12 +1,13 @@
 "use client";
 import { Fragment } from "react";
 import { fmtNum, asNum, SECTIONS, reorderSections } from "@/lib/playerStats";
-import type { SectionDef } from "@/types";
+import type { Player, SectionDef } from "@/types";
 
 // ── Public types ───────────────────────────────────────────────────────────────
 export interface PlayerEntry {
-  player: any;
-  stat: any;
+  player: Player;
+  /** Indexed by stat key — kept as Record to allow dynamic key access (r.k) */
+  stat: Record<string, unknown>;
   color?: { text: string; bg: string; hex: string };
 }
 
@@ -157,8 +158,8 @@ function MultiGeneralRow({
 // ── Single-column section renderer ────────────────────────────────────────────
 function SingleSections({ sections, player, stat }: {
   sections: SectionDef[];
-  player: any;
-  stat: any;
+  player: Player;
+  stat: Record<string, unknown>;
 }) {
   return (
     <>
@@ -197,14 +198,15 @@ export default function PlayerStatsTable({
   const count    = entries.length;
   const colors   = entries.map((e, i) => e.color ?? DEFAULT_COLORS[i] ?? DEFAULT_COLORS[0]);
 
-  // Filter sections
-  let visibleSections = SECTIONS.filter(sec => {
+  // Filter sections — onlySections / excludeSections are evaluated first so
+  // explicit allowlists/blocklists from the caller always take precedence.
+  const visibleSections = SECTIONS.filter(sec => {
     if (!showGeneralInfo && sec.label === "Info General") return false;
+    if (onlySections) return onlySections.includes(sec.label);
+    if (excludeSections) return !excludeSections.includes(sec.label);
     if (sec.label === "Portería") {
       return entries.some(e => e.player?.position?.toUpperCase() === "GK");
     }
-    if (onlySections) return onlySections.includes(sec.label);
-    if (excludeSections) return !excludeSections.includes(sec.label);
     return true;
   });
 

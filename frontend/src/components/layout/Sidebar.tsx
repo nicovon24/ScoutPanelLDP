@@ -1,6 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { Home, BarChart2, Star, LogOut, Menu, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Home, BarChart2, Star, LogOut, Menu, ChevronLeft, X } from "lucide-react";
 import { useScoutStore } from "@/store/useScoutStore";
 import LinkNext from "next/link";
 

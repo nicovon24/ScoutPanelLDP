@@ -1,5 +1,5 @@
 import { calcAgeStr } from "@/lib/utils";
-import type { PlayerColor, SectionDef } from "@/types";
+import type { Player, PlayerColor, SectionDef } from "@/types";
 
 // ── Shared color palette (compare + table) ────────────────────────────────────
 export const PLAYER_COLORS: PlayerColor[] = [
@@ -17,30 +17,30 @@ export interface RatingEntry {
 }
 
 export function buildRatingHistory(
-  player: any,
+  player: Player,
   selSeasonId: number | null,
   mode: "year" | "month",
 ): RatingEntry[] {
   const monthlyRaw = new Map<string, number>();
   const ratingSource = selSeasonId
-    ? (player.ratings ?? []).filter((r: any) => r.seasonId === selSeasonId)
+    ? (player.ratings ?? []).filter((r) => r.seasonId === selSeasonId)
     : (player.ratings ?? []);
-  ratingSource.forEach((r: any) => {
+  ratingSource.forEach((r) => {
     if (r.ratingByMonth)
-      Object.entries(r.ratingByMonth as Record<string, number>).forEach(([m, v]) => monthlyRaw.set(m, v));
+      Object.entries(r.ratingByMonth).forEach(([m, v]) => monthlyRaw.set(m, v));
   });
 
   if (mode === "year") {
     const yearlyMap: Record<string, { sum: number; count: number; injured: boolean }> = {};
-    (player.ratings ?? []).forEach((r: any) => {
+    (player.ratings ?? []).forEach((r) => {
       if (r.ratingByMonth) {
-        Object.entries(r.ratingByMonth as Record<string, number>).forEach(([month, val]) => {
+        Object.entries(r.ratingByMonth).forEach(([month, val]) => {
           const y = month.split("-")[0];
           if (!yearlyMap[y]) yearlyMap[y] = { sum: 0, count: 0, injured: false };
           yearlyMap[y].sum += val;
           yearlyMap[y].count++;
-          const isInjured = player.injuries?.some((inj: any) => {
-            const start = new Date(inj.startedAt);
+          const isInjured = player.injuries?.some((inj) => {
+            const start = new Date(inj.startedAt ?? "");
             const end   = new Date(start);
             end.setDate(start.getDate() + (inj.daysOut || 0));
             const current = new Date(parseInt(y), parseInt(month.split("-")[1]) - 1, 15);
@@ -58,20 +58,21 @@ export function buildRatingHistory(
   // monthly mode
   let targetYear = 2026;
   if (selSeasonId) {
-    const s = player.stats?.find((st: any) => st.seasonId === selSeasonId);
-    if (s?.season?.year) targetYear = s.season.year;
+    const s = player.stats?.find((st) => st.seasonId === selSeasonId);
+    const yr = s?.season?.year;
+    if (yr) targetYear = yr;
   }
   const MONTH_LABELS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
   return MONTH_LABELS.map((label, m) => {
     const key       = `${targetYear}-${(m + 1).toString().padStart(2, "0")}`;
-    const isInjured = player.injuries?.some((inj: any) => {
-      const start = new Date(inj.startedAt);
+    const isInjured = player.injuries?.some((inj) => {
+      const start = new Date(inj.startedAt ?? "");
       const end   = new Date(start);
       end.setDate(start.getDate() + (inj.daysOut || 0));
       const current = new Date(targetYear, m, 15);
       return current >= start && current <= end;
     });
-    return { month: label, year: String(targetYear), rating: monthlyRaw.get(key) ?? 0, injured: isInjured };
+    return { month: label, year: String(targetYear), rating: monthlyRaw.get(key) ?? 0, injured: isInjured ?? false };
   });
 }
 
@@ -84,21 +85,21 @@ export interface ValueEntry {
 }
 
 export function buildValueHistory(
-  player: any,
+  player: Player,
   selSeasonId: number | null,
   mode: "year" | "month",
 ): ValueEntry[] {
   if (mode === "year") {
     const allYears = Array.from(new Set([
-      ...(player.stats ?? []).map((s: any) => s.season?.year?.toString()),
-      ...(player.ratings ?? []).flatMap((r: any) =>
-        Object.keys(r.ratingByMonth || {}).map((m: string) => m.split("-")[0])
+      ...(player.stats ?? []).map((s) => s.season?.year?.toString()),
+      ...(player.ratings ?? []).flatMap((r) =>
+        Object.keys(r.ratingByMonth || {}).map((m) => m.split("-")[0])
       ),
     ])).filter(Boolean).sort() as string[];
 
     let lastVal = parseFloat(player.marketValueM ?? "0");
     return allYears.map(y => {
-      const s = player.stats?.find((st: any) => st.season?.year?.toString() === y);
+      const s = player.stats?.find((st) => st.season?.year?.toString() === y);
       if (s?.marketValueM) lastVal = parseFloat(s.marketValueM);
       return { month: y, value: lastVal };
     });
@@ -108,9 +109,10 @@ export function buildValueHistory(
   let targetYear = 2026;
   let targetVal  = parseFloat(player.marketValueM ?? "0");
   if (selSeasonId) {
-    const s = player.stats?.find((st: any) => st.seasonId === selSeasonId);
-    if (s?.season?.year) targetYear = s.season.year;
-    if (s?.marketValueM) targetVal  = parseFloat(s.marketValueM);
+    const s = player.stats?.find((st) => st.seasonId === selSeasonId);
+    const yr = s?.season?.year;
+    if (yr) targetYear = yr;
+    if (s?.marketValueM) targetVal = parseFloat(s.marketValueM);
   }
   const MONTH_LABELS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
   const today = new Date();
@@ -123,13 +125,13 @@ export function buildValueHistory(
 }
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
-export function fmtNum(v: any, dec = 0): string {
+export function fmtNum(v: unknown, dec = 0): string {
   if (v == null || v === "") return "—";
-  const n = typeof v === "string" ? parseFloat(v) : v;
+  const n = typeof v === "string" ? parseFloat(v) : typeof v === "number" ? v : NaN;
   return isNaN(n) ? "—" : dec > 0 ? n.toFixed(dec) : String(n);
 }
 
-export function asNum(v: any): number {
+export function asNum(v: unknown): number {
   const f = parseFloat(String(v ?? "0"));
   return isNaN(f) ? 0 : f;
 }

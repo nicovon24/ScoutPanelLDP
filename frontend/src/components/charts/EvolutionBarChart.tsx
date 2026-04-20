@@ -14,7 +14,6 @@ interface DataPoint {
 
 interface Props {
   data: DataPoint[];
-  nameA: string;
   mode: "year" | "month";
   onChangeMode: (mode: "year" | "month") => void;
 }
@@ -94,7 +93,7 @@ const CustomMonthTick = ({ x, y, payload, data }: any) => {
   );
 };
 
-export default function EvolutionBarChart({ data, nameA, mode, onChangeMode }: Props) {
+export default function EvolutionBarChart({ data, mode, onChangeMode }: Props) {
   const chartData = data.map(d => ({
     ...d,
     trend: d.rating > 0 && !d.injured ? d.rating : null,

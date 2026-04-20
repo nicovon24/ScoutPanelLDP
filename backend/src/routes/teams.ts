@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db";
-import { teams, players } from "../db/schema";
+import { teams } from "../db/schema";
 
 const router = Router();
 
