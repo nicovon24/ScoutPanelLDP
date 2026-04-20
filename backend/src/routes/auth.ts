@@ -4,30 +4,30 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { db } from "../db";
 import { users } from "../db/schema";
+import { JwtUser } from "../types/express";
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET ?? "scout-panel-secret-dev";
 
-// ── Middleware de autenticación (para proteger rutas en el futuro) ────────────
-export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized" });
+    return;
   }
   try {
     const token = header.split(" ")[1];
-    const payload = jwt.verify(token, JWT_SECRET);
-    (req as any).user = payload;
+    req.user = jwt.verify(token, JWT_SECRET) as JwtUser;
     next();
   } catch {
-    return res.status(401).json({ error: "Invalid or expired token" });
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 };
 
 // POST /api/auth/register
-router.post("/register", async (req, res) => {
+router.post("/register", async (req: Request, res: Response) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name } = req.body as { email: string; password: string; name: string };
     if (!email || !password || !name) {
       return res.status(400).json({ error: "email, password y nombre son requeridos" });
     }
@@ -58,9 +58,9 @@ router.post("/register", async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post("/login", async (req, res) => {
+router.post("/login", async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
     if (!email || !password) {
       return res.status(400).json({ error: "email and password are required" });
     }
@@ -91,9 +91,9 @@ router.post("/login", async (req, res) => {
 });
 
 // GET /api/auth/me — Devuelve el usuario logueado (requiere token)
-router.get("/me", requireAuth, async (req, res) => {
+router.get("/me", requireAuth, async (req: Request, res: Response) => {
   try {
-    const payload = (req as any).user;
+    const payload = req.user!;
     const user = await db.query.users.findFirst({
       where: eq(users.id, payload.id),
       columns: { id: true, email: true, name: true, createdAt: true },
