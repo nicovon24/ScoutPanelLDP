@@ -6,28 +6,14 @@ import { Star } from "lucide-react";
 import { useShortlist } from "@/hooks/useShortlist";
 import { calcAge } from "@/lib/utils";
 import type { Player } from "@/types";
+import FlagImg from "@/components/ui/FlagImg";
 
 function getPositionStyle(pos: string) {
   const p = pos?.toUpperCase();
-  if (["CF", "SS", "LW", "RW"].includes(p)) return "text-blue-400 bg-blue-400/10 border-blue-400/20"; // Attack
-  if (["CAM", "CM", "CDM"].includes(p)) return "text-green-400 bg-green-400/10 border-green-400/20"; // Mid
-  if (["CB", "LB", "RB"].includes(p)) return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"; // Def
-  return "text-orange-400 bg-orange-400/10 border-orange-400/20"; // GK
-}
-
-const COUNTRY_CODES: Record<string, string> = {
-  "Argentina": "ar", "Uruguay": "uy", "Paraguay": "py", "Brazil": "br",
-  "Chile": "cl", "Colombia": "co", "Ecuador": "ec", "Peru": "pe",
-  "Venezuela": "ve", "Bolivia": "bo", "Spain": "es", "Italy": "it",
-  "France": "fr", "Germany": "de", "Armenia": "am", "Mexico": "mx",
-  "USA": "us", "England": "gb", "Portugal": "pt",
-};
-
-function getFlagUrl(nationality?: string) {
-  if (!nationality) return null;
-  const code = COUNTRY_CODES[nationality];
-  if (!code) return null;
-  return `https://flagcdn.com/w40/${code}.png`;
+  if (["CF", "SS", "LW", "RW"].includes(p)) return "text-blue-400 bg-blue-400/10 border-blue-400/20";
+  if (["CAM", "CM", "CDM"].includes(p)) return "text-green-400 bg-green-400/10 border-green-400/20";
+  if (["CB", "LB", "RB"].includes(p)) return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
+  return "text-orange-400 bg-orange-400/10 border-orange-400/20";
 }
 
 
@@ -82,11 +68,7 @@ export default function PlayerCardV2({ player }: { player: Player }) {
             <span className={`px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider border ${getPositionStyle(player.position)}`}>
               {player.position}
             </span>
-            {getFlagUrl(player.nationality) && (
-              <div className="relative w-5 h-3.5 rounded-sm overflow-hidden shadow-sm">
-                <Image src={getFlagUrl(player.nationality)!} alt={player.nationality || ""} fill className="object-cover" unoptimized />
-              </div>
-            )}
+            {player.nationality && <FlagImg nationality={player.nationality} size={14} />}
           </div>
 
           <div className="flex items-center gap-2">
@@ -167,9 +149,9 @@ export default function PlayerCardV2({ player }: { player: Player }) {
 
               if (isGK) return (
                 <>
-                  <StatItem label="VI" value={stat?.cleanSheets ?? 0} />
+                  <StatItem label="Vallas Invictas" value={stat?.cleanSheets ?? 0} />
                   <div className="w-[1px] h-6 bg-white/5" />
-                  <StatItem label="Saves" value={`${stat?.savePct ?? 0}%`} />
+                  <StatItem label="Atajadas" value={`${stat?.savePct ?? 0}%`} />
                 </>
               );
               if (isDEF) return (

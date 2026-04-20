@@ -5,6 +5,8 @@ import { useScoutStore } from "@/store/useScoutStore";
 import SoccerFieldPositions from "./SoccerFieldPositions";
 import { Select, SelectItem, Input, Avatar } from "@nextui-org/react";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
+import api from "@/lib/api";
+
 
 export const POSITIONS_LIST = [
   { id: "CF", name: "CF - Centrodelantero" },
@@ -20,16 +22,22 @@ export const POSITIONS_LIST = [
   { id: "GK", name: "GK - Arquero" },
 ];
 
+const CONTRACT_OPTIONS = [
+  { id: "PERMANENT", label: "Permanente" },
+  { id: "LOAN",      label: "Préstamo" },
+  { id: "FREE",      label: "Libre" },
+];
+
 interface FilterState {
   position: string;
   teamId: string;
-  foot: string;
   ageMin: string;
   ageMax: string;
-  heightMin: string;
-  heightMax: string;
   minRating: string;
+  marketValueMin: string;
   marketValueMax: string;
+  nationality: string;
+  contractType: string;
 }
 
 interface Props {
@@ -42,9 +50,14 @@ interface Props {
 export default function FilterSidebar({ teams, filters, setFilters, onReset }: Props) {
   const { filterPanelOpen, setFilterPanelOpen } = useScoutStore();
   const [mounted, setMounted] = useState(false);
+  const [nationalities, setNationalities] = useState<string[]>([]);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    setMounted(true);
+    api.get("/players/nationalities")
+      .then(({ data }) => setNationalities(data as string[]))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -108,7 +121,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
         <div className="flex-1 overflow-y-auto p-5 lg:p-8 pb-10 relative z-10 custom-scrollbar overscroll-contain">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-start">
 
-            {/* Left Column: Posición */}
+            {/* ── Left Column: Posición ── */}
             <div className="space-y-4 lg:space-y-6">
               <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Posición
@@ -142,9 +155,9 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                   aria-label="Seleccionar posiciones"
                 >
                   {(item) => (
-                    <SelectItem 
-                      key={item.id} 
-                      textValue={item.id} 
+                    <SelectItem
+                      key={item.id}
+                      textValue={item.id}
                       classNames={sharedSelectItemClasses}
                     >
                       <div className="flex gap-2 items-center">
@@ -168,23 +181,25 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
               </div>
             </div>
 
-            {/* Right Column: Other Filters */}
+            {/* ── Right Column: Other Filters ── */}
             <div className="space-y-6 lg:space-y-8">
+
               {/* Club & Perfil */}
               <div className="space-y-4 lg:space-y-5">
                 <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Club & Perfil
                 </label>
 
+                {/* Club actual */}
                 <div className="space-y-2">
                   <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Club actual</span>
                   <Select
                     selectionMode="multiple"
                     items={[
-                      ...[...teams].sort((a, b) => a.name.localeCompare(b.name)).map(t => ({ 
-                        id: t.id?.toString() ?? "", 
-                        name: t.name, 
-                        logoUrl: t.logoUrl || t.imagePath 
+                      ...[...teams].sort((a, b) => a.name.localeCompare(b.name)).map(t => ({
+                        id: t.id?.toString() ?? "",
+                        name: t.name,
+                        logoUrl: t.logoUrl || t.imagePath
                       }))
                     ]}
                     selectedKeys={filters.teamId ? new Set(filters.teamId.split(",")) : new Set()}
@@ -193,24 +208,22 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                       update("teamId", keysArray.join(","));
                     }}
                     placeholder="Seleccioná equipos"
-                    renderValue={(items) => {
-                      return (
-                        <div className="flex flex-wrap gap-1">
-                          {items.map((item) => (
-                            <span key={item.key} className="bg-[#34d35a]/20 text-[#34d35a] text-[10px] px-2 py-0.5 rounded-md font-black flex items-center gap-1">
-                              {item.data?.logoUrl && (
-                                <Avatar 
-                                  src={item.data.logoUrl} 
-                                  alt={item.data.name} 
-                                  className="w-3 h-3 flex-shrink-0 bg-transparent"
-                                />
-                              )}
-                              {item.data?.name}
-                            </span>
-                          ))}
-                        </div>
-                      );
-                    }}
+                    renderValue={(items) => (
+                      <div className="flex flex-wrap gap-1">
+                        {items.map((item) => (
+                          <span key={item.key} className="bg-[#34d35a]/20 text-[#34d35a] text-[10px] px-2 py-0.5 rounded-md font-black flex items-center gap-1">
+                            {item.data?.logoUrl && (
+                              <Avatar
+                                src={item.data.logoUrl}
+                                alt={item.data.name}
+                                className="w-3 h-3 flex-shrink-0 bg-transparent"
+                              />
+                            )}
+                            {item.data?.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     classNames={{
                       trigger: `${sharedSelectClasses.trigger} h-[46px] lg:h-[50px]`,
                       value: sharedSelectClasses.value,
@@ -219,13 +232,13 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                     aria-label="Seleccionar club"
                   >
                     {(item) => (
-                      <SelectItem 
-                        key={item.id} 
-                        textValue={item.name} 
+                      <SelectItem
+                        key={item.id}
+                        textValue={item.name}
                         classNames={sharedSelectItemClasses}
                       >
                         <div className="flex gap-2 items-center">
-                          <Avatar alt={item.name} fallback={<div className="bg-[#34d35a]/20 text-[#34d35a] font-bold w-full h-full flex items-center justify-center text-[10px]">{item.name.substring(0,2)}</div>} className="w-5 h-5 flex-shrink-0 bg-transparent" src={item.logoUrl} />
+                          <Avatar alt={item.name} fallback={<div className="bg-[#34d35a]/20 text-[#34d35a] font-bold w-full h-full flex items-center justify-center text-[10px]">{item.name.substring(0, 2)}</div>} className="w-5 h-5 flex-shrink-0 bg-transparent" src={item.logoUrl} />
                           <span className="text-xs font-bold">{item.name}</span>
                         </div>
                       </SelectItem>
@@ -233,14 +246,33 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 lg:gap-4">
-                  <div className="space-y-2">
-                    <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Presupuesto Máx</span>
+                {/* Presupuesto Min / Max */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Presupuesto (M€)</span>
+                    {(filters.marketValueMin || filters.marketValueMax) && (
+                      <span className="bg-[#34d35a]/15 border border-[#34d35a]/30 px-2 py-0.5 rounded-lg text-green font-black text-[10px]">
+                        {filters.marketValueMin || "0"} — {filters.marketValueMax || "∞"} M€
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      type="number"
+                      value={filters.marketValueMin}
+                      onChange={(e) => update("marketValueMin", e.target.value)}
+                      placeholder="Mín M€"
+                      variant="bordered"
+                      classNames={{
+                        inputWrapper: "h-[46px] lg:h-[50px] bg-[#131f15] border-white/10 rounded-xl hover:border-[#34d35a]/30 transition-all",
+                        input: "text-sm font-bold text-primary placeholder:text-secondary"
+                      }}
+                    />
                     <Input
                       type="number"
                       value={filters.marketValueMax}
                       onChange={(e) => update("marketValueMax", e.target.value)}
-                      placeholder="Ej: 10.0 M€"
+                      placeholder="Máx M€"
                       variant="bordered"
                       classNames={{
                         inputWrapper: "h-[46px] lg:h-[50px] bg-[#131f15] border-white/10 rounded-xl hover:border-[#34d35a]/30 transition-all",
@@ -248,40 +280,70 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                       }}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Pie hábil</span>
-                    <div className="flex gap-2 h-[46px] lg:h-[50px]">
-                      {[
-                        { id: "D", val: "Right", label: "D" },
-                        { id: "Z", val: "Left", label: "Z" },
-                        { id: "Ambi", val: "Both", label: "Ambi" }
-                      ].map((f) => {
-                        const currentValue = filters.foot || "";
-                        const selectedFeet = currentValue ? currentValue.split(",") : [];
-                        const active = selectedFeet.includes(f.val);
-                        
-                        return (
-                          <button
-                            key={f.id}
-                            onClick={() => {
-                              let newSelected = [...selectedFeet];
-                              if (active) {
-                                newSelected = newSelected.filter(v => v !== f.val);
-                              } else {
-                                newSelected.push(f.val);
-                              }
-                              update("foot", newSelected.join(","));
-                            }}
-                            className={`flex-1 rounded-xl border text-[10px] lg:text-[11px] font-black transition-all flex items-center justify-center
-                                      ${active ? "bg-[#34d35a]/15 border-green text-green shadow-[0_0_15px_rgba(52,211,90,0.1)]" : "bg-[#131f15] border-white/10 text-[#7aab82] hover:border-white/20"}`}
-                          >
-                            {f.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
+              </div>
+
+              <div className="h-px bg-white/5 w-full" />
+
+              {/* Tipo de contrato */}
+              <div className="space-y-3">
+                <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Tipo de contrato
+                </label>
+                <div className="flex gap-2">
+                  {CONTRACT_OPTIONS.map((opt) => {
+                    const selectedContracts = filters.contractType ? filters.contractType.split(",") : [];
+                    const active = selectedContracts.includes(opt.id);
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          let next = [...selectedContracts];
+                          if (active) {
+                            next = next.filter(v => v !== opt.id);
+                          } else {
+                            next.push(opt.id);
+                          }
+                          update("contractType", next.join(","));
+                        }}
+                        className={`flex-1 h-[44px] lg:h-[48px] rounded-xl border text-[11px] lg:text-[12px] font-black transition-all
+                                  ${active
+                            ? "bg-[#34d35a]/15 border-green text-green shadow-[0_0_15px_rgba(52,211,90,0.1)]"
+                            : "bg-[#131f15] border-white/10 text-[#7aab82] hover:border-white/20"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Nacionalidad */}
+              <div className="space-y-3">
+                <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Nacionalidad
+                </label>
+                <Select
+                  items={nationalities.map(n => ({ id: n, label: n }))}
+                  selectedKeys={filters.nationality ? new Set([filters.nationality]) : new Set()}
+                  onSelectionChange={(keys) => {
+                    const arr = Array.from(keys);
+                    update("nationality", arr.length > 0 ? String(arr[0]) : "");
+                  }}
+                  placeholder="Seleccioná un país"
+                  classNames={{
+                    trigger: `${sharedSelectClasses.trigger} h-[46px] lg:h-[50px]`,
+                    value: sharedSelectClasses.value,
+                    popoverContent: sharedSelectClasses.popoverContent,
+                  }}
+                  aria-label="Seleccionar nacionalidad"
+                >
+                  {(item) => (
+                    <SelectItem key={item.id} textValue={item.label} classNames={sharedSelectItemClasses}>
+                      <span className="text-sm font-bold">{item.label}</span>
+                    </SelectItem>
+                  )}
+                </Select>
               </div>
 
               <div className="h-px bg-white/5 w-full" />
@@ -322,27 +384,6 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                     onChange={(e) => update("minRating", e.target.value)}
                     className="w-full h-1 bg-white/5 rounded-full appearance-none outline-none cursor-pointer accent-green"
                   />
-                </div>
-
-                <div className="bg-[#131f15] border border-white/5 rounded-2xl p-4 lg:p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] lg:text-[10px] font-bold uppercase text-secondary tracking-[0.2em]">Altura (cm)</span>
-                    {(filters.heightMin || filters.heightMax) && (
-                      <span className="bg-[#34d35a]/15 border border-[#34d35a]/30 px-2 lg:px-3 py-1 rounded-lg text-green font-black text-[11px] lg:text-[12px]">
-                        {filters.heightMin || "Mín"} — {filters.heightMax || "Máx"} cm
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 lg:gap-4">
-                    <input
-                      type="number" value={filters.heightMin} onChange={(e) => update("heightMin", e.target.value)}
-                      placeholder="Mín" className="bg-[#0e1710] border border-white/10 rounded-lg h-10 lg:h-11 text-center font-black text-primary focus:border-green outline-none"
-                    />
-                    <input
-                      type="number" value={filters.heightMax} onChange={(e) => update("heightMax", e.target.value)}
-                      placeholder="Máx" className="bg-[#0e1710] border border-white/10 rounded-lg h-10 lg:h-11 text-center font-black text-primary focus:border-green outline-none"
-                    />
-                  </div>
                 </div>
               </div>
             </div>

@@ -106,13 +106,13 @@ export interface SearchFilters {
   q: string;
   position: string;
   teamId: string;
-  foot: string;
   ageMin: string;
   ageMax: string;
-  heightMin: string;
-  heightMax: string;
   minRating: string;
+  marketValueMin: string;
   marketValueMax: string;
+  nationality: string;
+  contractType: string;
   sortBy: string;
 }
 

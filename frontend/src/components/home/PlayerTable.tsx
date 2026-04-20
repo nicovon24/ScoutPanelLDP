@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TrendingUp, User } from "lucide-react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, type SortDescriptor } from "@nextui-org/react";
 import type { Player } from "@/types";
+import FlagImg from "@/components/ui/FlagImg";
 
 interface Props {
   players: Player[];
@@ -85,7 +86,10 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
                 <span className="badge text-2xs font-black bg-white/5">{p.position}</span>
               </TableCell>
               <TableCell>
-                <span className="text-base text-secondary font-medium">{p.nationality}</span>
+                <div className="flex items-center gap-2">
+                  {p.nationality && <FlagImg nationality={p.nationality} size={13} />}
+                  <span className="text-base text-secondary font-medium">{p.nationality ?? "—"}</span>
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">

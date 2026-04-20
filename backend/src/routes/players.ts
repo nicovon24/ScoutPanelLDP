@@ -7,6 +7,20 @@ type SqlParam = string | number | boolean | string[] | number[];
 
 const router = Router();
 
+// ─── GET /api/players/nationalities  (distinct list for filter section) ────────────
+router.get("/nationalities", async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT nationality FROM players WHERE nationality IS NOT NULL AND nationality <> '' ORDER BY nationality ASC`
+    );
+    const list = result.rows.map((r: { nationality: string }) => r.nationality);
+    res.json(list);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ─── GET /api/players/search  (MUST be before /:id) ────────────────────────
 router.get("/search", async (req: Request, res: Response) => {
   try {
@@ -121,7 +135,7 @@ router.get("/compare", async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     const {
-      position, nationality, teamId, foot,
+      position, nationality, contractType, teamId, foot,
       ageMin, ageMax,
       valueMin, valueMax,
       heightMin, heightMax, minRating,
@@ -176,6 +190,17 @@ router.get("/", async (req: Request, res: Response) => {
     if (nationality) {
       whereClauses.push(`p.nationality = $${idx++}`);
       vals.push(nationality as string);
+    }
+    if (contractType && contractType !== "") {
+      const validTypes = ["PERMANENT", "LOAN", "FREE"];
+      const ctArr = (contractType as string).split(",").filter((t) => validTypes.includes(t));
+      if (ctArr.length > 1) {
+        whereClauses.push(`p.contract_type = ANY($${idx++})`);
+        vals.push(ctArr);
+      } else if (ctArr.length === 1) {
+        whereClauses.push(`p.contract_type = $${idx++}`);
+        vals.push(ctArr[0]);
+      }
     }
     if (teamId && teamId !== "") {
       // F-19: filtrar NaN de teamId
@@ -236,6 +261,7 @@ router.get("/", async (req: Request, res: Response) => {
         p.photo_url AS "photoUrl", p.market_value_m AS "marketValueM",
         p.preferred_foot AS "preferredFoot", p.height_cm AS "heightCm",
         p.weight_kg AS "weightKg", p.debut_year AS "debutYear",
+        p.contract_type AS "contractType", p.contract_until AS "contractUntil",
         p.team_id AS "teamId",
         t.name AS "teamName", t.logo_url AS "teamLogoUrl",
         ps.sofascore_rating AS "sofascoreRating",
@@ -279,6 +305,8 @@ router.get("/", async (req: Request, res: Response) => {
       heightCm: r.heightCm,
       weightKg: r.weightKg,
       debutYear: r.debutYear,
+      contractType: r.contractType,
+      contractUntil: r.contractUntil,
       team: r.teamName ? { id: r.teamId, name: r.teamName, logoUrl: r.teamLogoUrl } : null,
       stats: r.sofascoreRating != null ? [{
         sofascoreRating: r.sofascoreRating,
