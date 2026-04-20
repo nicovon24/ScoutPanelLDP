@@ -1,6 +1,6 @@
 "use client";
 import { Fragment } from "react";
-import { fmtNum, asNum, SECTIONS, reorderSections } from "@/lib/playerStats";
+import { asNum, SECTIONS, reorderSections } from "@/lib/playerStats";
 import type { Player, SectionDef } from "@/types";
 
 // ── Public types ───────────────────────────────────────────────────────────────
