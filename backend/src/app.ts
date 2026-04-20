@@ -6,6 +6,7 @@ import teamRoutes from "./routes/teams";
 import seasonRoutes from "./routes/seasons";
 import authRoutes, { requireAuth } from "./routes/auth";
 import shortlistRoutes from "./routes/shortlist";
+import analyticsRoutes from "./routes/analytics";
 
 export const app = express();
 
@@ -39,4 +40,5 @@ app.get("/health", (_req: Request, res: Response) => {
 app.use("/api/players",  requireAuth, playerRoutes);
 app.use("/api/teams",    requireAuth, teamRoutes);
 app.use("/api/seasons",  requireAuth, seasonRoutes);
-app.use("/api/shortlist", shortlistRoutes);
+app.use("/api/shortlist",  shortlistRoutes);
+app.use("/api/analytics", requireAuth, analyticsRoutes);

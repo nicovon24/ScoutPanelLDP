@@ -1,13 +1,14 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { Home, BarChart2, Star, LogOut, Menu, ChevronLeft, X } from "lucide-react";
+import { Home, BarChart2, Star, TrendingUp, LogOut, Menu, ChevronLeft, X } from "lucide-react";
 import { useScoutStore } from "@/store/useScoutStore";
 import LinkNext from "next/link";
 
 const NAV_ITEMS = [
-  { href: "/", icon: Home, label: "Inicio" },
-  { href: "/compare", icon: BarChart2, label: "Comparar" },
-  { href: "/favorites", icon: Star, label: "Favoritos" },
+  { href: "/",          icon: Home,        label: "Inicio" },
+  { href: "/compare",   icon: BarChart2,   label: "Comparar" },
+  { href: "/favorites", icon: Star,        label: "Favoritos" },
+  { href: "/analytics", icon: TrendingUp,  label: "Reportes" },
 ];
 
 export default function Sidebar() {

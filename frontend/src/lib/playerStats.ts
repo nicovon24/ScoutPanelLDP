@@ -150,18 +150,18 @@ export const SECTIONS: SectionDef[] = [
   },
   {
     label: "Ataque", type: "stat", rows: [
-      { l: "Goles",            k: "goals",            max: 30,  accent: "#00E094" },
-      { l: "Asistencias",      k: "assists",           max: 20,  accent: "#00E094" },
-      { l: "xG / Partido",     k: "xgPerGame",    d: 2, max: 1.5, accent: "#00E094" },
-      { l: "Tiros / PJ",       k: "shotsPerGame", d: 2, max: 6,   accent: "#0C65D4" },
-      { l: "Tiros al arco %",  k: "shotsOnTargetPct", d: 1, u: "%", max: 100, accent: "#0C65D4" },
+      { l: "Goles",           k: "goals",                                                                         max: 30,  accent: "#00E094" },
+      { l: "Asistencias",     k: "assists",                                                                        max: 20,  accent: "#00E094" },
+      { l: "xG",              k: "xgPerGame",  compute: (s) => asNum(s.xgPerGame)  * asNum(s.matchesPlayed), d: 1, max: 20,  accent: "#00E094" },
+      { l: "Tiros / PJ",      k: "shotsPerGame",                                                          d: 2, max: 6,   accent: "#0C65D4" },
+      { l: "Tiros al arco %", k: "shotsOnTargetPct",                                                      d: 1, u: "%", max: 100, accent: "#0C65D4" },
     ],
   },
   {
     label: "Pases & Creación", type: "stat", rows: [
-      { l: "xA / Partido",       k: "xaPerGame",        d: 2, max: 1,   accent: "#00E094" },
-      { l: "Pases clave / PJ",   k: "keyPassesPerGame", d: 2, max: 3,   accent: "#00E094" },
-      { l: "Precisión pases %",  k: "passAccuracyPct",  d: 1, u: "%", max: 100, accent: "#0C65D4" },
+      { l: "xA",               k: "xaPerGame",        compute: (s) => asNum(s.xaPerGame) * asNum(s.matchesPlayed), d: 1, max: 15,  accent: "#00E094" },
+      { l: "Pases clave / PJ", k: "keyPassesPerGame",                                                              d: 2, max: 3,   accent: "#00E094" },
+      { l: "Precisión pases %", k: "passAccuracyPct",                                                              d: 1, u: "%", max: 100, accent: "#0C65D4" },
     ],
   },
   {

@@ -128,6 +128,8 @@ export interface PlayerColor {
 export type StatDef = {
   l: string;
   k: string;
+  /** Optional override: derive value from the full stat object instead of stat[k] */
+  compute?: (stat: Record<string, unknown>) => number;
   d?: number;
   u?: string;
   lower?: boolean;
@@ -140,3 +142,51 @@ export type GeneralDef = { l: string; fn: (player: Player, stat: PlayerStat) => 
 export type SectionDef =
   | { label: string; type: "general"; rows: GeneralDef[] }
   | { label: string; type: "stat";    rows: StatDef[] };
+
+// ── Analytics / Liga section ───────────────────────────────────────────────────
+
+export type LeaderboardMetric =
+  | "goals" | "assists" | "combined" | "rating" | "minutesPlayed"
+  | "xgPerGame" | "shotsOnTargetPct"
+  | "keyPassesPerGame" | "passAccuracyPct" | "xaPerGame" | "recoveries"
+  | "tackles" | "interceptions" | "aerialDuelsWonPct"
+  | "savePct" | "cleanSheets" | "goalsConceded";
+
+export type PositionGroup = "todos" | "delanteros" | "mediocampistas" | "defensores" | "arqueros";
+
+export interface LeaderboardEntry {
+  rank: number;
+  id: number;
+  name: string;
+  photoUrl?: string | null;
+  position: string;
+  nationality?: string | null;
+  teamName?: string | null;
+  teamLogoUrl?: string | null;
+  goals: number;
+  assists: number;
+  combined: number;
+  matchesPlayed: number;
+  rating: number;
+  tackles: number;
+  interceptions: number;
+  recoveries: number;
+  aerialDuelsWonPct: number;
+  keyPassesPerGame: number;
+  passAccuracyPct: number;
+  xgPerGame: number;
+  xaPerGame: number;
+  shotsOnTargetPct: number;
+  savePct: number;
+  cleanSheets: number;
+  goalsConceded: number;
+  metricValue: number;
+}
+
+export interface LeagueSummary {
+  totalGoals: number;
+  totalAssists: number;
+  avgRating: number;
+  activePlayers: number;
+  totalMatches: number;
+}
