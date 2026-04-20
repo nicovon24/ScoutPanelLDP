@@ -3,8 +3,14 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ScoutPanel",
+  title: {
+    default: "ScoutPanelLDP",
+    template: "%s | ScoutPanelLDP",
+  },
   description: "Plataforma de scouting de jugadores de la Liga Profesional Argentina",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

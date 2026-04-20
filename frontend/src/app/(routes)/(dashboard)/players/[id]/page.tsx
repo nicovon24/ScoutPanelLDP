@@ -393,7 +393,6 @@ export default function PlayerDetailPage() {
         <div className="h-full">
           <EvolutionBarChart
             data={ratingHistory}
-            nameA={player.name}
             mode={ratingMode}
             onChangeMode={setRatingMode}
           />
