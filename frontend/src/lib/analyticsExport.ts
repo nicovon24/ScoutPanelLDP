@@ -55,6 +55,19 @@ export async function exportToExcel(
 // ── PDF export (jsPDF + autotable) ────────────────────────────────────────────
 // Sequential import: autotable must be loaded after jspdf so it can extend its prototype.
 
+// ── Brand palette (sincronizado con globals.css) ──────────────────────────────
+const C = {
+  bg:        [15,  15,  15]  as [number,number,number], // --main-bg  #0F0F0F
+  card:      [28,  28,  28]  as [number,number,number], // --card     #1C1C1C
+  cardAlt:   [22,  22,  22]  as [number,number,number], // fila alternada
+  border:    [44,  44,  44]  as [number,number,number], // --border   #2C2C2C
+  primary:   [242, 242, 242] as [number,number,number], // --primary  #F2F2F2
+  secondary: [200, 200, 200] as [number,number,number], // --secondary #C8C8C8
+  muted:     [149, 149, 149] as [number,number,number], // --muted    #959595
+  green:     [0,   224, 148] as [number,number,number], // --green    #00E094
+  greenDark: [0,   160, 106] as [number,number,number], // green oscuro para texto sobre fondo claro
+};
+
 export async function exportToPDF(
   entries: LeaderboardEntry[],
   cols: ColDef[],
@@ -62,77 +75,137 @@ export async function exportToPDF(
   metric: LeaderboardMetric,
   seasonName: string,
 ): Promise<void> {
-  // Load jspdf first, then autotable (order matters for prototype patching)
   const { default: jsPDF }     = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
 
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-
+  const doc    = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const PAGE_W = 297;
-  const ACCENT: [number, number, number] = [0, 180, 120]; // LDP green — readable on white
+  const PAGE_H = 210;
 
-  // ── Header strip ──────────────────────────────────────────────────────────
-  doc.setFillColor(...ACCENT);
-  doc.rect(0, 0, PAGE_W, 16, "F");
+  // ── Fondo oscuro completo ──────────────────────────────────────────────────
+  doc.setFillColor(...C.bg);
+  doc.rect(0, 0, PAGE_W, PAGE_H, "F");
+
+  // ── Header strip — card oscuro con borde verde inferior ───────────────────
+  doc.setFillColor(...C.card);
+  doc.rect(0, 0, PAGE_W, 18, "F");
+
+  // Línea acento verde
+  doc.setFillColor(...C.green);
+  doc.rect(0, 18, PAGE_W, 0.6, "F");
+
+  // Punto decorativo verde a la izquierda
+  doc.setFillColor(...C.green);
+  doc.circle(8, 9, 2.5, "F");
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(255, 255, 255);
-  doc.text("LDP Scout Panel — Reportes de Liga", 10, 10);
-
-  // ── Sub-header ────────────────────────────────────────────────────────────
-  doc.setFillColor(245, 247, 250);
-  doc.rect(0, 16, PAGE_W, 10, "F");
+  doc.setFontSize(13);
+  doc.setTextColor(...C.primary);
+  doc.text("ScoutPanel", 14, 9.5);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
-  const metaLabel = cols.find((c) => c.key === metric)?.label ?? metric;
+  doc.setTextColor(...C.green);
+  doc.text("LDP · Liga Profesional Argentina", 14, 14.5);
+
+  // Fecha alineada a la derecha
+  doc.setTextColor(...C.muted);
+  doc.setFontSize(7);
   doc.text(
-    `Temporada: ${seasonName}   ·   Grupo: ${group}   ·   Ordenado por: ${metaLabel}   ·   ${entries.length} jugadores`,
-    10,
-    22,
+    `Exportado: ${new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}`,
+    PAGE_W - 8,
+    9.5,
+    { align: "right" },
   );
 
-  // ── Table ─────────────────────────────────────────────────────────────────
+  // ── Sub-header — metadata del reporte ────────────────────────────────────
+  doc.setFillColor(...C.cardAlt);
+  doc.rect(0, 18.6, PAGE_W, 11, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...C.secondary);
+
+  const metaLabel = cols.find((c) => c.key === metric)?.label ?? metric;
+  const metaParts = [
+    `Temporada: ${seasonName}`,
+    `Grupo: ${group}`,
+    `Ordenado por: ${metaLabel}`,
+    `${entries.length} jugadores`,
+  ];
+  doc.text(metaParts.join("   ·   "), 8, 25.5);
+
+  // ── Tabla ─────────────────────────────────────────────────────────────────
   const headers = buildHeaders(cols);
   const rows    = buildRows(entries, cols);
+
+  const footerText = `ScoutPanel LDP · Reporte generado el ${new Date().toLocaleDateString("es-AR")}`;
 
   autoTable(doc, {
     head: [headers],
     body: rows as string[][],
-    startY: 28,
-    margin: { left: 8, right: 8 },
+    startY: 31,
+    margin: { left: 8, right: 8, bottom: 12 },
     styles: {
       font: "helvetica",
-      fontSize: 8,
+      fontSize: 7.5,
       cellPadding: { top: 3, right: 5, bottom: 3, left: 5 },
-      textColor: [40, 40, 40],
-      lineColor: [220, 220, 220],
-      lineWidth: 0.15,
+      textColor: C.secondary,
+      fillColor: C.card,
+      lineColor: C.border,
+      lineWidth: 0.2,
     },
     headStyles: {
-      fillColor: ACCENT,
-      textColor: [255, 255, 255],
+      fillColor: [20, 20, 20],
+      textColor: C.green,
       fontStyle: "bold",
-      fontSize: 8,
+      fontSize: 7.5,
       halign: "center",
+      lineColor: C.border,
+      lineWidth: 0.2,
     },
     alternateRowStyles: {
-      fillColor: [248, 250, 252],
+      fillColor: C.cardAlt,
     },
     columnStyles: {
-      0: { halign: "center", cellWidth: 10 }, // #
-      1: { cellWidth: 45 },                   // Jugador
-      2: { halign: "center", cellWidth: 14 }, // Pos
+      0: { halign: "center", cellWidth: 10, textColor: C.muted },
+      1: { cellWidth: 46, textColor: C.primary, fontStyle: "bold" },
+      2: { halign: "center", cellWidth: 14 },
+    },
+    // willDrawPage se ejecuta ANTES del contenido → el fondo no tapa la tabla
+    willDrawPage: (data: any) => {
+      // Fondo oscuro completo
+      doc.setFillColor(...C.bg);
+      doc.rect(0, 0, PAGE_W, PAGE_H, "F");
+
+      // Header en páginas 2+
+      if (data.pageNumber > 1) {
+        doc.setFillColor(...C.card);
+        doc.rect(0, 0, PAGE_W, 10, "F");
+        doc.setFillColor(...C.green);
+        doc.rect(0, 10, PAGE_W, 0.4, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(...C.primary);
+        doc.text("ScoutPanel LDP", 8, 6.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C.muted);
+        doc.setFontSize(7);
+        doc.text(`${seasonName}  ·  ${group}  ·  pág. ${data.pageNumber}`, PAGE_W - 8, 6.5, { align: "right" });
+      }
     },
     didDrawPage: (data: any) => {
-      doc.setFontSize(7);
-      doc.setTextColor(160, 160, 160);
+      // Footer
+      doc.setFillColor(...C.card);
+      doc.rect(0, PAGE_H - 9, PAGE_W, 9, "F");
+      doc.setFillColor(...C.green);
+      doc.rect(0, PAGE_H - 9, PAGE_W, 0.4, "F");
+      doc.setFontSize(6.5);
+      doc.setTextColor(...C.muted);
       doc.text(
-        `LDP Scout Panel · Exportado el ${new Date().toLocaleDateString("es-AR")} · Pág. ${data.pageNumber ?? ""}`,
+        `${footerText} · Página ${data.pageNumber}`,
         PAGE_W / 2,
-        doc.internal.pageSize.getHeight() - 5,
+        PAGE_H - 3.5,
         { align: "center" },
       );
     },

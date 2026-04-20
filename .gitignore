@@ -19,6 +19,7 @@ build/
 # Otros
 
 /doc
-/new_changes
-
-/reviews
+.cursorrules
+.claude
+.anthropic/
+.coderabbit.yaml
