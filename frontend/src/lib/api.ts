@@ -1,5 +1,6 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import toast from "react-hot-toast";
 import { useScoutStore } from "@/store/useScoutStore";
 
 const api = axios.create({
@@ -19,14 +20,26 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== "undefined") {
-      const path = window.location.pathname;
+    if (typeof window === "undefined") return Promise.reject(error);
+
+    const status = error.response?.status;
+    const path = window.location.pathname;
+
+    if (status === 401) {
       if (path !== "/login" && path !== "/register") {
-        // Limpia el localStorage como el estado persistido de Zustand,
         useScoutStore.getState().clearAuth();
-        window.location.href = "/login";
+        toast.error("Tu sesión expiró. Iniciá sesión nuevamente.");
+        setTimeout(() => { window.location.href = "/login"; }, 800);
+      }
+    } else if (status === 429) {
+      toast.error("Demasiados intentos. Esperá unos minutos.");
+    } else if (!status || status >= 500) {
+      // Solo mostrar toast genérico si no hay un handler local (ej. login/register tienen el suyo)
+      if (path !== "/login" && path !== "/register") {
+        toast.error("Error inesperado. Intentá de nuevo.");
       }
     }
+
     return Promise.reject(error);
   }
 );

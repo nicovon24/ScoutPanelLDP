@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Calendar, Search, TrendingUp, X } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Search, TrendingUp, X } from "lucide-react";
+
+const PAGE_SIZE = 25;
 import { Select, SelectItem } from "@nextui-org/react";
 import api from "@/lib/api";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
@@ -44,6 +46,7 @@ export default function AnalyticsPage() {
   const [summary, setSummary]               = useState<LeagueSummary | null>(null);
   const [loadingTable, setLoadingTable]     = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(true);
+  const [page, setPage]                     = useState(1);
 
   // ── Seasons ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -83,10 +86,10 @@ export default function AnalyticsPage() {
         sortDir,
         ...(positions              ? { positions }                        : {}),
         ...(selectedSeason?.year   ? { debutYearMax: selectedSeason.year } : {}),
-        limit: 25,
+        limit: 500,
       },
     })
-      .then(({ data }) => setEntries(data))
+      .then(({ data }) => { setEntries(data); setPage(1); })
       .catch(() => setEntries([]))
       .finally(() => setLoadingTable(false));
   }, [seasonId, posGroup, metric, sortDir, selectedSeason]);
@@ -99,6 +102,16 @@ export default function AnalyticsPage() {
     const q = searchQuery.toLowerCase();
     return entries.filter((e) => e.name.toLowerCase().includes(q));
   }, [entries, searchQuery]);
+
+  // Reset page when search changes
+  useEffect(() => { setPage(1); }, [searchQuery]);
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  const totalPages  = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const pagedEntries = useMemo(
+    () => filteredEntries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredEntries, page],
+  );
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function handleGroupChange(group: PositionGroup) {
@@ -222,14 +235,14 @@ export default function AnalyticsPage() {
             </span>
           </div>
 
-          {/* Export */}
+          {/* Export — usa el dataset completo sin paginar */}
           <ExportMenu
-            entries={filteredEntries}
+            entries={entries}
             cols={groupCfg.cols}
             group={posGroup}
             metric={metric}
             seasonName={seasonName}
-            disabled={filteredEntries.length === 0}
+            disabled={entries.length === 0}
           />
         </div>
 
@@ -240,7 +253,7 @@ export default function AnalyticsPage() {
 
         {/* Table */}
         <LeagueTable
-          entries={filteredEntries}
+          entries={pagedEntries}
           cols={groupCfg.cols}
           metric={metric}
           sortDir={sortDir}
@@ -248,6 +261,60 @@ export default function AnalyticsPage() {
           loading={loadingTable}
           isFiltered={searchQuery.trim().length > 0}
         />
+
+        {/* Pagination */}
+        {!loadingTable && filteredEntries.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-[11px] text-muted font-medium">
+              {filteredEntries.length} jugadores · página {page} de {totalPages}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10
+                           text-muted hover:text-primary hover:border-white/20 disabled:opacity-30
+                           disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={14} />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                .reduce<(number | "…")[]>((acc, p, i, arr) => {
+                  if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("…");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  p === "…" ? (
+                    <span key={`ellipsis-${i}`} className="w-8 text-center text-muted text-xs">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border
+                                  ${page === p
+                          ? "bg-green/15 text-green border-green/25"
+                          : "text-muted border-white/10 hover:text-primary hover:border-white/20"}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10
+                           text-muted hover:text-primary hover:border-white/20 disabled:opacity-30
+                           disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

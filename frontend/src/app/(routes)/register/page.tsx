@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
 
@@ -17,18 +18,21 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
-    if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
+    if (!name.trim()) { toast.error("Ingresá tu nombre"); return; }
+    if (!email.trim()) { toast.error("Ingresá tu email"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { toast.error("El email no tiene un formato válido"); return; }
+    if (!password) { toast.error("Ingresá una contraseña"); return; }
+    if (password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
       return;
     }
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+    if (!confirmPassword) { toast.error("Confirmá tu contraseña"); return; }
+    if (password !== confirmPassword) {
+      toast.error("Las contraseñas no coinciden");
       return;
     }
 
@@ -36,10 +40,12 @@ export default function RegisterPage() {
     try {
       const { data } = await api.post("/auth/register", { email, password, name });
       setAuth(data.token, data.user);
+      toast.success("¡Cuenta creada! Bienvenido/a.");
       router.replace("/");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg ?? "Error al registrarse, intentá de nuevo");
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        ?? "Error al registrarse, intentá de nuevo";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -126,7 +132,7 @@ export default function RegisterPage() {
             Crear <span className="text-green">cuenta</span>
           </h2>
 
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} noValidate className="space-y-4">
             {/* Name */}
             <div>
               <label className="block text-xs font-semibold text-muted mb-2 uppercase tracking-[1.5px]">
@@ -138,7 +144,6 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Tu nombre"
                 className="field"
-                required
                 autoComplete="name"
               />
             </div>
@@ -154,7 +159,6 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@email.com"
                 className="field"
-                required
                 autoComplete="email"
               />
             </div>
@@ -171,7 +175,6 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
                   className="field pr-11"
-                  required
                   autoComplete="new-password"
                 />
                 <button
@@ -195,16 +198,9 @@ export default function RegisterPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repetí tu contraseña"
                 className="field"
-                required
                 autoComplete="new-password"
               />
             </div>
-
-            {error && (
-              <p className="text-sm text-danger bg-danger/8 border border-danger/20 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
 
             {/* Submit button with shimmer */}
             <button

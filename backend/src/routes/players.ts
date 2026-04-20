@@ -17,7 +17,7 @@ router.get("/nationalities", async (_req: Request, res: Response) => {
     res.json(list);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -75,7 +75,7 @@ router.get("/search", async (req: Request, res: Response) => {
     res.json({ players: matchingPlayers, teams: matchingTeams });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -83,19 +83,21 @@ router.get("/search", async (req: Request, res: Response) => {
 router.get("/compare", async (req: Request, res: Response) => {
   try {
     const { ids, seasonId } = req.query;
-    if (!ids) return res.status(400).json({ error: "ids is required" });
+    if (!ids) return res.status(400).json({ error: "El parámetro ids es requerido" });
 
-    // F-04: filtrar IDs inválidos (NaN) y limitar cantidad
-    const playerIds = (ids as string)
-      .split(",")
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n) && n > 0);
+    // Filtrar IDs inválidos (NaN), deduplicar y limitar cantidad
+    const playerIds = [...new Set(
+      (ids as string)
+        .split(",")
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n) && n > 0)
+    )];
 
     if (playerIds.length === 0) {
-      return res.status(400).json({ error: "No valid player IDs provided" });
+      return res.status(400).json({ error: "No se proporcionaron IDs válidos" });
     }
     if (playerIds.length > 10) {
-      return res.status(400).json({ error: "Maximum 10 players can be compared at once" });
+      return res.status(400).json({ error: "Máximo 10 jugadores por comparación" });
     }
 
     // F-06: validar seasonId
@@ -103,13 +105,13 @@ router.get("/compare", async (req: Request, res: Response) => {
     if (seasonId) {
       sid = parseInt(seasonId as string, 10);
       if (isNaN(sid)) {
-        return res.status(400).json({ error: "seasonId must be a valid integer" });
+        return res.status(400).json({ error: "seasonId debe ser un entero válido" });
       }
     } else {
       const latestSeason = await db.query.seasons.findFirst({
         orderBy: (s, { desc }) => [desc(s.year)],
       });
-      if (!latestSeason) return res.status(404).json({ error: "No seasons found" });
+      if (!latestSeason) return res.status(404).json({ error: "No se encontraron temporadas" });
       sid = latestSeason.id;
     }
 
@@ -216,42 +218,47 @@ router.get("/", async (req: Request, res: Response) => {
         vals.push(teamArr[0]);
       }
     }
-    if (foot) {
-      whereClauses.push(`p.preferred_foot = $${idx++}`);
-      vals.push(foot as string);
+    const VALID_FOOT = ["left", "right", "both"] as const;
+    if (foot && VALID_FOOT.includes((foot as string).toLowerCase() as typeof VALID_FOOT[number])) {
+      whereClauses.push(`LOWER(p.preferred_foot) = $${idx++}`);
+      vals.push((foot as string).toLowerCase());
     }
-    if (valueMin) {
-      whereClauses.push(`p.market_value_m >= $${idx++}`);
-      vals.push(Number(valueMin));
-    }
-    if (valueMax) {
-      whereClauses.push(`p.market_value_m <= $${idx++}`);
-      vals.push(Number(valueMax));
-    }
-    if (ageMin) {
+
+    const safeNum = (v: unknown): number | null => {
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    };
+
+    const vMin = safeNum(valueMin);
+    if (vMin !== null) { whereClauses.push(`p.market_value_m >= $${idx++}`); vals.push(vMin); }
+
+    const vMax = safeNum(valueMax);
+    if (vMax !== null) { whereClauses.push(`p.market_value_m <= $${idx++}`); vals.push(vMax); }
+
+    const aMin = safeNum(ageMin);
+    if (aMin !== null) {
       const now = new Date();
-      const minDate = new Date(now.getFullYear() - Number(ageMin), now.getMonth(), now.getDate());
+      const minDate = new Date(now.getFullYear() - aMin, now.getMonth(), now.getDate());
       whereClauses.push(`p.date_of_birth <= $${idx++}`);
       vals.push(minDate.toISOString().split("T")[0]);
     }
-    if (ageMax) {
+
+    const aMax = safeNum(ageMax);
+    if (aMax !== null) {
       const now = new Date();
-      const maxDate = new Date(now.getFullYear() - Number(ageMax) - 1, now.getMonth(), now.getDate());
+      const maxDate = new Date(now.getFullYear() - aMax - 1, now.getMonth(), now.getDate());
       whereClauses.push(`p.date_of_birth >= $${idx++}`);
       vals.push(maxDate.toISOString().split("T")[0]);
     }
-    if (heightMin) {
-      whereClauses.push(`p.height_cm >= $${idx++}`);
-      vals.push(Number(heightMin));
-    }
-    if (heightMax) {
-      whereClauses.push(`p.height_cm <= $${idx++}`);
-      vals.push(Number(heightMax));
-    }
-    if (minRating) {
-      whereClauses.push(`ps.sofascore_rating >= $${idx++}`);
-      vals.push(Number(minRating));
-    }
+
+    const hMin = safeNum(heightMin);
+    if (hMin !== null) { whereClauses.push(`p.height_cm >= $${idx++}`); vals.push(hMin); }
+
+    const hMax = safeNum(heightMax);
+    if (hMax !== null) { whereClauses.push(`p.height_cm <= $${idx++}`); vals.push(hMax); }
+
+    const mRating = safeNum(minRating);
+    if (mRating !== null) { whereClauses.push(`ps.sofascore_rating >= $${idx++}`); vals.push(mRating); }
 
     const whereStr = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
@@ -327,7 +334,7 @@ router.get("/", async (req: Request, res: Response) => {
     return res.json({ items, totalItems });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
@@ -335,7 +342,7 @@ router.get("/", async (req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    if (isNaN(id)) return res.status(400).json({ error: "ID inválido" });
 
     const player = await db.query.players.findFirst({
       where: eq(players.id, id),
@@ -348,11 +355,11 @@ router.get("/:id", async (req: Request, res: Response) => {
       },
     });
 
-    if (!player) return res.status(404).json({ error: "Player not found" });
+    if (!player) return res.status(404).json({ error: "Jugador no encontrado" });
     res.json(player);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

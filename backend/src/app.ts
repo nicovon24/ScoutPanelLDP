@@ -7,6 +7,7 @@ import seasonRoutes from "./routes/seasons";
 import authRoutes, { requireAuth } from "./routes/auth";
 import shortlistRoutes from "./routes/shortlist";
 import analyticsRoutes from "./routes/analytics";
+import { errorHandler } from "./middleware/errorHandler";
 
 export const app = express();
 
@@ -37,8 +38,11 @@ app.get("/health", (_req: Request, res: Response) => {
 });
 
 // ── Rutas protegidas — requieren JWT ──────────────────────────────────────────
-app.use("/api/players",  requireAuth, playerRoutes);
-app.use("/api/teams",    requireAuth, teamRoutes);
-app.use("/api/seasons",  requireAuth, seasonRoutes);
-app.use("/api/shortlist",  shortlistRoutes);
+app.use("/api/players",   requireAuth, playerRoutes);
+app.use("/api/teams",     requireAuth, teamRoutes);
+app.use("/api/seasons",   requireAuth, seasonRoutes);
+app.use("/api/shortlist", shortlistRoutes);
 app.use("/api/analytics", requireAuth, analyticsRoutes);
+
+// ── Middleware global de errores (debe ir último) ────────────────────────────
+app.use(errorHandler);
