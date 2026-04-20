@@ -1,18 +1,17 @@
-import { Router } from "express";
-import { and, eq } from "drizzle-orm";
+import { Router, Request, Response } from "express";
+import { and, eq, desc } from "drizzle-orm";
 import { db } from "../db";
-import { shortlistEntries, players } from "../db/schema";
+import { shortlistEntries, players, playerStats } from "../db/schema";
 import { requireAuth } from "./auth";
 
 const router = Router();
 
-// Todas las rutas de shortlist requieren autenticación
 router.use(requireAuth);
 
 // GET /api/shortlist — favoritos del usuario con datos de jugador + equipo + última stat
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const entries = await db.query.shortlistEntries.findMany({
       where: eq(shortlistEntries.userId, userId),
       with: {
@@ -20,13 +19,13 @@ router.get("/", async (req, res) => {
           with: {
             team: true,
             stats: {
-              orderBy: (s: any, { desc }: any) => [desc(s.seasonId)],
+              orderBy: [desc(playerStats.seasonId)],
               limit: 1,
             },
           },
         },
       },
-      orderBy: (s, { desc }) => [desc(s.addedAt)],
+      orderBy: (s, { desc: d }) => [d(s.addedAt)],
     });
     res.json(entries.map((e) => ({ ...e.player, addedAt: e.addedAt })));
   } catch (error) {
@@ -36,9 +35,9 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/shortlist/ids — solo IDs para checks rápidos de isFavorite
-router.get("/ids", async (req, res) => {
+router.get("/ids", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const entries = await db.query.shortlistEntries.findMany({
       where: eq(shortlistEntries.userId, userId),
       columns: { playerId: true },
@@ -51,9 +50,9 @@ router.get("/ids", async (req, res) => {
 });
 
 // POST /api/shortlist/:playerId — agregar jugador a favoritos
-router.post("/:playerId", async (req, res) => {
+router.post("/:playerId", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const playerId = parseInt(req.params.playerId);
     if (isNaN(playerId)) return res.status(400).json({ error: "playerId inválido" });
 
@@ -72,9 +71,9 @@ router.post("/:playerId", async (req, res) => {
 });
 
 // DELETE /api/shortlist/:playerId — quitar jugador de favoritos
-router.delete("/:playerId", async (req, res) => {
+router.delete("/:playerId", async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const playerId = parseInt(req.params.playerId);
     if (isNaN(playerId)) return res.status(400).json({ error: "playerId inválido" });
 

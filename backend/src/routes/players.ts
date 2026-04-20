@@ -1,12 +1,14 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { db, pool } from "../db";
 import { players, playerStats, playerRatings, teams } from "../db/schema";
 import { eq, inArray, or, ilike, asc } from "drizzle-orm";
 
+type SqlParam = string | number | boolean | string[] | number[];
+
 const router = Router();
 
 // ─── GET /api/players/search  (MUST be before /:id) ────────────────────────
-router.get("/search", async (req, res) => {
+router.get("/search", async (req: Request, res: Response) => {
   try {
     const q = (req.query.q as string)?.trim() || "";
 
@@ -64,7 +66,7 @@ router.get("/search", async (req, res) => {
 });
 
 // ─── GET /api/players/compare  (MUST be before /:id) ───────────────────────
-router.get("/compare", async (req, res) => {
+router.get("/compare", async (req: Request, res: Response) => {
   try {
     const { ids, seasonId } = req.query;
     if (!ids) return res.status(400).json({ error: "ids is required" });
@@ -116,7 +118,7 @@ router.get("/compare", async (req, res) => {
 });
 
 // ─── GET /api/players  — List with filters + sorting ───────────────────────
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const {
       position, nationality, teamId, foot,
@@ -154,7 +156,7 @@ router.get("/", async (req, res) => {
 
     // Build parameterized WHERE clauses
     const whereClauses: string[] = [];
-    const vals: any[] = [];
+    const vals: SqlParam[] = [];
     let idx = 1;
 
     if (q) {
@@ -173,7 +175,7 @@ router.get("/", async (req, res) => {
     }
     if (nationality) {
       whereClauses.push(`p.nationality = $${idx++}`);
-      vals.push(nationality);
+      vals.push(nationality as string);
     }
     if (teamId && teamId !== "") {
       // F-19: filtrar NaN de teamId
@@ -191,7 +193,7 @@ router.get("/", async (req, res) => {
     }
     if (foot) {
       whereClauses.push(`p.preferred_foot = $${idx++}`);
-      vals.push(foot);
+      vals.push(foot as string);
     }
     if (valueMin) {
       whereClauses.push(`p.market_value_m >= $${idx++}`);
@@ -265,7 +267,7 @@ router.get("/", async (req, res) => {
     ]);
 
     const totalItems = parseInt(countRes.rows[0].count);
-    const items = dataRes.rows.map((r: any) => ({
+    const items = (dataRes.rows as Record<string, unknown>[]).map((r) => ({
       id: r.id,
       name: r.name,
       position: r.position,
@@ -302,7 +304,7 @@ router.get("/", async (req, res) => {
 });
 
 // ─── GET /api/players/:id ───────────────────────────────────────────────────
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
