@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.some((o) => origin.startsWith(o))) {
+      if (allowedOrigins.some((o) => origin === o)) {
         return callback(null, true);
       }
       callback(new Error(`CORS: origin ${origin} not allowed`));
