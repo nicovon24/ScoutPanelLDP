@@ -135,7 +135,7 @@ export type StatDef = {
   accent: string;
 };
 
-export type GeneralDef = { l: string; fn: (player: any, stat: any) => string };
+export type GeneralDef = { l: string; fn: (player: Player, stat: PlayerStat) => string };
 
 export type SectionDef =
   | { label: string; type: "general"; rows: GeneralDef[] }

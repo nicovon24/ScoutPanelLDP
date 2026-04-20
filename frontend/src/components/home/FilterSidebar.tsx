@@ -20,20 +20,22 @@ export const POSITIONS_LIST = [
   { id: "GK", name: "GK - Arquero" },
 ];
 
+interface FilterState {
+  position: string;
+  teamId: string;
+  foot: string;
+  ageMin: string;
+  ageMax: string;
+  heightMin: string;
+  heightMax: string;
+  minRating: string;
+  marketValueMax: string;
+}
+
 interface Props {
-  teams: { id: number; name: string }[];
-  filters: {
-    position: string;
-    teamId: string;
-    foot: string;
-    ageMin: string;
-    ageMax: string;
-    heightMin: string;
-    heightMax: string;
-    minRating: string;
-    marketValueMax: string;
-  };
-  setFilters: (f: any) => void;
+  teams: { id?: number; name: string; logoUrl?: string | null; imagePath?: string }[];
+  filters: FilterState;
+  setFilters: (f: FilterState) => void;
   onReset: () => void;
 }
 
@@ -59,7 +61,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
     };
   }, [filterPanelOpen]);
 
-  const update = (key: string, val: any) => {
+  const update = (key: string, val: string) => {
     setFilters({ ...filters, [key]: val });
   };
 
@@ -180,9 +182,9 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                     selectionMode="multiple"
                     items={[
                       ...[...teams].sort((a, b) => a.name.localeCompare(b.name)).map(t => ({ 
-                        id: t.id.toString(), 
+                        id: t.id?.toString() ?? "", 
                         name: t.name, 
-                        logoUrl: (t as any).logoUrl || (t as any).imagePath 
+                        logoUrl: t.logoUrl || t.imagePath 
                       }))
                     ]}
                     selectedKeys={filters.teamId ? new Set(filters.teamId.split(",")) : new Set()}

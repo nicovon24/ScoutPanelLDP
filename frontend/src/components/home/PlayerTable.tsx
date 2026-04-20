@@ -3,10 +3,11 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { TrendingUp, User } from "lucide-react";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@nextui-org/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, type SortDescriptor } from "@nextui-org/react";
+import type { Player } from "@/types";
 
 interface Props {
-  players: any[];
+  players: Player[];
   loading?: boolean;
   sortBy?: string;
   onSort?: (sort: string) => void;
@@ -25,12 +26,12 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
 
   if (players.length === 0) return null;
 
-  const sortDescriptor: any = sortBy ? {
+  const sortDescriptor: SortDescriptor | undefined = sortBy ? {
     column: sortBy.split("_")[0],
     direction: sortBy.split("_")[1] === "asc" ? "ascending" : "descending"
   } : undefined;
 
-  const handleSortChange = (descriptor: any) => {
+  const handleSortChange = (descriptor: SortDescriptor) => {
     if (onSort) {
       const order = descriptor.direction === "ascending" ? "asc" : "desc";
       onSort(`${descriptor.column}_${order}`);
@@ -62,7 +63,7 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
       </TableHeader>
       <TableBody items={players}>
         {(p) => {
-          const rating = p.stats?.[0]?.sofascoreRating;
+          const rating = Number(p.stats?.[0]?.sofascoreRating);
           const rColor = rating >= 7.5 ? "text-green" : rating >= 7.0 ? "text-gold" : "text-primary";
 
           return (
