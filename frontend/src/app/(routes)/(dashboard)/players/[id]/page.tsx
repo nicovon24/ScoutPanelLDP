@@ -31,6 +31,7 @@ const HeatmapField = dynamic(() => import("@/components/player/HeatmapField"), {
   ssr: false,
 });
 import { calcAge, posStyle, fmt, contractTypeLabel, careerYearKey } from "@/lib/utils";
+import FlagImg from "@/components/ui/FlagImg";
 import { buildSingleRadar } from "@/lib/radarNorm";
 import { buildRatingHistory, buildValueHistory } from "@/lib/playerStats";
 import DonutCircle from "@/components/player/DonutCircle";
@@ -88,19 +89,59 @@ export default function PlayerDetailPage() {
 
 
 
-  /* Quick Info chips */
+  /* Professional info — only what isn't shown in the hero already */
   const infoChips = [
-    { label: "Posición", value: player.position },
-    { label: "Pie hábil", value: player.preferredFoot ?? "—" },
-    { label: "Altura", value: player.heightCm ? `${player.heightCm} cm` : "—" },
-    { label: "Peso", value: player.weightKg ? `${player.weightKg} kg` : "—" },
-    { label: "Nac.", value: player.nationality ?? "—" },
-    { label: "Debut", value: player.debutYear ?? "—" },
-    { label: "Club", value: player.team?.name ?? "—" },
-    { label: "Valor", value: `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M` },
-    { label: "Tipo contrato", value: contractTypeLabel(player.contractType) },
+    { label: "Peso",           value: player.weightKg ? `${player.weightKg} kg` : "—" },
+    { label: "Debut",          value: player.debutYear ?? "—" },
+    { label: "Tipo contrato",  value: contractTypeLabel(player.contractType) },
     { label: "Contrato hasta", value: player.contractUntil ?? "—" },
   ];
+
+  /* Key stats by position */
+  type KeyStat = { label: string; value: string | number; accent: string };
+  function getKeyStats(pos: string, stat: Record<string, unknown>): KeyStat[] {
+    const f = (v: unknown, d = 1) => (v != null && v !== "" ? parseFloat(String(v)).toFixed(d) : "—");
+    const n = (v: unknown) => (v != null && v !== "" ? String(v) : "—");
+
+    if (pos === "GK") return [
+      { label: "Paradas %",     value: f(stat.savePct),          accent: "text-blue-400" },
+      { label: "Arcos en cero", value: n(stat.cleanSheets),       accent: "text-green" },
+      { label: "Goles enc.",    value: n(stat.goalsConceded),     accent: "text-danger" },
+      { label: "Partidos",      value: n(stat.matchesPlayed),     accent: "text-secondary" },
+    ];
+    if (pos === "CB") return [
+      { label: "Duelos aéreos", value: `${f(stat.aerialDuelsWonPct)}%`, accent: "text-blue-400" },
+      { label: "Intercepciones",value: n(stat.interceptions),    accent: "text-green" },
+      { label: "Tackles",       value: n(stat.tackles),          accent: "text-gold" },
+      { label: "Recuperaciones",value: n(stat.recoveries),       accent: "text-secondary" },
+    ];
+    if (pos === "LB" || pos === "RB") return [
+      { label: "Intercepciones",value: n(stat.interceptions),    accent: "text-green" },
+      { label: "Tackles",       value: n(stat.tackles),          accent: "text-gold" },
+      { label: "Pases %",       value: `${f(stat.passAccuracyPct)}%`, accent: "text-blue-400" },
+      { label: "Recuperaciones",value: n(stat.recoveries),       accent: "text-secondary" },
+    ];
+    if (pos === "CDM") return [
+      { label: "Tackles",       value: n(stat.tackles),          accent: "text-gold" },
+      { label: "Intercepciones",value: n(stat.interceptions),    accent: "text-green" },
+      { label: "Recuperaciones",value: n(stat.recoveries),       accent: "text-secondary" },
+      { label: "Duelos aéreos", value: `${f(stat.aerialDuelsWonPct)}%`, accent: "text-blue-400" },
+    ];
+    if (pos === "CM" || pos === "CAM") return [
+      { label: "Asistencias",   value: n(stat.assists),          accent: "text-green" },
+      { label: "Pases clave",   value: f(stat.keyPassesPerGame), accent: "text-blue-400" },
+      { label: "Pases %",       value: `${f(stat.passAccuracyPct)}%`, accent: "text-secondary" },
+      { label: "xA / partido",  value: f(stat.xaPerGame, 2),     accent: "text-gold" },
+    ];
+    // CF, SS, LW, RW
+    return [
+      { label: "Goles",         value: n(stat.goals),            accent: "text-green" },
+      { label: "Asistencias",   value: n(stat.assists),          accent: "text-blue-400" },
+      { label: "xG / partido",  value: f(stat.xgPerGame, 2),     accent: "text-gold" },
+      { label: "Remates arco %",value: `${f(stat.shotsOnTargetPct)}%`, accent: "text-secondary" },
+    ];
+  }
+  const keyStats: KeyStat[] = curStat ? getKeyStats(player.position, curStat as Record<string, unknown>) : [];
 
   const careerSorted = [...(player.career ?? [])].sort(
     (a: { yearRange: string }, b: { yearRange: string }) =>
@@ -134,11 +175,6 @@ export default function PlayerDetailPage() {
                 ? <Image src={player.photoUrl} alt={player.name} width={100} height={100} className="object-cover w-full h-full" unoptimized />
                 : player.name[0]}
             </div>
-            {player.nationality && (
-              <span className="absolute -bottom-1 -right-1 badge badge-muted text-2xs">
-                {player.nationality.slice(0, 3).toUpperCase()}
-              </span>
-            )}
           </div>
 
           {/* Name + chips + actions */}
@@ -152,12 +188,21 @@ export default function PlayerDetailPage() {
                   {player.heightCm && <span className="text-base text-muted">· {player.heightCm} cm</span>}
                 </div>
                 <h1 className="text-2xl font-black text-primary leading-tight">{player.name}</h1>
-                {player.team?.name && (
-                  <div className="flex items-center gap-2 mt-1">
-                    {player.team.logoUrl && <Image src={player.team.logoUrl} alt="" width={15} height={15} unoptimized />}
-                    <span className="text-base text-secondary">{player.team.name}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3 mt-1 flex-wrap">
+                  {player.team?.name && (
+                    <div className="flex items-center gap-1.5">
+                      {player.team.logoUrl && <Image src={player.team.logoUrl} alt="" width={15} height={15} unoptimized />}
+                      <span className="text-base text-secondary">{player.team.name}</span>
+                    </div>
+                  )}
+                  {player.nationality && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted">·</span>
+                      <FlagImg nationality={player.nationality} />
+                      <span className="text-base text-secondary">{player.nationality}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-3 flex-shrink-0">
@@ -213,31 +258,52 @@ export default function PlayerDetailPage() {
               </div>
             </div>
 
-            {/* Quick stats bar */}
-            {curStat && (
-              <div className="flex items-center gap-6 mt-4 pt-3 border-t border-border flex-wrap">
-                {mainRating != null && mainRating > 0 && (
-                  <div className="text-center">
-                    <p className={`text-xl font-black leading-none ${ratingColor}`}>{mainRating.toFixed(1)}</p>
-                    <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">Rating</p>
-                  </div>
-                )}
-                {[
-                  { label: "PJ", value: curStat.matchesPlayed },
-                  { label: "Min", value: curStat.minutesPlayed ? `${curStat.minutesPlayed}'` : "—" },
-                  { label: "Goles", value: curStat.goals },
-                  { label: "Asist", value: curStat.assists },
-                  { label: "xG", value: fmt(curStat.xgPerGame, 2) },
-                  { label: "xA", value: fmt(curStat.xaPerGame, 2) },
-                  { label: "Valor", value: `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M` },
-                ].map(({ label, value }) => (
-                  <div key={label} className="text-center">
-                    <p className="text-md font-bold text-primary leading-none">{value}</p>
-                    <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">{label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Quick stats bar — adapted by position */}
+            {curStat && (() => {
+              const pos = player.position;
+              const valor = `€${parseFloat(player.marketValueM ?? "0").toFixed(1)}M`;
+              let quickStats: { label: string; value: string | number }[];
+
+              if (pos === "GK") {
+                quickStats = [
+                  { label: "PJ",            value: curStat.matchesPlayed ?? "—" },
+                  { label: "Vallas inv.",   value: curStat.cleanSheets ?? "—" },
+                  { label: "Paradas %",     value: curStat.savePct != null ? `${parseFloat(String(curStat.savePct)).toFixed(1)}%` : "—" },
+                  { label: "Valor",         value: valor },
+                ];
+              } else if (pos === "CB" || pos === "LB" || pos === "RB") {
+                quickStats = [
+                  { label: "PJ",            value: curStat.matchesPlayed ?? "—" },
+                  { label: "Tackles",       value: curStat.tackles ?? "—" },
+                  { label: "Interc.",       value: curStat.interceptions ?? "—" },
+                  { label: "Valor",         value: valor },
+                ];
+              } else {
+                quickStats = [
+                  { label: "PJ",    value: curStat.matchesPlayed ?? "—" },
+                  { label: "Goles", value: curStat.goals ?? "—" },
+                  { label: "Asist", value: curStat.assists ?? "—" },
+                  { label: "Valor", value: valor },
+                ];
+              }
+
+              return (
+                <div className="flex items-center gap-6 mt-4 pt-3 border-t border-border flex-wrap">
+                  {mainRating != null && mainRating > 0 && (
+                    <div className="text-center">
+                      <p className={`text-xl font-black leading-none ${ratingColor}`}>{mainRating.toFixed(1)}</p>
+                      <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">Rating</p>
+                    </div>
+                  )}
+                  {quickStats.map(({ label, value }) => (
+                    <div key={label} className="text-center">
+                      <p className="text-md font-bold text-primary leading-none">{value}</p>
+                      <p className="text-2xs text-muted mt-0.5 uppercase tracking-wide">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -248,16 +314,33 @@ export default function PlayerDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Player info table */}
-        <div className="card h-full">
+        <div className="card h-full flex flex-col gap-5">
           <p className="section-title">Detalles Profesionales</p>
-          <div className="grid grid-cols-2 gap-x-10 gap-y-1">
+          <div className="divide-y divide-border/40">
             {infoChips.map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-3 border-b border-border/40 last:border-0">
-                <span className="text-secondary font-medium tracking-tight">{label}</span>
-                <span className="text-primary font-black">{value}</span>
+              <div key={label} className="flex items-center justify-between py-2">
+                <span className="text-xs text-secondary font-medium tracking-tight">{label}</span>
+                <span className="text-xs text-primary font-black">{value}</span>
               </div>
             ))}
           </div>
+
+          {keyStats.length > 0 && (
+            <>
+              <div className="h-px bg-border/60" />
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted mb-3">Stats clave</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {keyStats.map(({ label, value, accent }) => (
+                    <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 flex flex-col gap-0.5">
+                      <span className={`text-lg font-black leading-none ${accent}`}>{value}</span>
+                      <span className="text-[10px] text-muted uppercase tracking-wide">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* efficiency donuts */}

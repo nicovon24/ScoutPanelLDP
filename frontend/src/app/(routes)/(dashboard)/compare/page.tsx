@@ -126,11 +126,11 @@ export default function ComparePage() {
       <p className="text-[11px] font-bold text-muted mb-3">Player comparison</p>
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 sm:mb-5 gap-3 sm:gap-4">
-        <h1 className="text-lg sm:text-[20px] font-black tracking-[-0.01em] text-primary uppercase">
+        <h1 className="text-base sm:text-[20px] font-black tracking-[-0.01em] text-primary uppercase">
           Comparación de jugadores
         </h1>
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <div className="w-[160px] sm:w-[180px]">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex-1 sm:flex-none sm:w-[180px]">
             <Select aria-label="Seleccionar temporada" placeholder="Temporada"
               selectedKeys={selectedSeasonId ? [selectedSeasonId] : []}
               onSelectionChange={(keys: any) => { const v = Array.from(keys)[0]; if (v) setSeason(String(v)); }}
@@ -142,18 +142,25 @@ export default function ComparePage() {
           {slots.some(Boolean) && (
             <button
               onClick={() => { setSlots([null, null]); setPlayersData([null, null, null]); useScoutStore.getState().clearCompare(); }}
-              className="flex items-center gap-[6px] border border-danger/25 rounded-lg px-3 sm:px-4 h-[38px] text-danger text-[12px] font-extrabold hover:bg-danger/10 transition-all">
-              <RotateCcw size={12} strokeWidth={2.5} /> <span className="hidden sm:inline">Limpiar todo</span>
+              title="Limpiar todo"
+              className="flex items-center gap-[6px] border border-danger/25 rounded-lg px-3 sm:px-4 h-[38px] text-danger text-[12px] font-extrabold hover:bg-danger/10 transition-all whitespace-nowrap">
+              <RotateCcw size={12} strokeWidth={2.5} />
+              <span className="hidden sm:inline">Limpiar todo</span>
             </button>
           )}
         </div>
       </div>
 
+      {/* Mobile scroll hint */}
+      <p className="text-[11px] text-muted text-center sm:hidden mb-2 flex items-center justify-center gap-1">
+        <span>←</span> deslizá para ver todo <span>→</span>
+      </p>
+
       <div className="bg-surface border border-border rounded-[14px] overflow-hidden">
 
         {/* ── Horizontal scroll wrapper for the comparison table ─────────── */}
         <div className="overflow-x-auto">
-        <div className="min-w-[540px]">
+        <div className="min-w-[360px] sm:min-w-[540px]">
 
         {/* ── HEADER: player slots ──────────────────────────────────────────── */}
         <div className="grid border-b border-border" style={{ gridTemplateColumns: headerCols }}>
@@ -176,7 +183,7 @@ export default function ComparePage() {
                   </div>
                 )}
 
-                <div className={`relative flex flex-col items-center p-[36px_20px_28px] text-center border-r border-border last:border-0 ${!s ? "z-20" : "z-10"} transition-all duration-300`}>
+                <div className={`relative flex flex-col items-center p-[20px_12px_18px] sm:p-[36px_20px_28px] text-center border-r border-border last:border-0 ${!s ? "z-20" : "z-10"} transition-all duration-300`}>
                   {/* accent glow */}
                   {s && !load && (
                     <div className="absolute inset-0 pointer-events-none opacity-50"
@@ -198,14 +205,14 @@ export default function ComparePage() {
 
                   {/* Content */}
                   {!s ? (
-                    <div className="flex flex-col items-center justify-center min-h-[200px] gap-3 w-full">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${C.glow} ${C.text}`}>
-                        <Search size={22} strokeWidth={2.5} />
+                    <div className="flex flex-col items-center justify-center min-h-[160px] sm:min-h-[200px] gap-2 sm:gap-3 w-full">
+                      <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${C.glow} ${C.text}`}>
+                        <Search size={18} strokeWidth={2.5} />
                       </div>
-                      <p className="text-[11px] font-extrabold text-muted uppercase tracking-wide">
+                      <p className="text-[10px] sm:text-[11px] font-extrabold text-muted uppercase tracking-wide">
                         {i === 0 ? "Primer jugador" : i === 1 ? "Segundo jugador" : "Tercer jugador"}
                       </p>
-                      <div className="w-full max-w-[220px] z-50">
+                      <div className="w-full max-w-[180px] sm:max-w-[220px] z-50">
                         <PlayerSearch
                           onSelect={p => { const n = [...slots]; n[i] = p; setSlots(n); useScoutStore.getState().addToCompare(p as any); }}
                           excludeIds={slots.filter(Boolean).map(s => (s as SearchHit).id)}
@@ -213,33 +220,35 @@ export default function ComparePage() {
                       </div>
                     </div>
                   ) : load ? (
-                    <div className="flex items-center justify-center min-h-[200px] w-full">
-                      <Loader2 className={`animate-spin ${C.text}`} size={26} />
+                    <div className="flex items-center justify-center min-h-[160px] sm:min-h-[200px] w-full">
+                      <Loader2 className={`animate-spin ${C.text}`} size={22} />
                     </div>
                   ) : data && (
                     <div className="flex flex-col items-center z-10 w-full pt-2">
-                      <div className="relative mb-4">
+                      <div className="relative mb-3 sm:mb-4">
                         <div className="absolute -inset-1.5 rounded-full border-[3px]"
                           style={{ borderColor: C.hex, boxShadow: `0 0 20px ${C.hex}33` }} />
-                        <div className="w-20 h-20 rounded-full bg-surface-3 flex items-center justify-center text-2xl font-black text-secondary overflow-hidden relative z-10">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-surface-3 flex items-center justify-center text-xl sm:text-2xl font-black text-secondary overflow-hidden relative z-10">
                           {data.photoUrl ? <Image src={data.photoUrl} alt={data.name} width={80} height={80} className="object-cover w-full h-full" unoptimized /> : data.name?.[0]}
                         </div>
                       </div>
                       <Link href={`/players/${data.id}`} className="hover:opacity-80 transition-opacity">
-                        <p className="text-[16px] font-black tracking-[-0.01em] leading-[1.2] mb-2">{data.name}</p>
+                        <p className="text-sm sm:text-[16px] font-black tracking-[-0.01em] leading-[1.2] mb-1.5 sm:mb-2">{data.name}</p>
                       </Link>
-                      <div className="flex items-center gap-1.5 mb-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2 flex-wrap justify-center">
                         <span className={`text-[9px] font-black tracking-[0.1em] uppercase px-2 py-[3px] rounded bg-white/[0.04] ${C.text}`}>{data.position}</span>
                         {rv && (
                           <div className="flex items-center gap-1 bg-white/[0.06] rounded px-2 py-[3px]">
-                            <span className={`text-[13px] font-black ${ratingColor}`}>{rv.toFixed(1)}</span>
+                            <span className={`text-[12px] sm:text-[13px] font-black ${ratingColor}`}>{rv.toFixed(1)}</span>
                             <span className="text-[9px] font-bold text-muted uppercase">Rating</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-[11px] font-bold text-muted mb-3">{data.team?.name || "Sin Equipo"} · {data.nationality}</p>
-                      <div className="inline-flex items-center gap-1.5 bg-white/[0.04] border border-white/5 rounded-full px-3 py-1.5">
-                        <span className="text-[10px] font-black text-secondary">
+                      <p className="text-[10px] sm:text-[11px] font-bold text-muted mb-2 sm:mb-3 truncate max-w-full px-2">
+                        {data.team?.name || "Sin Equipo"} · {data.nationality}
+                      </p>
+                      <div className="inline-flex items-center gap-1.5 bg-white/[0.04] border border-white/5 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5">
+                        <span className="text-[9px] sm:text-[10px] font-black text-secondary">
                           {seasons.find(sz => String(sz.id) === selectedSeasonId)?.name || "—"}
                         </span>
                       </div>

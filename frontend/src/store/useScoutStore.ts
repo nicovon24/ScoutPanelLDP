@@ -1,5 +1,13 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, devtools } from "zustand/middleware";
+import Cookies from "js-cookie";
+
+const TOKEN_COOKIE = "accessToken";
+const COOKIE_OPTS: Cookies.CookieAttributes = {
+  expires: 7,       // 7 días
+  sameSite: "Strict",
+  secure: process.env.NODE_ENV === "production",
+};
 
 interface Player {
   id: number;
@@ -15,13 +23,13 @@ interface SearchFilters {
   q: string;
   position: string;
   teamId: string;
-  foot: string;
   ageMin: string;
   ageMax: string;
-  heightMin: string;
-  heightMax: string;
   minRating: string;
+  marketValueMin: string;
   marketValueMax: string;
+  nationality: string;
+  contractType: string;
   sortBy: string;
 }
 
@@ -29,13 +37,13 @@ export const DEFAULT_FILTERS: SearchFilters = {
   q: "",
   position: "",
   teamId: "",
-  foot: "",
   ageMin: "",
   ageMax: "",
-  heightMin: "",
-  heightMax: "",
   minRating: "6.0",
+  marketValueMin: "",
   marketValueMax: "",
+  nationality: "",
+  contractType: "",
   sortBy: "rating_desc",
 };
 
@@ -88,6 +96,7 @@ interface ScoutState {
 }
 
 export const useScoutStore = create<ScoutState>()(
+  devtools(
   persist(
     (set, get) => ({
       // ── Favoritos locales ────────────────────────────────────────────────
@@ -120,20 +129,15 @@ export const useScoutStore = create<ScoutState>()(
       clearCompare: () => set({ compareList: [] }),
       isInCompare: (id) => get().compareList.some((p) => p.id === id),
 
-      // ── Auth ─────────────────────────────────────────────────────────────
-      token: null,
+      // ── Auth — token leído desde cookie al iniciar ────────────────────────
+      token: typeof window !== "undefined" ? (Cookies.get(TOKEN_COOKIE) ?? null) : null,
       user: null,
       setAuth: (token, user) => {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("accessToken", token);
-        }
-        // Resetear shortlist al cambiar de sesión
+        Cookies.set(TOKEN_COOKIE, token, COOKIE_OPTS);
         set({ token, user, shortlistIds: [], shortlistFetched: false });
       },
       clearAuth: () => {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("accessToken");
-        }
+        Cookies.remove(TOKEN_COOKIE);
         set({ token: null, user: null, shortlistIds: [], shortlistFetched: false });
       },
 
@@ -160,17 +164,20 @@ export const useScoutStore = create<ScoutState>()(
       name: "scout-store",
       // shortlistIds y shortlistFetched NO se persisten (son estado del servidor)
       partialize: (s) => ({
-        favorites: s.favorites,
-        compareList: s.compareList,
-        token: s.token,
-        user: s.user,
+        searchFilters: s.searchFilters,
         pageSize: s.pageSize,
         sidebarExpanded: s.sidebarExpanded,
-        searchFilters: s.searchFilters,
+        compareList: s.compareList,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
+        if (state) {
+          // Normalize searchFilters — fills any missing fields after schema changes
+          state.searchFilters = { ...DEFAULT_FILTERS, ...(state.searchFilters ?? {}) };
+          state.setHasHydrated(true);
+        }
       },
     },
+  ),
+  { name: "ScoutStore", enabled: process.env.NODE_ENV === "development" }
   ),
 );

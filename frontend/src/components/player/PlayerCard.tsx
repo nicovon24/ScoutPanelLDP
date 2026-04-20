@@ -6,32 +6,18 @@ import { Star } from "lucide-react";
 import { useShortlist } from "@/hooks/useShortlist";
 import { calcAge } from "@/lib/utils";
 import type { Player } from "@/types";
+import FlagImg from "@/components/ui/FlagImg";
 
 function getPositionStyle(pos: string) {
   const p = pos?.toUpperCase();
-  if (["CF", "SS", "LW", "RW"].includes(p)) return "text-blue-400 bg-blue-400/10 border-blue-400/20"; // Attack
-  if (["CAM", "CM", "CDM"].includes(p)) return "text-green-400 bg-green-400/10 border-green-400/20"; // Mid
-  if (["CB", "LB", "RB"].includes(p)) return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"; // Def
-  return "text-orange-400 bg-orange-400/10 border-orange-400/20"; // GK
-}
-
-const COUNTRY_CODES: Record<string, string> = {
-  "Argentina": "ar", "Uruguay": "uy", "Paraguay": "py", "Brazil": "br",
-  "Chile": "cl", "Colombia": "co", "Ecuador": "ec", "Peru": "pe",
-  "Venezuela": "ve", "Bolivia": "bo", "Spain": "es", "Italy": "it",
-  "France": "fr", "Germany": "de", "Armenia": "am", "Mexico": "mx",
-  "USA": "us", "England": "gb", "Portugal": "pt",
-};
-
-function getFlagUrl(nationality?: string) {
-  if (!nationality) return null;
-  const code = COUNTRY_CODES[nationality];
-  if (!code) return null;
-  return `https://flagcdn.com/w40/${code}.png`;
+  if (["CF", "SS", "LW", "RW"].includes(p)) return "text-blue-400 bg-blue-400/10 border-blue-400/20";
+  if (["CAM", "CM", "CDM"].includes(p)) return "text-green-400 bg-green-400/10 border-green-400/20";
+  if (["CB", "LB", "RB"].includes(p)) return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
+  return "text-orange-400 bg-orange-400/10 border-orange-400/20";
 }
 
 
-export default function PlayerCardV2({ player }: { player: Player }) {
+export default function PlayerCard({ player, hideFavBtn }: { player: Player; hideFavBtn?: boolean }) {
   const { isFavorite, addFavorite, removeFavorite } = useShortlist();
   const fav = isFavorite(player.id);
   const age = calcAge(player.dateOfBirth);
@@ -82,11 +68,7 @@ export default function PlayerCardV2({ player }: { player: Player }) {
             <span className={`px-2.5 py-0.5 rounded-md text-xs font-black uppercase tracking-wider border ${getPositionStyle(player.position)}`}>
               {player.position}
             </span>
-            {getFlagUrl(player.nationality) && (
-              <div className="relative w-5 h-3.5 rounded-sm overflow-hidden shadow-sm">
-                <Image src={getFlagUrl(player.nationality)!} alt={player.nationality || ""} fill className="object-cover" unoptimized />
-              </div>
-            )}
+            {player.nationality && <FlagImg nationality={player.nationality} size={14} />}
           </div>
 
           <div className="flex items-center gap-2">
@@ -96,17 +78,19 @@ export default function PlayerCardV2({ player }: { player: Player }) {
                 <span className="text-yellow-500/90 font-black text-md leading-none">€{parseFloat(player.marketValueM).toFixed(1)}M</span>
               </div>
             )}
-            <button
-              onClick={handleFavToggle}
-              title={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 border
-                ${fav
-                  ? "bg-yellow-500/15 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/25"
-                  : "bg-white/[0.03] border-white/[0.06] text-white/20 hover:text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-500/20"
-                }`}
-            >
-              <Star size={14} fill={fav ? "currentColor" : "none"} />
-            </button>
+            {!hideFavBtn && (
+              <button
+                onClick={handleFavToggle}
+                title={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 border
+                  ${fav
+                    ? "bg-yellow-500/15 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/25"
+                    : "bg-white/[0.03] border-white/[0.06] text-white/20 hover:text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-500/20"
+                  }`}
+              >
+                <Star size={14} fill={fav ? "currentColor" : "none"} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -154,43 +138,50 @@ export default function PlayerCardV2({ player }: { player: Player }) {
           <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-3 flex justify-around items-center">
             {(() => {
               const p = player.position?.toUpperCase();
-              const isGK = p === "GK";
+              const isGK  = p === "GK";
               const isDEF = ["CB", "LB", "RB"].includes(p);
               const isMID = ["CAM", "CM", "CDM"].includes(p);
 
-              const StatItem = ({ label, value }: { label: string, value: string | number }) => (
+              const mp  = stat?.matchesPlayed ?? 0;
+              const xgT = mp > 0 ? (parseFloat(String(stat?.xgPerGame ?? "0")) * mp).toFixed(1) : "0.0";
+              const xaT = mp > 0 ? (parseFloat(String(stat?.xaPerGame ?? "0")) * mp).toFixed(1) : "0.0";
+
+              const StatItem = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
                 <div className="flex flex-col items-center">
                   <span className="text-2xs text-primary/40 uppercase font-bold tracking-wider mb-1">{label}</span>
                   <span className="text-primary font-bold text-base leading-none">{value}</span>
                 </div>
               );
+              const Divider = () => <div className="w-[1px] h-6 bg-white/5" />;
 
               if (isGK) return (
                 <>
-                  <StatItem label="VI" value={stat?.cleanSheets ?? 0} />
-                  <div className="w-[1px] h-6 bg-white/5" />
-                  <StatItem label="Saves" value={`${stat?.savePct ?? 0}%`} />
+                  <StatItem label="Vallas inv." value={stat?.cleanSheets ?? 0} />
+                  <Divider />
+                  <StatItem label="% Atajadas" value={`${stat?.savePct ?? 0}%`} />
                 </>
               );
               if (isDEF) return (
                 <>
                   <StatItem label="Tackles" value={stat?.tackles ?? 0} />
-                  <div className="w-[1px] h-6 bg-white/5" />
-                  <StatItem label="Int." value={stat?.interceptions ?? 0} />
+                  <Divider />
+                  <StatItem label="Interc." value={stat?.interceptions ?? 0} />
                 </>
               );
               if (isMID) return (
                 <>
-                  <StatItem label="Asist." value={stat?.assists ?? 0} />
-                  <div className="w-[1px] h-6 bg-white/5" />
-                  <StatItem label="xA" value={stat?.xaPerGame ?? "0.0"} />
+                  <StatItem label="G+A" value={(stat?.goals ?? 0) + (stat?.assists ?? 0)} />
+                  <Divider />
+                  <StatItem label="xG" value={xgT} />
+                  <Divider />
+                  <StatItem label="xA" value={xaT} />
                 </>
               );
               return (
                 <>
                   <StatItem label="Goles" value={stat?.goals ?? 0} />
-                  <div className="w-[1px] h-6 bg-white/5" />
-                  <StatItem label="xG" value={stat?.xgPerGame ?? "0.0"} />
+                  <Divider />
+                  <StatItem label="xG" value={xgT} />
                 </>
               );
             })()}

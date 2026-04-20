@@ -171,8 +171,9 @@ function SingleSections({ sections, player, stat }: {
               <SingleGeneralRow key={rIdx} label={r.l} value={r.fn(player, stat)} />
             ))
             : sec.rows.map((r, rIdx) => {
-              const raw     = asNum(stat[r.k]);
-              const display = fmtNum(stat[r.k], r.d ?? 0) + (r.u ?? "");
+              const raw     = r.compute ? r.compute(stat) : asNum(stat[r.k]);
+              const display = raw === 0 && stat[r.k] == null ? "—"
+                : (r.d != null && r.d > 0 ? raw.toFixed(r.d) : String(Math.round(raw))) + (r.u ?? "");
               const pct     = Math.min(100, (raw / r.max) * 100);
               return (
                 <SingleStatRow key={rIdx} label={r.l} value={display} pct={pct} accent={r.accent} />
@@ -280,8 +281,12 @@ export default function PlayerStatsTable({
               <MultiStatRow
                 key={rIdx}
                 label={r.l}
-                vals={entries.map(e => fmtNum(e.stat[r.k], r.d ?? 0) + (r.u ?? ""))}
-                nums={entries.map(e => asNum(e.stat[r.k]))}
+                vals={entries.map(e => {
+                  const v = r.compute ? r.compute(e.stat) : asNum(e.stat[r.k]);
+                  if (v === 0 && e.stat[r.k] == null) return "—";
+                  return (r.d != null && r.d > 0 ? v.toFixed(r.d) : String(Math.round(v))) + (r.u ?? "");
+                })}
+                nums={entries.map(e => r.compute ? r.compute(e.stat) : asNum(e.stat[r.k]))}
                 colors={colors}
                 higherIsBetter={!r.lower}
                 colsStyle={colsStyle}

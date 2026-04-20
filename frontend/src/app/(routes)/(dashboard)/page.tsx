@@ -17,6 +17,9 @@ import Pagination from "@/components/home/Pagination";
 function HomeContent() {
   const { setFilterPanelOpen, pageSize, setPageSize, searchFilters, setSearchFilters, _hasHydrated } = useScoutStore();
 
+  // Filters derived from the store — single source of truth for the fetch
+  const filters = { ...DEFAULT_FILTERS, ...(searchFilters ?? {}) };
+
   // Data State
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -25,72 +28,56 @@ function HomeContent() {
   const [totalItems, setTotalItems] = useState(0);
   const [view, setView] = useState<"grid" | "table">("grid");
 
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [inputQ, setInputQ] = useState("");
+  // inputQ is local-only for debounce — kept in sync with store
+  const [inputQ, setInputQ] = useState(searchFilters?.q ?? "");
 
-  // When Store Hydration finishes, sync local state
+  // Keep inputQ in sync if store changes externally (e.g. reset)
   useEffect(() => {
-    if (_hasHydrated && searchFilters) {
-      setFilters(searchFilters);
-      setInputQ(searchFilters.q || "");
-    }
-  }, [_hasHydrated]);
+    setInputQ(searchFilters?.q ?? "");
+  }, [searchFilters?.q]);
 
-  // Sync back to local if Store changes later (e.g. from Sidebar)
-  useEffect(() => {
-    if (_hasHydrated && searchFilters) {
-      setFilters(searchFilters);
-      if (searchFilters.q !== inputQ) {
-        setInputQ(searchFilters.q);
-      }
-    }
-  }, [searchFilters]);
-
-  // WR-04: memoizado para evitar closure stale en el debounce
+  // setSearchFilters already merges with existing state in the store
   const updateFiltersAndStore = useCallback((updates: Partial<typeof DEFAULT_FILTERS>) => {
     if (!_hasHydrated) return;
-    setFilters(prev => {
-      const next = { ...prev, ...updates };
-      setSearchFilters(next);
-      return next;
-    });
+    setSearchFilters(updates);
     setPage(1);
   }, [_hasHydrated, setSearchFilters]);
 
-  // Debounced search
+  // Debounced search — only passes the changed field, no stale closure risk
   useEffect(() => {
     if (!_hasHydrated) return;
     const t = setTimeout(() => {
-      if (inputQ !== filters.q) {
-        updateFiltersAndStore({ q: inputQ });
-      }
+      setSearchFilters({ q: inputQ });
+      setPage(1);
     }, 500);
     return () => clearTimeout(t);
-  }, [inputQ, _hasHydrated, filters.q, updateFiltersAndStore]);
+  }, [inputQ, _hasHydrated, setSearchFilters]);
 
   // Initial load
   useEffect(() => {
     api.get("/teams").then(({ data }) => setTeams(data)).catch(() => { });
   }, []);
 
+  // fetchPlayers reads searchFilters from the store — always up-to-date after hydration
   const fetchPlayers = useCallback(async () => {
     setLoading(true);
+    const f = { ...DEFAULT_FILTERS, ...(searchFilters ?? {}) };
     const params = new URLSearchParams({
       page: String(page),
       limit: String(pageSize),
     });
 
-    if (filters.q) params.set("q", filters.q);
-    if (filters.position) params.set("position", filters.position);
-    if (filters.teamId) params.set("teamId", filters.teamId);
-    if (filters.foot) params.set("foot", filters.foot);
-    if (filters.ageMin) params.set("ageMin", filters.ageMin);
-    if (filters.ageMax) params.set("ageMax", filters.ageMax);
-    if (filters.heightMin) params.set("heightMin", filters.heightMin);
-    if (filters.heightMax) params.set("heightMax", filters.heightMax);
-    if (filters.minRating) params.set("minRating", filters.minRating);
-    if (filters.marketValueMax) params.set("valueMax", filters.marketValueMax);
-    if (filters.sortBy) params.set("sortBy", filters.sortBy);
+    if (f.q) params.set("q", f.q);
+    if (f.position) params.set("position", f.position);
+    if (f.teamId) params.set("teamId", f.teamId);
+    if (f.ageMin) params.set("ageMin", f.ageMin);
+    if (f.ageMax) params.set("ageMax", f.ageMax);
+    if (f.minRating) params.set("minRating", f.minRating);
+    if (f.marketValueMin) params.set("valueMin", f.marketValueMin);
+    if (f.marketValueMax) params.set("valueMax", f.marketValueMax);
+    if (f.nationality) params.set("nationality", f.nationality);
+    if (f.contractType) params.set("contractType", f.contractType);
+    if (f.sortBy) params.set("sortBy", f.sortBy);
 
     try {
       const { data } = await api.get(`/players?${params}`);
@@ -101,16 +88,17 @@ function HomeContent() {
     } finally {
       setLoading(false);
     }
-  }, [page, filters, pageSize, _hasHydrated]);
+  }, [page, searchFilters, pageSize]);
 
-  useEffect(() => { 
-    if (_hasHydrated) fetchPlayers(); 
+  // Only fetch after store is hydrated — searchFilters already has persisted values at this point
+  useEffect(() => {
+    if (_hasHydrated) fetchPlayers();
   }, [fetchPlayers, _hasHydrated]);
 
   const activeFilterCount = Object.entries(filters).filter(([key, val]) => {
     if (key === "sortBy") return false;
     if (key === "minRating" && val === "6.0") return false;
-    return val !== "" && val !== undefined;
+    return val !== "" && val !== undefined && val !== null;
   }).length;
   const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -143,9 +131,10 @@ function HomeContent() {
               isIconOnly
               onClick={() => {
                 const resetState = {
-                  q: "", position: "", teamId: "", foot: "",
-                  ageMin: "", ageMax: "", heightMin: "", heightMax: "",
-                  minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
+                  q: "", position: "", teamId: "",
+                  ageMin: "", ageMax: "",
+                  minRating: "6.0", marketValueMin: "", marketValueMax: "",
+                  nationality: "", contractType: "", sortBy: "rating_desc"
                 };
                 updateFiltersAndStore(resetState);
                 setInputQ("");
@@ -295,16 +284,6 @@ function HomeContent() {
             );
           })}
 
-          {filters.foot && filters.foot.split(",").map(f => (
-            <div key={f} className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-lg">
-              <span className="text-[10px] font-black text-blue-400 uppercase">Pie: {f === "Both" ? "Ambi" : f === "Left" ? "Zurdo" : "Diestro"}</span>
-              <button onClick={() => {
-                const arr = filters.foot.split(",").filter(p => p !== f);
-                updateFiltersAndStore({ foot: arr.join(",") });
-              }} className="text-blue-400/60 hover:text-blue-400"><X size={10} strokeWidth={3} /></button>
-            </div>
-          ))}
-
           {(filters.ageMin || filters.ageMax) && (
             <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded-lg">
               <span className="text-[10px] font-black text-purple-400 uppercase">Edad: {filters.ageMin || "0"}-{filters.ageMax || "50"}</span>
@@ -312,19 +291,42 @@ function HomeContent() {
             </div>
           )}
 
-          {filters.marketValueMax && (
+          {(filters.marketValueMin || filters.marketValueMax) && (
             <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 px-2 py-1 rounded-lg">
-              <span className="text-[10px] font-black text-orange-400 uppercase">Máx: {filters.marketValueMax}M€</span>
-              <button onClick={() => updateFiltersAndStore({ marketValueMax: "" })} className="text-orange-400/60 hover:text-orange-400"><X size={10} strokeWidth={3} /></button>
+              <span className="text-[10px] font-black text-orange-400 uppercase">
+                {filters.marketValueMin ? `${filters.marketValueMin}M€` : "0"} — {filters.marketValueMax ? `${filters.marketValueMax}M€` : "∞"}
+              </span>
+              <button onClick={() => updateFiltersAndStore({ marketValueMin: "", marketValueMax: "" })} className="text-orange-400/60 hover:text-orange-400"><X size={10} strokeWidth={3} /></button>
             </div>
           )}
 
-          <button 
+          {filters.nationality && (
+            <div className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
+              <span className="text-[10px] font-black text-cyan-400 uppercase">{filters.nationality}</span>
+              <button onClick={() => updateFiltersAndStore({ nationality: "" })} className="text-cyan-400/60 hover:text-cyan-400"><X size={10} strokeWidth={3} /></button>
+            </div>
+          )}
+
+          {filters.contractType && filters.contractType.split(",").map(ct => {
+            const label = ct === "PERMANENT" ? "Permanente" : ct === "LOAN" ? "Préstamo" : "Libre";
+            return (
+              <div key={ct} className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/20 px-2 py-1 rounded-lg">
+                <span className="text-[10px] font-black text-violet-400 uppercase">{label}</span>
+                <button onClick={() => {
+                  const arr = filters.contractType.split(",").filter(v => v !== ct);
+                  updateFiltersAndStore({ contractType: arr.join(",") });
+                }} className="text-violet-400/60 hover:text-violet-400"><X size={10} strokeWidth={3} /></button>
+              </div>
+            );
+          })}
+
+          <button
             onClick={() => {
               const resetState = {
-                q: "", position: "", teamId: "", foot: "",
-                ageMin: "", ageMax: "", heightMin: "", heightMax: "",
-                minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
+                q: "", position: "", teamId: "",
+                ageMin: "", ageMax: "",
+                minRating: "6.0", marketValueMin: "", marketValueMax: "",
+                nationality: "", contractType: "", sortBy: "rating_desc"
               };
               updateFiltersAndStore(resetState);
               setInputQ("");
@@ -398,9 +400,10 @@ function HomeContent() {
         setFilters={(n) => updateFiltersAndStore(n)}
         onReset={() => {
           const resetState = {
-            q: "", position: "", teamId: "", foot: "",
-            ageMin: "", ageMax: "", heightMin: "", heightMax: "",
-            minRating: "6.0", marketValueMax: "", sortBy: "rating_desc"
+            q: "", position: "", teamId: "",
+            ageMin: "", ageMax: "",
+            minRating: "6.0", marketValueMin: "", marketValueMax: "",
+            nationality: "", contractType: "", sortBy: "rating_desc"
           };
           updateFiltersAndStore(resetState);
           setInputQ("");

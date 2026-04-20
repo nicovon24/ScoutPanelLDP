@@ -79,16 +79,25 @@ export default function FavoritesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {players.map((p) => (
             <div key={p.id} className="relative group/card">
-              <PlayerCard player={p} />
+              <PlayerCard player={p} hideFavBtn />
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   removeFavorite(p.id);
                   setPlayers((prev) => prev.filter((pl) => pl.id !== p.id));
                 }}
-                className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-black/70 border border-white/10 flex items-center justify-center text-gold hover:bg-danger/20 hover:border-danger/30 hover:text-danger transition-all opacity-0 group-hover/card:opacity-100"
+                className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5
+                           rounded-full bg-black/75 border border-white/10 backdrop-blur-sm
+                           text-gold text-[11px] font-bold
+                           hover:bg-danger/20 hover:border-danger/30 hover:text-danger
+                           transition-all duration-200
+                           opacity-100 sm:opacity-0 sm:group-hover/card:opacity-100
+                           scale-100 sm:scale-90 sm:group-hover/card:scale-100"
                 title="Quitar de favoritos"
               >
-                <Star size={12} fill="currentColor" />
+                <Star size={11} fill="currentColor" />
+                <span>Quitar</span>
               </button>
             </div>
           ))}
