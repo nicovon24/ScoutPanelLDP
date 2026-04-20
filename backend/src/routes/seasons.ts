@@ -10,6 +10,7 @@ router.get("/", async (_req: Request, res: Response) => {
     const data = await db.select().from(seasons).orderBy(desc(seasons.year));
     res.json(data);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
