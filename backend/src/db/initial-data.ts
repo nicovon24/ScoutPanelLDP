@@ -282,9 +282,11 @@ async function main() {
 
   // ── USUARIO DEMO ──────────────────────────────────────────────────────────
   const hash = await bcrypt.hash("123456", 10);
-  await db.insert(users).values({
-    email: "demo@gmail.com", passwordHash: hash, name: "Scout Demo",
-  }).onConflictDoNothing();
+  await db.insert(users).values([
+    { email: "demo@gmail.com", passwordHash: hash, name: "Scout Demo" },
+    { email: "apiuser@gmail.com", passwordHash: hash, name: "API User" },
+    { email: "productionuser@gmail.com", passwordHash: hash, name: "Production User" },
+  ]).onConflictDoNothing();
 
   // ── RESUMEN ───────────────────────────────────────────────────────────────
   const byTeam: Record<string, number> = {};

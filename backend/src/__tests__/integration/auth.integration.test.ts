@@ -193,13 +193,3 @@ describe("GET /api/auth/me", () => {
     expect(res.status).toBe(401);
   });
 });
-
-// ── GET /health ───────────────────────────────────────────────────────────────
-
-describe("GET /health", () => {
-  it("200 — API responde con status ok", async () => {
-    const res = await request(app).get("/health");
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe("ok");
-  });
-});

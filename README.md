@@ -22,7 +22,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 ### Obligatorias (MVP)
 - Búsqueda y filtros: por posición, nacionalidad, equipo, rango de edad
 - Comparador side-by-side de hasta 3 jugadores con radar chart overlay y tabla comparativa
-- Schema con 9 tablas relacionales y seed realista con jugadores del fútbol argentino
+- Schema con 9 tablas relacionales y seed generado con IA (30 clubes, 61 jugadores, 4 temporadas, etc — datos ficticios/aleatorios, no reales)
 - Tests en 4 capas: unit (Vitest) en backend y frontend · integration (Vitest + Supertest) para todos los endpoints · E2E (Playwright) con happy path y smoke tests para staging/prod
 - Docker Compose — toda la infraestructura levanta con un comando
 - README con instrucciones, decisiones técnicas y mejoras pendientes
@@ -30,47 +30,66 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 ### Bonus implementados
 - Auth JWT (registro + login) con shortlist persistida en DB
 - Responsive — mobile, tablet y desktop
-- Performance — paginación en listado, índices compuestos en DB
+- Performance — paginación en listado
 - UX — loading skeletons, empty states, transiciones
 - Historial de lesiones por jugador con correlación en line chart de rating
-- Export a PDF y Excel desde la vista **Reportes** (tablas de analytics)
-- Sección clubes para elegir un equipo y ver todos sus jugadores
-- Historial de valores del mercado y mostrar en un gráfico mensual si ese mes estuvo lesionado se muestra en rojo
+- Vista **reportes** y export a PDF y Excel 
+- Sección **clubes** para elegir un equipo y ver todos sus jugadores
+- Historial de valores del mercado con gráfico mensual; meses con lesión se muestran en rojo
 
 ---
 
-## Setup local
+## Setup con Docker (recomendado)
 
-**Requisitos:** Node.js 20 LTS y Docker Desktop.
+**Requisito único:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y corriendo.
+
+### Primera vez
 
 ```bash
-# 1. Clonar el repo
-git clone <repo-url> && cd app
-
-# 2. Variables de entorno
+# 1. Crear el archivo de variables de entorno (los defaults ya funcionan)
 cp .env.example .env
-# (editar .env si querés cambiar credenciales — los defaults funcionan)
 
-# 3. Levantar toda la infraestructura con Docker
-docker-compose up -d
+# 2. Buildear y levantar los 3 servicios
+docker compose up --build
 
-# Esto levanta: PostgreSQL (5432) + Backend (4000) + Frontend (3000)
-# Migraciones y seed: el contenedor del backend solo arranca la API; hay que
-# ejecutarlos una vez (ver abajo) o usar el flujo "solo DB + npm run dev".
+# 3. Cargar los datos iniciales (jugadores, equipos, temporadas)
+docker compose exec backend npm run db:seed
 ```
 
-**Primera vez con Docker (migraciones + seed en el contenedor del backend):**
+Esto construye las imágenes y levanta:
 
-```bash
-docker-compose exec backend npm run db:migrate
-docker-compose exec backend npm run db:seed
-```
+| Servicio | URL |
+|----------|-----|
+| Frontend (Next.js) | http://localhost:3000 |
+| Backend (Express API) | http://localhost:4000/api |
+| Base de datos (PostgreSQL) | localhost:5432 |
 
-`NEXT_PUBLIC_API_URL` del frontend debe apuntar a la API con sufijo **`/api`** (por ejemplo `http://localhost:4000/api`) para que el cliente Axios coincida con las rutas de Express.
+Las migraciones de base de datos corren **automáticamente** al iniciar el backend.
 
-Abrir **http://localhost:3000** en el browser.
+### Abrir la app
+
+Ir a **http://localhost:3000** en el browser.
 
 **Usuario demo:** `demo@gmail.com` / `123456`
+
+### Comandos útiles
+
+```bash
+# Ver logs en tiempo real
+docker compose logs -f
+
+# Ver logs de un servicio en particular
+docker compose logs -f backend
+
+# Detener todos los contenedores
+docker compose down
+
+# Detener y borrar la base de datos (reset completo)
+docker compose down -v
+
+# Rebuild después de cambios en código
+docker compose up --build
+```
 
 ---
 
@@ -80,11 +99,10 @@ Para desarrollo con hot-reload, sin Docker para frontend/backend:
 
 ```bash
 # 1. Levantar solo la DB en Docker
-docker-compose up db -d
+docker compose up db -d
 
 # 2. Backend
 cd backend
-cp ../.env.example .env   # ajustar DATABASE_URL si es necesario
 npm install
 npm run db:migrate
 npm run db:seed
@@ -139,12 +157,14 @@ Los **E2E** son los únicos que apuntan a una URL real. Están diseñados para c
 ```bash
 # Backend — unit + integration (requiere DB corriendo)
 cd backend && npm test
+cd backend && npm run test      # equivalente
 
 # Backend — solo unit (sin DB)
 cd backend && npx vitest run src/__tests__/unit
 
 # Frontend — unit
 cd frontend && npm test
+cd frontend && npm run test     # equivalente
 
 # E2E — local (requiere frontend :3000 y backend :4000 corriendo)
 npm run test:e2e               # headless
@@ -158,6 +178,8 @@ npm run test:e2e:prod
 
 > **Nota:** los tests de integración del backend usan la DB real definida en `DATABASE_URL`. Crean usuarios con emails únicos (timestamp) y los limpian en `afterAll`, por lo que no requieren una DB de test separada.
 
+> **Importante — seed:** para que `npm run db:seed` funcione correctamente, el **backend y el frontend deben estar corriendo** (ya sea vía Docker Compose o en modo local). El seed depende de que la DB esté accesible a través del backend. Con Docker: levantar primero con `docker compose up` y luego ejecutar `docker compose exec backend npm run db:seed`.
+
 ---
 
 ## Arquitectura del repositorio
@@ -169,12 +191,13 @@ app/
 ├── docker-compose.yml       # PostgreSQL + build opcional backend/frontend
 ├── .env                     # (no versionado) copiar desde .env.example
 ├── .env.example             # plantilla con todas las variables documentadas
-├── playwright.config.ts     # configuración E2E (BASE_URL por env var)
-├── e2e/
+├── playwright.config.ts     # configuración E2E
+├── global-tests/
 │   └── e2e-happy-path.spec.ts   # tests E2E: login, flujo completo, smoke @prod
 ├── README.md
 ├── backend/
 │   ├── Dockerfile
+│   ├── entrypoint.sh        # corre migraciones y luego node dist/index.js
 │   ├── drizzle.config.ts
 │   ├── vitest.config.ts
 │   ├── package.json
@@ -224,7 +247,7 @@ Rutas públicas (sin layout de dashboard):
 | `/register` | Alta de usuario; mismo flujo de token que login. |
 
 Rutas del panel `(dashboard)` — comparten layout con **sidebar**, **topbar** y protección por token en cliente (si no hay sesión, redirección a `/login`):
-
+#
 | Ruta | Vista |
 |------|--------|
 | `/` | **Jugadores:** grid o tabla, filtros (posición, nacionalidad, equipo, edad, etc.), ordenamiento, paginación y acceso al detalle. |
@@ -243,17 +266,21 @@ La barra lateral enlaza a `/`, `/compare`, `/favorites`, `/analytics` y `/clubs`
 
 **9 tablas:** `teams`, `seasons`, `players`, `player_stats`, `player_ratings`, `player_injuries`, `player_career`, `users`, `shortlist_entries`. Además, enum PostgreSQL `contract_type` en la tabla `players`.
 
-Detalle de campos y decisiones: `doc/ScoutPanel_Documentacion_V5.txt` y `backend/src/db/schema.ts`.
+### Datos seed
+
+Los datos de seed fueron **generados con IA** y no son todos reales la mayoría. Gran parte de los valores (estadísticas, historial de lesiones, valores de mercado, carreras) fueron creados de forma aleatoria para poder poblar la base de datos sin sobrecargar tokens ni inflar el archivo de seed con datos reales. El volumen exacto cargado es:
+
+| Entidad | Cantidad |
+|---------|----------|
+| Clubes (`teams`) | 30 |
+| Jugadores (`players`) | 61 |
+| Temporadas (`seasons`) | 4 |
 
 ---
 
 ## API REST (rutas principales)
 
-**Base URL:** `http://localhost:4000` — los endpoints de negocio viven bajo **`/api/...`**. Health check sin prefijo API:
-
-| Método | Ruta | Auth |
-|--------|------|------|
-| GET | `/health` | No — estado del servidor |
+**Base URL:** `http://localhost:4000` — los endpoints de negocio viven bajo **`/api/...`**.
 
 ### Autenticación (`/api/auth`)
 
@@ -288,6 +315,7 @@ Todas requieren **JWT**.
 | GET | `/api/shortlist/ids` | Solo los `playerId` en favoritos (checks rápidos en UI). |
 | POST | `/api/shortlist/:playerId` | Agrega jugador a favoritos (ID en la URL). |
 | DELETE | `/api/shortlist/:playerId` | Quita jugador de favoritos. |
+| PATCH | `/api/shortlist/:playerId` | ⚠️ **Pendiente** — actualiza la nota personal del jugador. El campo `note` existe en `shortlist_entries` pero el endpoint no está implementado. |
 
 ### Analytics (`/api/analytics`)
 
@@ -316,6 +344,8 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 
 ## Qué mejoraría con más tiempo
 
+- **Notas en shortlist** — implementar `PATCH /api/shortlist/:playerId` + input en la UI de favoritos (el campo `note` ya existe en la DB)
+- **Botón "Comparar seleccionados"** en `/favorites` — seleccionar jugadores de la shortlist y navegar a `/compare` con IDs precargados
 - **CI/CD con GitHub Actions** — lint + test (unit + integration) + build en cada PR; E2E smoke automático post-deploy
 - **Rate limiting más granular** — por endpoint y por user ID además de por IP
 - **Integración con API real** — Transfermarkt / SofaScore para datos actualizados
