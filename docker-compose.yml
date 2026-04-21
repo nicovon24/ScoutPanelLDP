@@ -27,7 +27,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-scout}:${POSTGRES_PASSWORD:-scout1234}@db:5432/${POSTGRES_DB:-scout_panel}
       JWT_SECRET: ${JWT_SECRET:-scout_panel_super_secret_local_dev_key_change_in_prod}
       PORT: 4000
-      NODE_ENV: production
+      NODE_ENV: development
+      ALLOWED_ORIGINS: http://localhost:3000
     ports:
       - "4000:4000"
     depends_on:
@@ -38,11 +39,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000/api
     container_name: scout_panel_frontend
     restart: unless-stopped
-    environment:
-      # Debe incluir /api — coincide con Express y con frontend/src/lib/api.ts
-      NEXT_PUBLIC_API_URL: http://localhost:4000/api
     ports:
       - "3000:3000"
     depends_on:

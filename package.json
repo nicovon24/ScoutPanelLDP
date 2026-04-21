@@ -3,8 +3,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:staging": "cross-env BASE_URL=https://staging.scoutpanel.com playwright test --grep @smoke",
-    "test:e2e:prod": "cross-env BASE_URL=https://scoutpanel.com playwright test --grep @smoke"
+    "test:e2e:staging": "cross-env BASE_URL=https://scout-panel-ldp.vercel.app  playwright test --grep @smoke",
+    "test:e2e:prod": "cross-env BASE_URL=https://scout-panel-ldp.vercel.app playwright test --grep @smoke"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

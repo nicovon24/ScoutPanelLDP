@@ -7,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
 const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./global-tests",
   timeout: 30_000,
   retries: 1,
   workers: 1,           // secuencial — evita colisiones de auth state

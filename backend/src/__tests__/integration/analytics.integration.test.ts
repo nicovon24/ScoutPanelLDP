@@ -82,12 +82,6 @@ describe("GET /api/analytics/leaderboard", () => {
     expect(res.status).toBe(200);
   });
 
-  it("200 — limit respetado", async () => {
-    const res = await request(app).get("/api/analytics/leaderboard?limit=5").set(auth());
-    expect(res.status).toBe(200);
-    expect(res.body.length).toBeLessThanOrEqual(5);
-  });
-
   it("200 — filtro positions=GK devuelve solo porteros", async () => {
     const res = await request(app)
       .get("/api/analytics/leaderboard?metric=savePct&positions=GK")

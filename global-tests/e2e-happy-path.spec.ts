@@ -10,7 +10,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 // ── Credenciales de prueba ────────────────────────────────────────────────────
-const TEST_EMAIL    = "apiuser@scoutpanel.com";
+const TEST_EMAIL    = "apiuser@gmail.com";
 const TEST_PASSWORD = "123456";
 
 // ── Helper de login ───────────────────────────────────────────────────────────
