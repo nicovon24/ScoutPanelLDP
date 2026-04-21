@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  async redirects() {
+    return [{ source: "/favorites", destination: "/shortlist", permanent: true }];
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "ui-avatars.com" },

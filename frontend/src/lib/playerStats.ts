@@ -31,28 +31,43 @@ export function buildRatingHistory(
   });
 
   if (mode === "year") {
-    const yearlyMap: Record<string, { sum: number; count: number; injured: boolean }> = {};
+    const yearlyMap: Record<string, { sum: number; count: number }> = {};
     (player.ratings ?? []).forEach((r) => {
       if (r.ratingByMonth) {
         Object.entries(r.ratingByMonth).forEach(([month, val]) => {
           const y = month.split("-")[0];
-          if (!yearlyMap[y]) yearlyMap[y] = { sum: 0, count: 0, injured: false };
+          if (!yearlyMap[y]) yearlyMap[y] = { sum: 0, count: 0 };
           yearlyMap[y].sum += val;
           yearlyMap[y].count++;
-          const isInjured = player.injuries?.some((inj) => {
-            const start = new Date(inj.startedAt ?? "");
-            const end   = new Date(start);
-            end.setDate(start.getDate() + (inj.daysOut || 0));
-            const current = new Date(parseInt(y), parseInt(month.split("-")[1]) - 1, 15);
-            return current >= start && current <= end;
-          });
-          if (isInjured) yearlyMap[y].injured = true;
         });
       }
     });
+
+    // A year is red when injuries cover ≥50% of its days (same logic as monthly mode).
+    const yearlyInjured: Record<string, boolean> = {};
+    for (const y of Object.keys(yearlyMap)) {
+      const yInt    = parseInt(y);
+      const yStart  = new Date(yInt, 0, 1);
+      const yEnd    = new Date(yInt, 11, 31);
+      const daysInYear = (yInt % 4 === 0 && (yInt % 100 !== 0 || yInt % 400 === 0)) ? 366 : 365;
+
+      let coveredDays = 0;
+      (player.injuries ?? []).forEach((inj) => {
+        const injStart = new Date(inj.startedAt ?? "");
+        const injEnd   = new Date(injStart);
+        injEnd.setDate(injStart.getDate() + (inj.daysOut || 0));
+        const overlapStart = injStart > yStart ? injStart : yStart;
+        const overlapEnd   = injEnd   < yEnd   ? injEnd   : yEnd;
+        if (overlapStart <= overlapEnd) {
+          coveredDays += Math.round((overlapEnd.getTime() - overlapStart.getTime()) / 86400000) + 1;
+        }
+      });
+      yearlyInjured[y] = coveredDays / daysInYear >= 0.5;
+    }
+
     return Object.entries(yearlyMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([y, d]) => ({ month: y, rating: d.sum / d.count, injured: d.injured }));
+      .map(([y, d]) => ({ month: y, rating: d.sum / d.count, injured: yearlyInjured[y] ?? false }));
   }
 
   // monthly mode
@@ -64,15 +79,26 @@ export function buildRatingHistory(
   }
   const MONTH_LABELS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
   return MONTH_LABELS.map((label, m) => {
-    const key       = `${targetYear}-${(m + 1).toString().padStart(2, "0")}`;
-    const isInjured = player.injuries?.some((inj) => {
-      const start = new Date(inj.startedAt ?? "");
-      const end   = new Date(start);
-      end.setDate(start.getDate() + (inj.daysOut || 0));
-      const current = new Date(targetYear, m, 15);
-      return current >= start && current <= end;
+    const key        = `${targetYear}-${(m + 1).toString().padStart(2, "0")}`;
+    const daysInMonth = new Date(targetYear, m + 1, 0).getDate();
+    const mStart      = new Date(targetYear, m, 1);
+    const mEnd        = new Date(targetYear, m, daysInMonth);
+
+    // A month is red only when injuries cover more than 50% of its days.
+    let coveredDays = 0;
+    (player.injuries ?? []).forEach((inj) => {
+      const injStart = new Date(inj.startedAt ?? "");
+      const injEnd   = new Date(injStart);
+      injEnd.setDate(injStart.getDate() + (inj.daysOut || 0));
+      const overlapStart = injStart > mStart ? injStart : mStart;
+      const overlapEnd   = injEnd   < mEnd   ? injEnd   : mEnd;
+      if (overlapStart <= overlapEnd) {
+        coveredDays += Math.round((overlapEnd.getTime() - overlapStart.getTime()) / 86400000) + 1;
+      }
     });
-    return { month: label, year: String(targetYear), rating: monthlyRaw.get(key) ?? 0, injured: isInjured ?? false };
+    const isInjured = coveredDays / daysInMonth >= 0.5;
+
+    return { month: label, year: String(targetYear), rating: monthlyRaw.get(key) ?? 0, injured: isInjured };
   });
 }
 

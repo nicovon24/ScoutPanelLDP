@@ -7,6 +7,7 @@ import { useShortlist } from "@/hooks/useShortlist";
 import { calcAge } from "@/lib/utils";
 import type { Player } from "@/types";
 import FlagImg from "@/components/ui/FlagImg";
+import AppButton from "@/components/ui/AppButton";
 
 function getPositionStyle(pos: string) {
   const p = pos?.toUpperCase();
@@ -22,7 +23,7 @@ export default function PlayerCard({ player, hideFavBtn }: { player: Player; hid
   const fav = isFavorite(player.id);
   const age = calcAge(player.dateOfBirth);
 
-  const handleFavToggle = (e: React.MouseEvent) => {
+  const handleFavToggle = (e: React.MouseEvent | React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (fav) {
@@ -79,17 +80,21 @@ export default function PlayerCard({ player, hideFavBtn }: { player: Player; hid
               </div>
             )}
             {!hideFavBtn && (
-              <button
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
                 onClick={handleFavToggle}
                 title={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 border
+                className={`!min-w-8 w-8 h-8 min-w-8 rounded-lg border transition-all duration-200
                   ${fav
                     ? "bg-yellow-500/15 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/25"
                     : "bg-white/[0.03] border-white/[0.06] text-white/20 hover:text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-500/20"
                   }`}
               >
                 <Star size={14} fill={fav ? "currentColor" : "none"} />
-              </button>
+              </AppButton>
             )}
           </div>
         </div>

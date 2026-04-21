@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import AppButton from "@/components/ui/AppButton";
 
 const POSITIONS = [
   // Delanteros
@@ -55,24 +56,27 @@ export default function SoccerFieldPositions({ selected, onSelect }: Props) {
         const active = selectedArr.includes(p.id);
 
         return (
-          <button
+          <AppButton
             key={p.id}
-            onClick={() => {
+            type="button"
+            variant="light"
+            disableRipple
+            onPress={() => {
               if (active) {
                 onSelect(selectedArr.filter(x => x !== p.id).join(","));
               } else {
                 onSelect([...selectedArr, p.id].join(","));
               }
             }}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 w-[34px] h-[34px] rounded-full 
-                        flex items-center justify-center text-2xs font-black transition-all duration-300
+            className={`absolute -translate-x-1/2 -translate-y-1/2 !min-w-[34px] w-[34px] h-[34px] min-w-[34px] rounded-full 
+                        text-2xs font-black transition-all duration-300 p-0
                         ${active
                 ? `bg-green text-[#081009] shadow-[0_0_20px_rgba(52,211,90,0.55),0_0_40px_rgba(52,211,90,0.2)] scale-110 z-10`
                 : "bg-[#0E1710]/90 text-[#7aab82] border-[1.5px] border-[#34d35a]/30 hover:border-green hover:text-green hover:bg-[#34d35a]/15 hover:scale-115"}`}
             style={{ left: `${p.x}%`, top: `${p.y}%` }}
           >
             {p.id}
-          </button>
+          </AppButton>
         );
       })}
     </div>

@@ -25,7 +25,7 @@ async function doLogin(page: Page, email = TEST_EMAIL, password = TEST_PASSWORD)
 }
 
 // ── 1. Login ──────────────────────────────────────────────────────────────────
-// Tests marcados con @smoke son seguros de correr contra staging/producción.
+// Tests marcados con @smoke son seguros de correr contra producción.
 
 test("login exitoso redirige al dashboard @smoke", async ({ page }) => {
   await doLogin(page);

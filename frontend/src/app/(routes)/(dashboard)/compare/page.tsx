@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Loader2, X, Plus, RotateCcw, Calendar, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,7 +14,7 @@ const HeatmapField = dynamic(() => import("@/components/player/HeatmapField"), {
   loading: () => <ChartSkeleton height={180} />,
   ssr: false,
 });
-import PlayerStatsTable, { getCompareColsStyle } from "@/components/player/PlayerStatsTable";
+import PlayerStatsTable, { getCompareLayoutColsStyle } from "@/components/player/PlayerStatsTable";
 import PlayerSearch from "@/components/compare/PlayerSearch";
 import { useScoutStore } from "@/store/useScoutStore";
 import { Select, SelectItem } from "@nextui-org/react";
@@ -22,7 +22,8 @@ import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sh
 import { buildMultiRadar } from "@/lib/radarNorm";
 import { PLAYER_COLORS } from "@/lib/playerStats";
 import api from "@/lib/api";
-import type { SearchHit } from "@/types";
+import AppButton from "@/components/ui/AppButton";
+import type { SearchHit, Player, PlayerStat, Season } from "@/types";
 
 const COLORS = PLAYER_COLORS;
 
@@ -62,37 +63,62 @@ export default function ComparePage() {
     });
   }, [compareList]);
 
-  const [playersData, setPlayersData] = useState<(any | null)[]>([null, null, null]);
+  const [playersData, setPlayersData] = useState<(Player | null)[]>([null, null, null]);
   const [loadings, setLoadings]       = useState<boolean[]>([false, false, false]);
-  const [seasons, setSeasons]         = useState<any[]>([]);
+  const [seasons, setSeasons]         = useState<Season[]>([]);
   const [selectedSeasonId, setSeason] = useState<string>("");
 
   useEffect(() => {
-    api.get("/seasons").then(({ data }) => {
+    api.get<Season[]>("/seasons").then(({ data }) => {
       setSeasons(data);
       if (data.length) setSeason(String(data[0].id));
     }).catch(() => {});
   }, []);
 
-  const fetchPlayer = useCallback(async (id: number, idx: number) => {
-    setLoadings(p => { const o = [...p]; o[idx] = true; return o; });
-    try {
-      const { data } = await api.get(`/players/${id}`);
-      setPlayersData(prev => { const o = [...prev]; o[idx] = data; return o; });
-    } catch {
-      setPlayersData(prev => { const o = [...prev]; o[idx] = null; return o; });
-    } finally {
-      setLoadings(p => { const o = [...p]; o[idx] = false; return o; });
-    }
-  }, []);
-
   useEffect(() => {
+    const ids = slots.map((s) => s?.id).filter((id): id is number => typeof id === "number");
+    if (ids.length === 0) {
+      setPlayersData([null, null, null]);
+      setLoadings([false, false, false]);
+      return;
+    }
+
+    const loadingMask: boolean[] = [false, false, false];
     slots.forEach((s, i) => {
-      if (s) { if (!playersData[i] || playersData[i].id !== s.id) fetchPlayer(s.id, i); }
-      else if (playersData[i]) setPlayersData(prev => { const o = [...prev]; o[i] = null; return o; });
+      if (i < 3 && s) loadingMask[i] = true;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slots]);
+    setLoadings(loadingMask);
+
+    const params = new URLSearchParams({ ids: ids.join(",") });
+    if (selectedSeasonId) params.set("seasonId", selectedSeasonId);
+
+    let cancelled = false;
+    api
+      .get<Player[]>(`/players/compare?${params}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const byId = new Map(data.map((p) => [p.id, p] as const));
+        const next: (Player | null)[] = [null, null, null];
+        slots.forEach((s, i) => {
+          if (i < 3) next[i] = s ? (byId.get(s.id) ?? null) : null;
+        });
+        setPlayersData(next);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const next: (Player | null)[] = [null, null, null];
+        slots.forEach((s, i) => {
+          if (i < 3) next[i] = s ? null : null;
+        });
+        setPlayersData(next);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadings([false, false, false]);
+      });
+
+    return () => { cancelled = true; };
+  }, [slots, selectedSeasonId]);
 
   const activeCount = slots.filter(Boolean).length;
   const canAdd      = slots.length < 3 && activeCount === slots.length;
@@ -110,20 +136,22 @@ export default function ComparePage() {
   const validIndices = slots.map((s, i) => (s && playersData[i] && !loadings[i] ? i : -1)).filter(i => i !== -1);
   const bothLoaded   = validIndices.length >= 2;
 
-  const getStat = (i: number): any => {
-    if (!playersData[i]?.stats) return {};
-    if (!selectedSeasonId)
-      return [...playersData[i].stats].sort((a: any, b: any) => (b.season?.year || 0) - (a.season?.year || 0))[0] ?? {};
-    return playersData[i].stats.find((s: any) => String(s.seasonId) === selectedSeasonId) ?? {};
+  const getStat = (i: number): PlayerStat => {
+    const stats = playersData[i]?.stats;
+    if (!stats?.length) return {} as PlayerStat;
+    if (!selectedSeasonId) {
+      return [...stats].sort(
+        (a, b) => (b.season?.year ?? 0) - (a.season?.year ?? 0),
+      )[0] ?? ({} as PlayerStat);
+    }
+    return stats.find((s) => String(s.seasonId) === selectedSeasonId) ?? ({} as PlayerStat);
   };
 
   // ── Grid column definitions ─────────────────────────────────────────────────
-  // Content grid is based on loaded players only — keeps PlayerStatsTable,
-  // heatmap and SectionHeaders in sync (all use the same column template).
+  // Misma plantilla que el header (slots + columna “+”) para tablas, heatmap y secciones.
   const validCount  = validIndices.length;
-  const contentCols = getCompareColsStyle(validCount);
-  // Header grid shows all slots (including empty) + optional Add button
-  const headerCols  = `${getCompareColsStyle(slotCount)}${canAdd ? ` 64px` : ""}`;
+  const layoutCols    = getCompareLayoutColsStyle(slotCount, canAdd);
+  const trailingAdd   = canAdd ? 1 : 0;
 
   // Heatmap canvas sizes scale with the number of loaded players
   const hmW = validCount >= 3 ? 420 : 640;
@@ -131,7 +159,7 @@ export default function ComparePage() {
 
   // Un solo ancho mínimo para header + tablas + heatmap (hmW puede ser 640px; si no entra, el scroll es el de afuera)
   const headerMinPx = compareGridMinPx(slotCount) + (canAdd ? 64 : 0);
-  const statsMinPx  = bothLoaded && validCount >= 2 ? compareGridMinPx(validCount) : 0;
+  const statsMinPx  = bothLoaded && validCount >= 2 ? headerMinPx : 0;
   const heatmapRowMinPx = bothLoaded && validCount >= 2 ? 130 + hmW : 0;
   const innerMinPx  = Math.max(headerMinPx, statsMinPx || headerMinPx, heatmapRowMinPx, 320);
 
@@ -155,13 +183,21 @@ export default function ComparePage() {
             </Select>
           </div>
           {slots.some(Boolean) && (
-            <button
-              onClick={() => { setSlots([null, null]); setPlayersData([null, null, null]); useScoutStore.getState().clearCompare(); }}
+            <AppButton
+              type="button"
+              variant="danger"
+              disableRipple
+              onPress={() => {
+                setSlots([null, null]);
+                setPlayersData([null, null, null]);
+                useScoutStore.getState().clearCompare();
+              }}
               title="Limpiar todo"
-              className="flex items-center gap-[6px] border border-danger/25 rounded-lg px-3 sm:px-4 h-[38px] text-danger text-[12px] font-extrabold hover:bg-danger/10 transition-all whitespace-nowrap">
+              className="!min-h-[38px] h-[38px] px-3 sm:px-4 gap-[6px] border border-danger/25 text-danger text-[12px] font-extrabold hover:bg-danger/10 whitespace-nowrap"
+            >
               <RotateCcw size={12} strokeWidth={2.5} />
               <span className="hidden sm:inline">Limpiar todo</span>
-            </button>
+            </AppButton>
           )}
         </div>
       </div>
@@ -180,7 +216,7 @@ export default function ComparePage() {
         <div style={{ minWidth: `${innerMinPx}px` }} className="min-w-0">
 
         {/* ── HEADER: player slots ──────────────────────────────────────────── */}
-        <div className="grid border-b border-border" style={{ gridTemplateColumns: headerCols }}>
+        <div className="grid border-b border-border" style={{ gridTemplateColumns: layoutCols }}>
           {/* Empty label column */}
           <div className="border-r border-border bg-surface-2/20" />
 
@@ -189,7 +225,7 @@ export default function ComparePage() {
             const load = loadings[i];
             const C    = COLORS[i];
             const stat = data ? getStat(i) : null;
-            const rv   = stat?.sofascoreRating ? parseFloat(stat.sofascoreRating) : null;
+            const rv   = stat?.sofascoreRating != null ? parseFloat(String(stat.sofascoreRating)) : null;
             const ratingColor = rv ? rv >= 7.5 ? C.text : rv >= 7.0 ? "text-gold" : "text-muted" : "text-muted";
 
             return (
@@ -212,11 +248,16 @@ export default function ComparePage() {
                   {/* Remove button */}
                   {s && !load && (
                     <div className="absolute top-5 left-0 right-0 flex justify-center z-20">
-                      <button onClick={() => handleClearSlot(i)}
-                        className="flex items-center gap-1.5 text-white/40 hover:text-danger hover:bg-danger/10 px-3 py-1 rounded-full transition-all group">
+                      <AppButton
+                        type="button"
+                        variant="light"
+                        disableRipple
+                        onPress={() => handleClearSlot(i)}
+                        className="!min-h-0 h-auto py-1 px-3 gap-1.5 rounded-full text-white/40 hover:text-danger hover:bg-danger/10 group data-[hover=true]:text-danger"
+                      >
                         <X size={14} strokeWidth={3} />
                         <span className="text-2xs font-black uppercase tracking-widest hidden group-hover:inline">Sacar</span>
-                      </button>
+                      </AppButton>
                     </div>
                   )}
 
@@ -231,7 +272,7 @@ export default function ComparePage() {
                       </p>
                       <div className="w-full max-w-[180px] sm:max-w-[220px] z-50">
                         <PlayerSearch
-                          onSelect={p => { const n = [...slots]; n[i] = p; setSlots(n); useScoutStore.getState().addToCompare(p as any); }}
+                          onSelect={p => { const n = [...slots]; n[i] = p; setSlots(n); useScoutStore.getState().addToCompare(p as Player); }}
                           excludeIds={slots.filter(Boolean).map(s => (s as SearchHit).id)}
                         />
                       </div>
@@ -278,14 +319,19 @@ export default function ComparePage() {
 
           {/* Add slot button */}
           {canAdd && (
-            <button onClick={() => setSlots([...slots, null])}
-              className="flex flex-col items-center justify-center border-l border-border bg-surface-2 hover:bg-surface-3 transition-colors group p-5 gap-2">
+            <AppButton
+              type="button"
+              variant="light"
+              disableRipple
+              onPress={() => setSlots([...slots, null])}
+              className="!rounded-none !h-auto min-h-0 flex-1 flex flex-col items-center justify-center border-l border-border bg-surface-2 hover:bg-surface-3 group p-5 gap-2 !px-0"
+            >
               <div className="w-9 h-9 rounded-full border-[1.5px] border-dashed border-border flex items-center justify-center text-muted group-hover:border-[#00e87a]/40 group-hover:text-[#00e87a] transition-all">
                 <Plus size={16} strokeWidth={2.5} />
               </div>
               <span className="text-2xs font-extrabold text-muted tracking-[0.1em] uppercase"
                 style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>Agregar</span>
-            </button>
+            </AppButton>
           )}
         </div>
 
@@ -305,14 +351,24 @@ export default function ComparePage() {
           </div>
         ) : (
           <div className="animate-fade-in">
-            {/* Sticky legend — outside scroll so stays fixed while scrolling */}
-            <div className="flex items-center justify-center gap-6 p-3.5 border-b border-border bg-surface-2/50 backdrop-blur-sm sticky top-0 z-30">
+            {/* Sticky legend — mismo grid que el header para alinear nombres con columnas */}
+            <div
+              className="grid items-stretch border-b border-border bg-surface-2/50 backdrop-blur-sm sticky top-0 z-30"
+              style={{ gridTemplateColumns: layoutCols }}
+            >
+              <div className="border-r border-border min-h-[44px]" aria-hidden />
               {slots.map((s, i) => (
-                <div key={i} className={`flex items-center gap-1.5 text-[11px] font-extrabold transition-opacity ${s ? "text-secondary opacity-100" : "text-muted opacity-40"}`}>
-                  <div className="w-2xs h-2xs rounded-[3px]" style={{ background: COLORS[i].hex }} />
-                  {s ? playersData[i]?.name?.split(" ")[0] || "…" : `Slot ${i + 1}`}
-                </div>
+                <Fragment key={i}>
+                  {i > 0 && <div className="border-r border-border" aria-hidden />}
+                  <div className="flex items-center justify-center gap-1.5 px-2 py-2.5 border-r border-border">
+                    <div className={`flex items-center gap-1.5 text-[11px] font-extrabold transition-opacity ${s ? "text-secondary opacity-100" : "text-muted opacity-40"}`}>
+                      <div className="w-2xs h-2xs rounded-[3px] shrink-0" style={{ background: COLORS[i].hex }} />
+                      <span className="truncate max-w-full text-center">{s ? playersData[i]?.name?.split(" ")[0] || "…" : `Slot ${i + 1}`}</span>
+                    </div>
+                  </div>
+                </Fragment>
               ))}
+              {canAdd && <div className="border-l border-border min-w-0" aria-hidden />}
             </div>
 
             {/* Stats + heatmap: el scroll horizontal es el del contenedor padre (una sola capa) */}
@@ -320,21 +376,27 @@ export default function ComparePage() {
               {/* Info General */}
               <PlayerStatsTable
                 entries={validIndices.map(i => ({
-                  player: playersData[i],
+                  player: playersData[i]!,
                   stat: getStat(i),
                   color: COLORS[i],
                 }))}
                 onlySections={["Info General"]}
+                compareGridTemplateColumns={layoutCols}
+                compareTrailingEmptyTracks={trailingAdd}
               />
 
               {/* Heatmap — right after Info General */}
-              <SectionHeader label="Mapas de calor" colsStyle={contentCols} />
-              <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: contentCols }}>
+              <SectionHeader label="Mapas de calor" colsStyle={layoutCols} />
+              <div className="grid border-t border-border bg-surface-2" style={{ gridTemplateColumns: layoutCols }}>
                 <div className="border-r border-border" />
                 {validIndices.map((dataIdx, arrIdx) => (
                   <Fragment key={dataIdx}>
                     {arrIdx > 0 && <div className="border-r border-border" />}
-                    <div className="p-3 border-r border-border last:border-0">
+                    <div
+                      className={`p-3 border-r border-border ${
+                        trailingAdd === 0 && arrIdx === validIndices.length - 1 ? "last:border-0" : ""
+                      }`}
+                    >
                       <HeatmapField
                         grid={getStat(dataIdx).heatmapData as number[][] | undefined}
                         width={hmW}
@@ -343,16 +405,19 @@ export default function ComparePage() {
                     </div>
                   </Fragment>
                 ))}
+                {canAdd && <div className="border-l border-border min-h-[80px] min-w-0" aria-hidden />}
               </div>
 
               {/* Remaining stats (everything except Info General) */}
               <PlayerStatsTable
                 entries={validIndices.map(i => ({
-                  player: playersData[i],
+                  player: playersData[i]!,
                   stat: getStat(i),
                   color: COLORS[i],
                 }))}
                 excludeSections={["Info General"]}
+                compareGridTemplateColumns={layoutCols}
+                compareTrailingEmptyTracks={trailingAdd}
               />
 
               <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-l from-[#141414] to-transparent
@@ -360,7 +425,7 @@ export default function ComparePage() {
             </div>
 
             {/* Radar section — full width, no horizontal scroll needed */}
-            <SectionHeader label="Radar de Rendimiento" colsStyle={contentCols} />
+            <SectionHeader label="Radar de Rendimiento" colsStyle={layoutCols} />
             <div className="border-t border-border bg-surface-2 p-6 sm:p-10 flex justify-center">
               <div className="w-full max-w-[min(100%,880px)] px-1 sm:px-2">
                 <RadarChartComponent

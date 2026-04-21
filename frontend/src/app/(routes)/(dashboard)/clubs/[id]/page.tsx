@@ -7,6 +7,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { posStyle, calcAgeStr } from "@/lib/utils";
 import FlagImg from "@/components/ui/FlagImg";
+import AppButton from "@/components/ui/AppButton";
 
 interface RosterPlayer {
   id: number;
@@ -69,12 +70,15 @@ export default function ClubPage() {
         </div>
         <p className="text-lg font-black text-secondary">Club no encontrado</p>
         <p className="text-sm text-muted max-w-xs">El equipo que buscás no existe o fue eliminado.</p>
-        <button
-          onClick={() => router.back()}
-          className="mt-2 flex items-center gap-2 text-sm font-bold text-green hover:text-green/80 transition-colors"
+        <AppButton
+          type="button"
+          variant="light"
+          disableRipple
+          onPress={() => router.back()}
+          className="mt-2 gap-2 text-sm font-bold text-green hover:text-green/80 bg-transparent"
         >
           <ArrowLeft size={15} /> Volver
-        </button>
+        </AppButton>
       </div>
     );
   }
@@ -90,12 +94,15 @@ export default function ClubPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
 
       {/* Back */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm font-bold text-muted hover:text-primary transition-colors"
+      <AppButton
+        type="button"
+        variant="light"
+        disableRipple
+        onPress={() => router.back()}
+        className="gap-2 text-sm font-bold text-muted hover:text-primary bg-transparent"
       >
         <ArrowLeft size={15} /> Volver
-      </button>
+      </AppButton>
 
       {/* Club Hero */}
       <div className="relative rounded-2xl overflow-hidden border border-white/[0.05] bg-card">

@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import api from "@/lib/api";
+import type { Player } from "@/types";
 import { useScoutStore } from "@/store/useScoutStore";
 import { useShortlist } from "@/hooks/useShortlist";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
@@ -32,6 +33,7 @@ const HeatmapField = dynamic(() => import("@/components/player/HeatmapField"), {
 });
 import { calcAge, posStyle, contractTypeLabel, careerYearKey } from "@/lib/utils";
 import FlagImg from "@/components/ui/FlagImg";
+import AppButton from "@/components/ui/AppButton";
 import { buildSingleRadar } from "@/lib/radarNorm";
 import { buildRatingHistory, buildValueHistory } from "@/lib/playerStats";
 import DonutCircle from "@/components/player/DonutCircle";
@@ -41,7 +43,7 @@ import DonutCircle from "@/components/player/DonutCircle";
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [player, setPlayer] = useState<any>(null);
+  const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [selSeasonId, setSelSeason] = useState<number | null>(null);
   const [ratingMode, setRatingMode] = useState<"year" | "month">("month");
@@ -79,10 +81,10 @@ export default function PlayerDetailPage() {
   const valueHistory  = buildValueHistory(player, selSeasonId, valueMode);
 
 
-  const radarData = curStat ? buildSingleRadar(curStat as Record<string, unknown>) : [];
+  const radarData = curStat ? buildSingleRadar(curStat) : [];
 
 
-  const mainRating = curStat ? parseFloat(curStat.sofascoreRating ?? "0") : null;
+  const mainRating = curStat ? parseFloat(String(curStat.sofascoreRating ?? "0")) : null;
   const ratingColor = mainRating
     ? mainRating >= 7.5 ? "text-green" : mainRating >= 7.0 ? "text-gold" : "text-secondary"
     : "text-muted";
@@ -238,23 +240,30 @@ export default function PlayerDetailPage() {
                   </Select>
                 )}
 
-                <button
-                  onClick={() => fav ? removeFavorite(player.id) : addFavorite(player)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all border flex-shrink-0 ${fav ? "bg-gold/10 border-gold/30 text-gold" : "bg-input border-border text-muted hover:text-gold hover:border-gold/30"}`}
+                <AppButton
+                  type="button"
+                  isIconOnly
+                  variant="light"
+                  disableRipple
+                  onPress={() => (fav ? removeFavorite(player.id) : addFavorite(player))}
+                  className={`!min-w-9 w-9 h-9 min-w-9 rounded-lg border flex-shrink-0 ${fav ? "bg-gold/10 border-gold/30 text-gold" : "bg-input border-border text-muted hover:text-gold hover:border-gold/30"}`}
                   title={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
                 >
                   <Star size={15} fill={fav ? "currentColor" : "none"} />
-                </button>
-                <button
-                  onClick={() => {
+                </AppButton>
+                <AppButton
+                  type="button"
+                  variant="primary"
+                  disableRipple
+                  onPress={() => {
                     useScoutStore.setState({ compareList: [player] });
-                    router.push('/compare');
+                    router.push("/compare");
                   }}
-                  className="btn text-mainBg h-9 px-3 btn-primary flex-shrink-0"
+                  className="!min-h-9 h-9 px-3 gap-1.5 flex-shrink-0"
                 >
                   <BarChart2 size={13} />
                   Comparar
-                </button>
+                </AppButton>
               </div>
             </div>
 
@@ -350,16 +359,16 @@ export default function PlayerDetailPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-10 items-center justify-items-center h-full py-2">
               <DonutCircle
                 value={player.position === "GK"
-                  ? parseFloat(curStat.savePct ?? "0")
-                  : Math.min(100, parseFloat(curStat.sofascoreRating ?? "0") * 10)}
+                  ? parseFloat(String(curStat.savePct ?? "0"))
+                  : Math.min(100, parseFloat(String(curStat.sofascoreRating ?? "0")) * 10)}
                 label={player.position === "GK" ? "Paradas" : "Rating"}
                 color="var(--blue)"
               />
-              <DonutCircle value={parseFloat(curStat.passAccuracyPct ?? "0")} label="Pases" color="var(--green)" />
-              <DonutCircle value={parseFloat(curStat.shotsOnTargetPct ?? "0")} label="Tiros arco" color="var(--blue)" />
+              <DonutCircle value={parseFloat(String(curStat.passAccuracyPct ?? "0"))} label="Pases" color="var(--green)" />
+              <DonutCircle value={parseFloat(String(curStat.shotsOnTargetPct ?? "0"))} label="Tiros arco" color="var(--blue)" />
               <DonutCircle value={Math.min(100, (curStat.goals ?? 0) / Math.max(1, curStat.matchesPlayed ?? 1) * 100 * 4)} label="Conversión" color="var(--purple)" />
-              <DonutCircle value={parseFloat(curStat.dribbleSuccessRate ?? "0")} label="Regates" color="var(--gold)" />
-              <DonutCircle value={parseFloat(curStat.aerialDuelsWonPct ?? "0")} label="Aéreos" color="var(--green)" />
+              <DonutCircle value={parseFloat(String(curStat.dribbleSuccessRate ?? "0"))} label="Regates" color="var(--gold)" />
+              <DonutCircle value={parseFloat(String(curStat.aerialDuelsWonPct ?? "0"))} label="Aéreos" color="var(--green)" />
             </div>
           </div>
         )}

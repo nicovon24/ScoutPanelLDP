@@ -1,14 +1,15 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { db, pool } from "../db";
 import { players, playerStats, playerRatings, teams } from "../db/schema";
 import { eq, inArray, or, ilike, asc } from "drizzle-orm";
+import { PLAYERS_LIST_ORDER_BY_MAP } from "../helpers/playersListOrderBy";
 
 type SqlParam = string | number | boolean | string[] | number[];
 
 const router = Router();
 
 // ─── GET /api/players/nationalities  (distinct list for filter section) ────────────
-router.get("/nationalities", async (_req: Request, res: Response) => {
+router.get("/nationalities", async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await pool.query(
       `SELECT DISTINCT nationality FROM players WHERE nationality IS NOT NULL AND nationality <> '' ORDER BY nationality ASC`
@@ -16,13 +17,12 @@ router.get("/nationalities", async (_req: Request, res: Response) => {
     const list = result.rows.map((r: { nationality: string }) => r.nationality);
     res.json(list);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 
 // ─── GET /api/players/search  (MUST be before /:id) ────────────────────────
-router.get("/search", async (req: Request, res: Response) => {
+router.get("/search", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const q = (req.query.q as string)?.trim() || "";
 
@@ -74,13 +74,12 @@ router.get("/search", async (req: Request, res: Response) => {
 
     res.json({ players: matchingPlayers, teams: matchingTeams });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 
 // ─── GET /api/players/compare  (MUST be before /:id) ───────────────────────
-router.get("/compare", async (req: Request, res: Response) => {
+router.get("/compare", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { ids, seasonId } = req.query;
     if (!ids) return res.status(400).json({ error: "El parámetro ids es requerido" });
@@ -126,15 +125,19 @@ router.get("/compare", async (req: Request, res: Response) => {
       },
     });
 
-    res.json(data);
+    const byId = new Map(data.map((p) => [p.id, p] as const));
+    const ordered = playerIds
+      .map((id) => byId.get(id))
+      .filter((p): p is NonNullable<typeof p> => p !== undefined);
+
+    res.json(ordered);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 
 // ─── GET /api/players  — List with filters + sorting ───────────────────────
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       position, nationality, contractType, teamId, foot,
@@ -151,18 +154,8 @@ router.get("/", async (req: Request, res: Response) => {
     const rawLimit = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
     const offset   = (rawPage - 1) * rawLimit;
 
-    // Build sort order — whitelist prevents SQL injection
-    const ORDER_MAP: Record<string, string> = {
-      name_asc:    "p.name ASC",
-      name_desc:   "p.name DESC",
-      age_asc:     "p.date_of_birth DESC",
-      age_desc:    "p.date_of_birth ASC",
-      value_asc:   "p.market_value_m ASC NULLS LAST",
-      value_desc:  "p.market_value_m DESC NULLS LAST",
-      rating_asc:  "COALESCE(ps.sofascore_rating, 0) ASC",
-      rating_desc: "COALESCE(ps.sofascore_rating, 0) DESC",
-    };
-    const orderByClause = ORDER_MAP[sortBy as string] ?? ORDER_MAP["rating_desc"];
+    const orderByClause =
+      PLAYERS_LIST_ORDER_BY_MAP[sortBy as string] ?? PLAYERS_LIST_ORDER_BY_MAP["rating_desc"];
 
     // Get latest season
     const latestSeason = await db.query.seasons.findFirst({
@@ -170,10 +163,10 @@ router.get("/", async (req: Request, res: Response) => {
     });
     const sidVal = latestSeason?.id ?? 0;
 
-    // Build parameterized WHERE clauses
+    // Build parameterized WHERE clauses ($1 = season_id en el JOIN)
     const whereClauses: string[] = [];
-    const vals: SqlParam[] = [];
-    let idx = 1;
+    const vals: SqlParam[] = [sidVal];
+    let idx = 2;
 
     if (q) {
       whereClauses.push(`p.name ILIKE $${idx++}`);
@@ -279,7 +272,7 @@ router.get("/", async (req: Request, res: Response) => {
         ps.recoveries
       FROM players p
       LEFT JOIN teams t ON t.id = p.team_id
-      LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
+      LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = $1
       ${whereStr}
       ORDER BY ${orderByClause}, p.id ASC
       LIMIT $${idx++} OFFSET $${idx++}
@@ -288,7 +281,7 @@ router.get("/", async (req: Request, res: Response) => {
     const countQuery = `
       SELECT COUNT(*)
       FROM players p
-      LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = ${sidVal}
+      LEFT JOIN player_stats ps ON ps.player_id = p.id AND ps.season_id = $1
       ${whereStr}
     `;
 
@@ -333,13 +326,12 @@ router.get("/", async (req: Request, res: Response) => {
 
     return res.json({ items, totalItems });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 
 // ─── GET /api/players/:id ───────────────────────────────────────────────────
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: "ID inválido" });
@@ -358,8 +350,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     if (!player) return res.status(404).json({ error: "Jugador no encontrado" });
     res.json(player);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 

@@ -8,6 +8,7 @@ import { Select, SelectItem, Input } from "@nextui-org/react";
 import { sharedSelectClasses, sharedSelectItemClasses, searchBarLabelClass } from "@/components/ui/sharedStyles";
 import { useScoutStore } from "@/store/useScoutStore";
 import FlagImg from "@/components/ui/FlagImg";
+import AppButton from "@/components/ui/AppButton";
 
 interface SearchResult {
   players: { id: number; name: string; position: string; photoUrl?: string; nationality?: string }[];
@@ -123,19 +124,21 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
       {compact ? (
         <div className="space-y-4">
           <span className={searchBarLabelClass}>Buscar</span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 ">
             {TYPE_PILLS.map(({ key, icon: Icon }) => (
-              <button
+              <AppButton
                 key={key}
-                onClick={() => setType(key)}
-                className={`flex items-center justify-center gap-1.5 flex-1 h-9 rounded-lg text-[11px] font-black
-                            transition-all border
+                type="button"
+                variant="light"
+                disableRipple
+                onPress={() => setType(key)}
+                className={`flex-1h-9 min-h-9 gap-1.5 rounded-lg text-[11px] font-black border transition-all
                             ${type === key
                               ? "bg-green/15 border-green/30 text-green shadow-[0_0_8px_rgba(0,224,148,0.12)]"
                               : "bg-white/[0.03] border-white/[0.06] text-muted hover:text-secondary hover:bg-white/[0.05]"}`}
               >
                 <Icon size={12} className="flex-shrink-0" />
-              </button>
+              </AppButton>
             ))}
           </div>
 
@@ -153,9 +156,17 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
               className="flex-1 bg-transparent text-sm text-primary placeholder:text-muted outline-none min-w-0 py-2 pl-0.5"
             />
             {query && (
-              <button type="button" onClick={() => { setQuery(""); setOpen(true); }} className="flex-shrink-0">
-                <X size={13} className="text-muted hover:text-secondary transition-colors" />
-              </button>
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => { setQuery(""); setOpen(true); }}
+                className="!min-w-0 w-7 h-7 min-w-7 flex-shrink-0 bg-transparent text-muted hover:text-secondary"
+                aria-label="Limpiar búsqueda"
+              >
+                <X size={13} />
+              </AppButton>
             )}
           </div>
         </div>
@@ -196,9 +207,17 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
               }
               endContent={
                 query && (
-                  <button type="button" onClick={() => { setQuery(""); setOpen(true); }} className="pr-2 flex-shrink-0">
-                    <X size={14} className="text-muted hover:text-secondary transition-colors" />
-                  </button>
+                  <AppButton
+                    type="button"
+                    isIconOnly
+                    variant="light"
+                    disableRipple
+                    onPress={() => { setQuery(""); setOpen(true); }}
+                    className="!min-w-0 w-8 h-8 min-w-8 mr-1 flex-shrink-0 bg-transparent text-muted hover:text-secondary"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X size={14} />
+                  </AppButton>
                 )
               }
               variant="flat"
@@ -251,9 +270,17 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
               }
               endContent={
                 query && (
-                  <button type="button" onClick={() => { setQuery(""); setOpen(true); }} className="pr-2 flex-shrink-0">
-                    <X size={15} className="text-muted hover:text-secondary transition-colors" />
-                  </button>
+                  <AppButton
+                    type="button"
+                    isIconOnly
+                    variant="light"
+                    disableRipple
+                    onPress={() => { setQuery(""); setOpen(true); }}
+                    className="!min-w-0 w-8 h-8 min-w-8 mr-1 flex-shrink-0 bg-transparent text-muted hover:text-secondary"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X size={15} />
+                  </AppButton>
                 )
               }
               variant="flat"
@@ -293,9 +320,15 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
                 .map((p, idx) => {
                   const isFav = favorites.some((f) => f.id === p.id);
                   return (
-                    <button key={p.id} onClick={() => go(`/players/${p.id}`)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5
-                                 hover:bg-white/[0.03] transition-colors text-left group">
+                    <AppButton
+                      key={p.id}
+                      type="button"
+                      variant="light"
+                      disableRipple
+                      onPress={() => go(`/players/${p.id}`)}
+                      className="!rounded-none w-full !min-h-0 h-auto justify-start gap-3 px-4 py-2.5
+                                 hover:bg-white/[0.03] text-left group bg-transparent font-normal"
+                    >
                       <div className="relative w-9 h-9 rounded-full bg-input border border-white/[0.05]
                                       flex items-center justify-center flex-shrink-0 overflow-hidden
                                       group-hover:border-green/30 transition-colors">
@@ -320,7 +353,7 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
                         </div>
                       </div>
                       <span className={`badge text-2xs ${posClass(p.position)}`}>{p.position}</span>
-                    </button>
+                    </AppButton>
                   );
                 })}
             </div>
@@ -336,9 +369,15 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
               {active!.teams
                 .filter((_, i) => type === "all" ? i < 5 : true)
                 .map((t) => (
-                  <button key={t.id} onClick={() => go(`/clubs/${t.id}`)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5
-                               hover:bg-white/[0.03] transition-colors text-left group">
+                  <AppButton
+                    key={t.id}
+                    type="button"
+                    variant="light"
+                    disableRipple
+                    onPress={() => go(`/clubs/${t.id}`)}
+                    className="!rounded-none w-full !min-h-0 h-auto justify-start gap-3 px-4 py-2.5
+                               hover:bg-white/[0.03] text-left group bg-transparent font-normal"
+                  >
                     <div className="w-9 h-9 rounded-xl flex-shrink-0 bg-input border border-white/[0.05]
                                     flex items-center justify-center overflow-hidden
                                     group-hover:border-green/30 transition-colors">
@@ -355,7 +394,7 @@ export default function SearchBar({ fullWidth = false, compact = false, inline =
                         <span className="text-xs text-muted">{t.country}</span>
                       </div>
                     </div>
-                  </button>
+                  </AppButton>
                 ))}
             </div>
           )}

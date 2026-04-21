@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scout1234}
       POSTGRES_DB: ${POSTGRES_DB:-scout_panel}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -26,11 +26,15 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-scout}:${POSTGRES_PASSWORD:-scout1234}@db:5432/${POSTGRES_DB:-scout_panel}
       JWT_SECRET: ${JWT_SECRET:-scout_panel_super_secret_local_dev_key_change_in_prod}
-      PORT: 4000
-      NODE_ENV: development
-      ALLOWED_ORIGINS: http://localhost:3000
+      PORT: ${PORT:-4000}
+      NODE_ENV: ${NODE_ENV:-development}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      ALLOWED_ORIGIN_PATTERNS: ${ALLOWED_ORIGIN_PATTERNS:-}
+      # URLs informativas para el startup log (no afectan el comportamiento del servidor)
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:4000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     ports:
-      - "4000:4000"
+      - "${PORT:-4000}:${PORT:-4000}"
     depends_on:
       db:
         condition: service_healthy
@@ -40,7 +44,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:4000/api
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
     container_name: scout_panel_frontend
     restart: unless-stopped
     ports:

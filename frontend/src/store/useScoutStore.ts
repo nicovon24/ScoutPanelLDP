@@ -1,13 +1,5 @@
 import { create } from "zustand";
 import { persist, devtools } from "zustand/middleware";
-import Cookies from "js-cookie";
-
-const TOKEN_COOKIE = "accessToken";
-const COOKIE_OPTS: Cookies.CookieAttributes = {
-  expires: 7,       // 7 días
-  sameSite: "Strict",
-  secure: process.env.NODE_ENV === "production",
-};
 
 interface Player {
   id: number;
@@ -48,14 +40,11 @@ export const DEFAULT_FILTERS: SearchFilters = {
 };
 
 interface ScoutState {
-  // ─── Favoritos locales (sin sesión) ──────────────────────────────────────
   favorites: Player[];
   addFavorite: (player: Player) => void;
   removeFavorite: (id: number) => void;
   isFavorite: (id: number) => boolean;
 
-  // ─── Shortlist del servidor (con sesión) ──────────────────────────────────
-  /** IDs de la shortlist del usuario en el servidor (no persistidos). */
   shortlistIds: number[];
   shortlistFetched: boolean;
   setShortlistIds: (ids: number[]) => void;
@@ -63,20 +52,20 @@ interface ScoutState {
   removeShortlistId: (id: number) => void;
   setShortlistFetched: (v: boolean) => void;
 
-  // ─── Comparación ──────────────────────────────────────────────────────────
   compareList: Player[];
   addToCompare: (player: Player) => void;
   removeFromCompare: (id: number) => void;
   clearCompare: () => void;
   isInCompare: (id: number) => boolean;
 
-  // ─── Auth ─────────────────────────────────────────────────────────────────
+  /** JWT en memoria (misma sesión). Tras F5, solo cookie httpOnly + /auth/me restaura `user`. */
   token: string | null;
   user: { id: number; name: string; email: string } | null;
   setAuth: (token: string, user: ScoutState["user"]) => void;
+  /** Sesión restaurada vía cookie httpOnly + GET /auth/me (sin token en memoria). */
+  setUserFromSession: (user: NonNullable<ScoutState["user"]>) => void;
   clearAuth: () => void;
 
-  // ─── UI ───────────────────────────────────────────────────────────────────
   filterPanelOpen: boolean;
   setFilterPanelOpen: (open: boolean) => void;
   pageSize: number;
@@ -88,11 +77,9 @@ interface ScoutState {
   searchType: "all" | "players" | "clubs";
   setSearchType: (type: "all" | "players" | "clubs") => void;
 
-  // ─── Filtros de búsqueda ──────────────────────────────────────────────────
   searchFilters: SearchFilters;
   setSearchFilters: (filters: Partial<SearchFilters>) => void;
 
-  // ─── Hydration ────────────────────────────────────────────────────────────
   _hasHydrated: boolean;
   setHasHydrated: (h: boolean) => void;
 }
@@ -101,7 +88,6 @@ export const useScoutStore = create<ScoutState>()(
   devtools(
   persist(
     (set, get) => ({
-      // ── Favoritos locales ────────────────────────────────────────────────
       favorites: [],
       addFavorite: (player) =>
         set((s) => ({ favorites: [...s.favorites.filter((f) => f.id !== player.id), player] })),
@@ -109,7 +95,6 @@ export const useScoutStore = create<ScoutState>()(
         set((s) => ({ favorites: s.favorites.filter((f) => f.id !== id) })),
       isFavorite: (id) => get().favorites.some((f) => f.id === id),
 
-      // ── Shortlist del servidor ───────────────────────────────────────────
       shortlistIds: [],
       shortlistFetched: false,
       setShortlistIds: (ids) => set({ shortlistIds: ids }),
@@ -119,7 +104,6 @@ export const useScoutStore = create<ScoutState>()(
         set((s) => ({ shortlistIds: s.shortlistIds.filter((i) => i !== id) })),
       setShortlistFetched: (v) => set({ shortlistFetched: v }),
 
-      // ── Comparación ─────────────────────────────────────────────────────
       compareList: [],
       addToCompare: (player) => {
         const list = get().compareList;
@@ -131,19 +115,18 @@ export const useScoutStore = create<ScoutState>()(
       clearCompare: () => set({ compareList: [] }),
       isInCompare: (id) => get().compareList.some((p) => p.id === id),
 
-      // ── Auth — token leído desde cookie al iniciar ────────────────────────
-      token: typeof window !== "undefined" ? (Cookies.get(TOKEN_COOKIE) ?? null) : null,
+      token: null,
       user: null,
       setAuth: (token, user) => {
-        Cookies.set(TOKEN_COOKIE, token, COOKIE_OPTS);
         set({ token, user, shortlistIds: [], shortlistFetched: false });
       },
+      setUserFromSession: (user) => {
+        set({ user, token: null, shortlistIds: [], shortlistFetched: false });
+      },
       clearAuth: () => {
-        Cookies.remove(TOKEN_COOKIE);
         set({ token: null, user: null, shortlistIds: [], shortlistFetched: false });
       },
 
-      // ── UI ───────────────────────────────────────────────────────────────
       filterPanelOpen: false,
       setFilterPanelOpen: (open) => set({ filterPanelOpen: open }),
       pageSize: 30,
@@ -155,18 +138,15 @@ export const useScoutStore = create<ScoutState>()(
       searchType: "all",
       setSearchType: (type) => set({ searchType: type }),
 
-      // ── Filtros ──────────────────────────────────────────────────────────
       searchFilters: DEFAULT_FILTERS,
       setSearchFilters: (filters) =>
         set((s) => ({ searchFilters: { ...(s.searchFilters ?? DEFAULT_FILTERS), ...filters } })),
 
-      // ── Hydration ────────────────────────────────────────────────────────
       _hasHydrated: false,
       setHasHydrated: (h) => set({ _hasHydrated: h }),
     }),
     {
       name: "scout-store",
-      // shortlistIds y shortlistFetched NO se persisten (son estado del servidor)
       partialize: (s) => ({
         searchFilters: s.searchFilters,
         pageSize: s.pageSize,
@@ -175,7 +155,6 @@ export const useScoutStore = create<ScoutState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Normalize searchFilters — fills any missing fields after schema changes
           state.searchFilters = { ...DEFAULT_FILTERS, ...(state.searchFilters ?? {}) };
           state.setHasHydrated(true);
         }

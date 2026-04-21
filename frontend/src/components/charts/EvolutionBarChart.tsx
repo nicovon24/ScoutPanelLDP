@@ -3,6 +3,7 @@ import {
   ComposedChart, Bar, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import AppButton from "@/components/ui/AppButton";
 
 interface DataPoint {
   month: string;
@@ -106,18 +107,24 @@ export default function EvolutionBarChart({ data, mode, onChangeMode }: Props) {
           Resumen Evolutivo
         </h3>
         <div className="flex bg-input/50 rounded-lg p-1 border border-border h-7">
-          <button
-            onClick={() => onChangeMode("year")}
-            className={`px-3 flex items-center justify-center rounded-md text-2xs font-black uppercase tracking-widest transition-all ${mode === "year" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
+          <AppButton
+            type="button"
+            variant="light"
+            disableRipple
+            onPress={() => onChangeMode("year")}
+            className={`!min-h-0 h-6 px-3 rounded-md text-2xs font-black uppercase tracking-widest bg-transparent ${mode === "year" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
           >
             Anual
-          </button>
-          <button
-            onClick={() => onChangeMode("month")}
-            className={`px-3 flex items-center justify-center rounded-md text-2xs font-black uppercase tracking-widest transition-all ${mode === "month" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
+          </AppButton>
+          <AppButton
+            type="button"
+            variant="light"
+            disableRipple
+            onPress={() => onChangeMode("month")}
+            className={`!min-h-0 h-6 px-3 rounded-md text-2xs font-black uppercase tracking-widest bg-transparent ${mode === "month" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
           >
             Mensual
-          </button>
+          </AppButton>
         </div>
       </div>
 

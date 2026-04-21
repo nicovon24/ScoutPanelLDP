@@ -2,6 +2,16 @@
 // Single source of truth for metrics, stat keys, and scale factors.
 // Scale converts raw stat values to a 0-100 range for the radar chart.
 
+import type { PlayerStat } from "@/types";
+
+/** Stats row from API (typed) or a loose bag for dynamic key reads */
+type StatInput = PlayerStat | Record<string, unknown> | null | undefined;
+
+function asStatBag(stat: StatInput): Record<string, unknown> {
+  if (stat == null) return {};
+  return stat as Record<string, unknown>;
+}
+
 export interface RadarMetric {
   metric: string;
   key: string;
@@ -11,8 +21,8 @@ export interface RadarMetric {
   compute?: (stat: Record<string, unknown>) => number;
 }
 
-function _n(stat: Record<string, unknown> | null | undefined, key: string): number {
-  const raw = parseFloat(String(stat?.[key] ?? "0"));
+function _n(stat: StatInput, key: string): number {
+  const raw = parseFloat(String(asStatBag(stat)[key] ?? "0"));
   return isNaN(raw) ? 0 : raw;
 }
 
@@ -37,8 +47,9 @@ export const RADAR_METRICS: RadarMetric[] = [
   { metric: "Rating",      key: "sofascoreRating",    scale: 11  },
 ];
 
-function norm(stat: Record<string, unknown> | null | undefined, m: RadarMetric): number {
-  const raw = m.compute ? m.compute(stat ?? {}) : _n(stat, m.key);
+function norm(stat: StatInput, m: RadarMetric): number {
+  const bag = asStatBag(stat);
+  const raw = m.compute ? m.compute(bag) : _n(stat, m.key);
   return Math.min(100, raw * m.scale);
 }
 
@@ -46,7 +57,7 @@ function norm(stat: Record<string, unknown> | null | undefined, m: RadarMetric):
  * Builds radar data for a single player (key "playerA").
  */
 export function buildSingleRadar(
-  stat: Record<string, unknown> | null | undefined
+  stat: StatInput
 ): Array<{ metric: string; playerA: number }> {
   return RADAR_METRICS.map((m) => ({
     metric:  m.metric,
@@ -59,9 +70,9 @@ export function buildSingleRadar(
  * Pass undefined for slots that are not in use.
  */
 export function buildMultiRadar(
-  statA: Record<string, unknown> | null | undefined,
-  statB: Record<string, unknown> | null | undefined,
-  statC?: Record<string, unknown> | null | undefined
+  statA: StatInput,
+  statB: StatInput,
+  statC?: StatInput
 ): Array<{ metric: string; playerA: number; playerB: number; playerC?: number }> {
   return RADAR_METRICS.map((m) => ({
     metric:  m.metric,

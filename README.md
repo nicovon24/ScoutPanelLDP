@@ -1,6 +1,6 @@
 # Scout Panel
 
-Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadores con gráficos estadísticos, historial de lesiones y shortlist personal. Estilo visual inspirado en LDP + Sofascore.
+Plataforma fullstack para scouts de fútbol. Buscá, filtrá y compará jugadores con gráficos estadísticos, historial de lesiones y shortlist personal. Estilo visual inspirado en LDP + Sofascore.
 
 ---
 
@@ -23,7 +23,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 - Búsqueda y filtros: por posición, nacionalidad, equipo, rango de edad
 - Comparador side-by-side de hasta 3 jugadores con radar chart overlay y tabla comparativa
 - Schema con 9 tablas relacionales y seed generado con IA (30 clubes, 61 jugadores, 4 temporadas, etc — datos ficticios/aleatorios, no reales)
-- Tests en 4 capas: unit (Vitest) en backend y frontend · integration (Vitest + Supertest) para todos los endpoints · E2E (Playwright) con happy path y smoke tests para staging/prod
+- Tests: **unit (Vitest) en frontend** · **integration (Vitest + Supertest) en backend** (5 suites: auth, players, teams, shortlist, analytics) · **E2E (Playwright)** con happy path y smoke para prod
 - Docker Compose — toda la infraestructura levanta con un comando
 - README con instrucciones, decisiones técnicas y mejoras pendientes
 
@@ -32,10 +32,44 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 - Responsive — mobile, tablet y desktop
 - Performance — paginación en listado
 - UX — loading skeletons, empty states, transiciones
-- Historial de lesiones por jugador con correlación en line chart de rating
+- Historial de lesiones por jugador con correlación en line chart de rating — un período se resalta en rojo si el jugador estuvo lesionado **≥50% de los días** de ese mes o año (no con cualquier toque de lesión)
 - Vista **reportes** y export a PDF y Excel 
 - Sección **clubes** para elegir un equipo y ver todos sus jugadores
-- Historial de valores del mercado con gráfico mensual; meses con lesión se muestran en rojo
+- **Mercado de transferencias** — valor de mercado, evolución temporal y contexto de fichaje (tipo de contrato en datos y filtros)
+- **Historial de valores** — gráfico con valor de mercado por mes/año; meses o años con lesión resaltados en rojo (umbral ≥50% del período) para leer rendimiento + disponibilidad
+- **Fortalezas y debilidades** — perfil cualitativo del jugador (rasgos de scouting) visible en la ficha junto a lo numérico
+- **Heatmap de posición** — cancha táctica en la ficha del jugador para ver zonas de actuación según su rol (cuando aplica a la posición)
+
+---
+
+## Flujo de trabajo
+
+Primero se armó **documentación y criterios** con **Claude** en el chat de **Claude Code** (modelado, README, decisiones). El **código** se avanzó en gran parte con **Google Antigravity**; después, al **subir de plan en Cursor**, se cerraron features, refactors y la entrega final sobre el mismo repo.
+
+La arquitectura y las etapas de implementación siguieron un orden claro para no mezclar concerns y validar cada capa antes de la siguiente:
+
+1. **Planificación** — alcance MVP, modelo de datos y rutas principales.
+2. **Core** — decisiones de stack, estructura de carpetas (`backend/` + `frontend/`), contratos generales.
+3. **Backend** — Express, Drizzle, `schema.ts`, rutas REST, auth JWT, seed.
+4. **Frontend** — Next.js App Router, listado, ficha, comparador base, integración con API.
+5. **Segunda ola (v2)** — más analítica en backend (`/api/analytics`) y en frontend: reportes, export PDF/Excel, sección **clubes**, refinos de UX y datos en ficha.
+6. **Tests** — Vitest + Supertest en endpoints; unit en lógica y store del front; Playwright para E2E y smoke contra prod.
+7. **Docker y deploy online** — `docker-compose` reproducible; despliegue en Vercel + Render + Supabase.
+
+### Agentes y herramientas en el IDE
+
+Se integró al flujo el sistema **GSD** (*get-shit-done*, TÂCHES — https://github.com/gsd-build/get-shit-done): *meta-prompting*, *context engineering* y desarrollo **guiado por specs** pensado para **Claude Code**. Orquesta mejor **plan → implementación → revisión**, acota el contexto al código relevante y ordena los pasos para que el modelo no “dispare” cambios fuera de lugar. Sirve para **cerrar features** con menos deriva y para **code review** estructurado (checklist, severidad, diffs acotados).
+
+En **Cursor** se conectaron **MCPs** (ver también fila en *Decisiones técnicas*):
+
+- **PostgreSQL** — consultas e inspección contra el esquema real al tocar migraciones, seeds o índices.
+- **Sequential Thinking** — razonamiento por pasos explícitos en tareas que cruzan backend y frontend (ej. orden: API → tipos → UI → tests).
+
+### Cómo se fueron sumando features
+
+Después del front “base”, muchas mejoras entraron como **mini planes de implementación** (objetivo + archivos + orden): **toasts** (`react-hot-toast`), **heatmaps** en ficha, **fortalezas y debilidades** (JSONB + UI), **carrera** (`player_career` + generador), **vista clubes** y **analytics / reportes** con export. Al acercarse a entregas, se corrieron **revisores de código** sobre los últimos commits para detectar regresiones o inconsistencias antes de merge.
+
+La documentación de columnas de base de datos vive en **[DB_DOCS.md](./DB_DOCS.md)**.
 
 ---
 
@@ -70,8 +104,7 @@ Las migraciones de base de datos corren **automáticamente** al iniciar el backe
 
 Ir a **http://localhost:3000** en el browser.
 
-**Usuario demo:** `demo@gmail.com` / `123456`
-**Usuario demo 2:** `productionuser@gmail.com` / `123456`
+**Usuarios demo** (misma contraseña `123456`): `demo@gmail.com` · `apiuser@gmail.com` (usado en E2E) · `productionuser@gmail.com`
 
 ### Comandos útiles
 
@@ -119,14 +152,13 @@ npm run dev                  # http://localhost:3000
 
 ## Tests
 
-La suite está organizada en **4 capas independientes**. Cada capa testea un nivel distinto del stack, sin duplicados reales entre ellas.
+La suite combina **tests unitarios en el frontend**, **integración HTTP en el backend** contra la DB real y **E2E** en navegador. Cada capa apunta a un nivel distinto del stack.
 
 ### Mapa de cobertura
 
 | Capa | Runner | Archivos | Qué cubre |
 |------|--------|----------|-----------|
-| **Backend — Unit** | Vitest (Node) | `backend/src/__tests__/unit/authSchemas.test.ts` | Schemas Zod (`loginSchema`, `registerSchema`) en aislamiento: validaciones de email, password, nombre, normalización a lowercase |
-| **Backend — Integration** | Vitest + Supertest | `backend/src/__tests__/integration/` | 4 archivos · endpoints HTTP reales contra la DB (ver detalle abajo) |
+| **Backend — Integration** | Vitest + Supertest | `backend/src/__tests__/integration/` | **5** archivos · HTTP real contra la DB: auth, jugadores, equipos, shortlist, analytics (ver detalle abajo). La validación de payloads (Zod) se ejerce en los flujos de auth y rutas. |
 | **Frontend — Unit** | Vitest (jsdom) | `frontend/src/__tests__/unit/` | 5 archivos · funciones puras y store de Zustand (ver detalle abajo) |
 | **E2E** | Playwright | `global-tests/e2e-happy-path.spec.ts` | Flujo completo en browser: login → dashboard → detalle de jugador → comparar · protección de rutas · viewport mobile |
 
@@ -134,6 +166,7 @@ La suite está organizada en **4 capas independientes**. Cada capa testea un niv
 
 | Archivo | Endpoints cubiertos | Casos representativos |
 |---------|--------------------|-----------------------|
+| `auth.integration.test.ts` | `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` | 201 registro · 200 login · 409 duplicado · 400 body inválido · JWT en rutas protegidas |
 | `players.integration.test.ts` | `GET /api/players` · `/nationalities` · `/search` · `/compare` · `/:id` | paginación · filtro por posición · búsqueda · 400 ID inválido · 404 no encontrado · protección JWT |
 | `teams.integration.test.ts` | `GET /api/teams` · `GET /api/teams/:id` | array de equipos con campos obligatorios · roster de jugadores · 400 ID inválido · 404 no encontrado · protección JWT |
 | `shortlist.integration.test.ts` | `GET /api/shortlist` · `/ids` · `POST /:playerId` · `DELETE /:playerId` | agregar/quitar favorito · idempotencia (sin duplicados) · 400 ID inválido · 404 jugador no existe · 404 entrada no encontrada al borrar · protección JWT |
@@ -149,9 +182,9 @@ La suite está organizada en **4 capas independientes**. Cada capa testea un niv
 | `radarNorm.test.ts` | `@/lib/radarNorm` | `buildSingleRadar` (valores 0-100, stats vacías, null/undefined) · `buildMultiRadar` (2 y 3 jugadores, presencia de `playerC`) |
 | `useScoutStore.test.ts` | `@/store/useScoutStore` | Favoritos (add/remove/isFavorite, sin duplicados) · Comparación (cap 3, removeFromCompare, clearCompare, isInCompare) · `setSearchFilters` (merge parcial) |
 
-Los tests **unit e integration corren antes del deploy** (en tu máquina o en GitHub Actions). Son una red de seguridad pre-deploy, no tienen sentido contra una URL deployada.
+Los tests **unit (frontend) e integration (backend)** corren en local o en CI antes del deploy. No tienen sentido apuntarlos contra una URL pública salvo los E2E.
 
-Los **E2E** son los únicos que apuntan a una URL real. Están diseñados para correr en 3 entornos sin cambiar el código — solo cambia la variable `BASE_URL`. **En local** tenés que tener **frontend y backend corriendo a la vez** (por ejemplo `http://localhost:3000` y `http://localhost:4000`): Playwright abre el navegador contra el front, y las acciones de la app llaman al API; si falta uno de los dos, los tests fallan por timeouts o errores de red. En staging/prod el deploy ya expone ambos servicios. Los tests marcados con `@smoke` (login, happy path, protección de rutas) son seguros de correr en producción porque usan el usuario demo y no generan datos sucios.
+Los **E2E** son los únicos que apuntan a una URL real. Están diseñados para correr en 3 entornos sin cambiar el código — solo cambia la variable `BASE_URL`. **En local** tenés que tener **frontend y backend corriendo a la vez** (por ejemplo `http://localhost:3000` y `http://localhost:4000`): Playwright abre el navegador contra el front, y las acciones de la app llaman al API; si falta uno de los dos, los tests fallan por timeouts o errores de red. En prod el deploy ya expone ambos servicios. Los tests marcados con `@smoke` (login, happy path, protección de rutas) son seguros de correr en producción porque usan el usuario demo y no generan datos sucios.
 
 ### Correr los tests
 
@@ -159,9 +192,6 @@ Los **E2E** son los únicos que apuntan a una URL real. Están diseñados para c
 # Backend — unit + integration (requiere DB corriendo)
 cd backend && npm test
 cd backend && npm run test      # equivalente
-
-# Backend — solo unit (sin DB)
-cd backend && npx vitest run src/__tests__/unit
 
 # Frontend — unit
 cd frontend && npm test
@@ -172,14 +202,13 @@ npm run test:e2e               # headless
 npm run test:e2e:headed        # con browser visible
 npm run test:e2e:ui            # UI interactiva de Playwright
 
-# E2E — staging y producción (solo tests @smoke)
-npm run test:e2e:staging
+# E2E —  producción (solo tests @smoke)
 npm run test:e2e:prod
 ```
 
 > **Nota:** los tests de integración del backend usan la DB real definida en `DATABASE_URL`. Crean usuarios con emails únicos (timestamp) y los limpian en `afterAll`, por lo que no requieren una DB de test separada.
 
-> **Importante — seed:** para que `npm run db:seed` funcione correctamente, el **backend y el frontend deben estar corriendo** (ya sea vía Docker Compose o en modo local). El seed depende de que la DB esté accesible a través del backend. Con Docker: levantar primero con `docker compose up` y luego ejecutar `docker compose exec backend npm run db:seed`.
+> **Importante — seed:** `db:seed` ejecuta el script compilado del backend contra **`DATABASE_URL`** (conexión directa a Postgres). Hace falta la **DB levantada** y, en Docker, el contenedor **backend** con imagen construida (`npm run db:seed` dentro del backend). **No** requiere el frontend en marcha.
 
 ---
 
@@ -210,8 +239,7 @@ app/
 │       ├── helpers/         # utilidades (p. ej. generación de carrera)
 │       ├── types/           # tipos TS, ampliación de Express (req.user)
 │       ├── __tests__/
-│       │   ├── unit/        # authSchemas.test.ts — schemas Zod en aislamiento
-│       │   └── integration/ # auth · players · teams · shortlist · analytics
+│       │   └── integration/ # 5 suites: auth · players · teams · shortlist · analytics
 │       └── db/
 │           ├── schema.ts    # tablas Drizzle (fuente de verdad)
 │           ├── index.ts     # pool + instancia db
@@ -248,18 +276,18 @@ Rutas públicas (sin layout de dashboard):
 | `/register` | Alta de usuario; mismo flujo de token que login. |
 
 Rutas del panel `(dashboard)` — comparten layout con **sidebar**, **topbar** y protección por token en cliente (si no hay sesión, redirección a `/login`):
-#
+
 | Ruta | Vista |
 |------|--------|
 | `/` | **Jugadores:** grid o tabla, filtros (posición, nacionalidad, equipo, edad, etc.), ordenamiento, paginación y acceso al detalle. |
 | `/players/[id]` | **Ficha del jugador:** cabecera, KPIs, radar por posición, evolución de rating (line chart), stats por temporada, heatmap si aplica, historial de lesiones y carrera en clubes. |
 | `/compare` | **Comparador:** hasta 3 slots; búsqueda de jugadores, selector de temporada, radar superpuesto, tabla comparativa y heatmaps. |
-| `/favorites` | **Favoritos (shortlist):** listado de jugadores guardados con datos de última temporada. |
+| `/shortlist` | **Favoritos (shortlist):** listado de jugadores guardados con datos de última temporada. (`/favorites` redirige a `/shortlist`.) |
 | `/clubs` | **Clubes:** listado de equipos del sistema. |
 | `/clubs/[id]` | **Detalle de club:** jugadores asociados al equipo. |
 | `/analytics` | **Reportes:** métricas agregadas / leaderboard, resumen de liga, export PDF o Excel. |
 
-La barra lateral enlaza a `/`, `/compare`, `/favorites`, `/analytics` y `/clubs`. El buscador global (`SearchBar`) permite saltar rápido a jugadores o clubes desde cualquier vista del dashboard.
+La barra lateral enlaza a `/`, `/compare`, `/shortlist`, `/analytics` y `/clubs`. El buscador global (`SearchBar`) permite saltar rápido a jugadores o clubes desde cualquier vista del dashboard.
 
 ---
 
@@ -267,7 +295,13 @@ La barra lateral enlaza a `/`, `/compare`, `/favorites`, `/analytics` y `/clubs`
 
 **9 tablas:** `teams`, `seasons`, `players`, `player_stats`, `player_ratings`, `player_injuries`, `player_career`, `users`, `shortlist_entries`. Además, enum PostgreSQL `contract_type` en la tabla `players`.
 
+Documentación ampliada (columnas, relaciones, seed vs runtime, checklist y diferencias frente a `doc/ScoutPanel_V5 (1).txt`): **[DB_DOCS.md](./DB_DOCS.md)**.
+
 ### Datos seed
+
+El seed (`backend/src/db/initial-data.ts` + `backend/src/db/seed-data/*`) **limpia** las tablas (incluye `shortlist_entries`) y vuelve a cargar **equipos, temporadas, jugadores, stats por temporada, ratings mensuales, lesiones, carrera y usuarios demo**. Los **favoritos** no vienen precargados: los crea cada usuario desde la app.
+
+Resumen para contexto rápido: nombres de clubes y jugadores del torneo argentino en plantillas; **fotos** con URL estable de Fotmob; **stats** reales parciales en `real-player-stats.seed.ts` donde exista fila; el resto de métricas, **lesiones**, variaciones y **heatmaps** salen de **plantillas por posición + aleatoriedad controlada**; **fortalezas/debilidades** desde listas por posición; **carrera** con `career-generator`. Objetivo: volumen creíble sin inflar el repo ni depender de datos 100% verificados.
 
 Los datos de seed fueron **generados con IA** y no son todos reales la mayoría. Gran parte de los valores (estadísticas, historial de lesiones, valores de mercado, carreras) fueron creados de forma aleatoria para poder poblar la base de datos sin sobrecargar tokens ni inflar el archivo de seed con datos reales. El volumen exacto cargado es:
 
@@ -300,7 +334,7 @@ Todas requieren **JWT** en `Authorization: Bearer …`.
 | GET | `/api/players` | Listado paginado con filtros (posición, nacionalidad, equipo, edad, valor, rating, etc.) y ordenamiento. |
 | GET | `/api/players/nationalities` | Lista de nacionalidades distintas (para filtros). |
 | GET | `/api/players/search?q=` | Autocomplete: jugadores y equipos que coinciden con `q`. |
-| GET | `/api/players/compare?ids=1,2,3` | Comparación; `seasonId` opcional (si falta, usa la temporada más reciente). |
+| GET | `/api/players/compare?ids=1,2,3` | Comparación (API: hasta **10** IDs; la UI del comparador usa **3** slots); `seasonId` opcional (si falta, temporada más reciente). |
 | GET | `/api/players/:id` | Detalle: jugador con stats, ratings, lesiones, carrera, equipo. |
 | GET | `/api/teams` | Listado de equipos. |
 | GET | `/api/teams/:id` | Detalle de un equipo. |
@@ -339,14 +373,16 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 | Infra local | Docker Compose | Todo el stack levanta con un comando. |
 | Ratings en DB | JSONB en `player_ratings` | Flexibilidad temporal sin saturar la UI con columnas fijas. |
 | Comparador | `seasonId` explícito por request | Garantiza comparación justa entre jugadores. |
-| Lesiones | Tabla separada `player_injuries` | Permite filtrar por temporada y tipo; mantiene `players` limpia. |
-| Panel de filtros | Drawer lateral (portal) + Zustand | Filtros combinados complejos sin romper el layout y que se mantienen en memoria al refrescar; portal resuelve z-index y scroll en mobile. |
+| Lesiones | Tabla separada `player_injuries` + umbral ≥50% | Permite filtrar por temporada y tipo; mantiene `players` limpia. El marcado rojo en gráficos requiere ≥50% de cobertura del período (mes o año) — lesiones breves no distorsionan la lectura visual. |
+| Panel de filtros | Drawer lateral (portal) + Zustand | Filtros combinados sin romper el layout; portal resuelve z-index y scroll en mobile. Parte del estado (filtros de búsqueda, `pageSize`, comparador, sidebar) **persiste en `localStorage`** vía middleware `persist` de Zustand. |
 | Skeletons | Componentes custom con shimmer (`framer-motion`) | Replican la forma exacta de cada vista, eliminando layout shift. |
 | Reportes | Leaderboard client-side + export PDF/Excel (SheetJS/jsPDF) | Filtrado instantáneo sin round-trips; dataset por temporada es acotado. |
 | Clubes | Vista dedicada `/clubs` + `/clubs/[id]` | Contexto de plantel completo reutilizando `/api/teams` sin endpoints extra. |
-| Tests unitarios | Vitest — lógica pura (radar, stats, store, utils) | Cubre la lógica crítica (normalización radar, límite comparador) sin montar componentes. |
+| Tests unitarios | Vitest en **frontend** — lógica pura (radar, stats, store, utils) | Cubre normalización de radar, stats, límite del comparador (3) y utilidades sin montar toda la UI. El backend se valida principalmente por **integración** (Supertest + DB). |
 | Tests de integración | Vitest + Supertest contra DB real | Valida contrato HTTP real (status, JSON shape, JWT) sin mocks que enmascaren bugs. |
-| Tests E2E | Playwright con `@smoke` tags | Happy path en browser real; smoke corre automáticamente post-deploy en staging/prod. |
+| Tests E2E | Playwright con `@smoke` tags | Happy path en browser real; smoke corre automáticamente post-deploy en prod. |
+| Proceso con IA | **GSD** (*get-shit-done*, TÂCHES) para **Claude Code** | Sistema liviano de meta-prompting, *context engineering* y desarrollo por especificación: mejor orden de trabajo, menos contexto ruidoso y revisiones acotadas al repo. Repo: https://github.com/gsd-build/get-shit-done |
+| Herramientas IDE | **MCPs** — PostgreSQL + Sequential Thinking (Cursor) | Postgres ancla decisiones de esquema y datos; Sequential Thinking desglosa cambios multi-capa antes de tocar código (menos errores de orden entre API, tipos y UI). |
 
 ---
 
@@ -366,16 +402,25 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 
 ## Qué mejoraría con más tiempo
 
-- **Notas en shortlist** — implementar `PATCH /api/shortlist/:playerId` + input en la UI de favoritos (el campo `note` ya existe en la DB)
-- **Botón "Comparar seleccionados"** en `/favorites` — seleccionar jugadores de la shortlist y navegar a `/compare` con IDs precargados
-- **CI/CD con GitHub Actions** — lint + test (unit + integration) + build en cada PR; E2E smoke automático post-deploy
-- **Rate limiting más granular** — por endpoint y por user ID además de por IP
-- **Integración con API real** — Transfermarkt / SofaScore para datos actualizados
-- **Refresh token** — el JWT actual expira en 7 días sin rotación automática
-- **CI/CD** — pipeline que corra lint + tests backend + frontend + e2e en PR; gates de migraciones en deploy.
+- **Historial partido a partido** — tabla o timeline por encuentro: rival, competición, minutos, goles, asistencias, rating del partido, resultado; para contextualizar el rendimiento (no es lo mismo un buen partido contra un grande de Primera que contra un equipo de menor exigencia). Base para comparar evolución real frente al calendario.
+- **Roles y permisos** — distinción scout vs admin (lectura vs gestión de seeds/usuarios) si el producto crece.
+- **Internacionalización** — opción para inglés o español si el panel deja de ser solo mercado local.
+- **Perfil de jugador enriquecido y filtrable** — vista de “ficha extendida” con secciones colapsables o tabs, y filtros dentro del perfil (por temporada, rival, competición) sin salir de la ficha.
+- **CI/CD en GitHub Actions** — lint + tests (unit + integration) + build en cada PR; E2E opcional con servicios en Docker; migraciones como gate antes de deploy.
+- **Rate limiting más granular** — por endpoint y por user ID además de por IP.
+- **Integración con API real** — Transfermarkt / SofaScore (o feed propio) para datos y planteles actualizados.
+- **Notas en shortlist** — `PATCH /api/shortlist/:playerId` + campo en UI (el `note` ya existe en DB).
+- **Auth más robusta** — refresh token o rotación de JWT; cookies `httpOnly` + SameSite; recuperación de contraseña y verificación de email en registro/cambio de credenciales.
+- **Accesibilidad** — foco visible, orden de tab, `aria-*` en tablas/filtros, contraste en gráficos, pruebas con axe o Playwright a11y.
+- **Observabilidad** — logs estructurados, `request-id`, Sentry (o similar) en front y back en producción.
+- **Contrato de API** — OpenAPI/Swagger generado a partir de Zod o rutas para documentar y versionar (`/api/v1`).
+- **Búsqueda avanzada** — índices full-text en Postgres (`pg_trgm` / `tsvector`) para nombres y clubes; mejoraría el autocomplete en búsquedas largas y con errores tipográficos.
+- **Evolución de valor de mercado mensual real** — el gráfico mensual usa una oscilación sintética (`Math.sin`) como aproximación visual porque el modelo no almacena el valor mes a mes, solo por temporada. Requeriría una tabla `player_market_values` con granularidad mensual o una fuente externa.
+- **Chart de rating anual respeta temporada seleccionada** — en modo anual el gráfico muestra todas las temporadas del jugador independientemente del selector de temporada (comportamiento intencional como vista de carrera, pero inconsistente con el modo mensual que sí filtra).
+- **Invalidación de shortlist al cambiar sesión** — si dos usuarios inician sesión en la misma pestaña sin F5, los IDs de shortlist de la sesión anterior podrían quedar activos brevemente hasta que se resuelva el nuevo fetch. Requeriría atar el fetch al `user.id` y abortar si cambia.
 
 ---
 
 ## Nota sobre producción (Supabase gratuito)
 
-La base en producción corre en **Supabase en plan gratuito**. En ese tier el proyecto puede **pausarse** si no recibe tráfico durante un rato; al volver a usarlo, el primer arranque puede tardar **varios minutos** (cold start) hasta que Postgres responda con normalidad. No es un fallo del código: es habitual en el free tier. Para probar con respuesta inmediata, usá el **setup con Docker** (sección más arriba en este README).
+La base en producción corre en **Supabase en plan gratuito**. En ese tier el proyecto puede **pausarse** si no recibe tráfico durante un rato; al volver a usarlo, el primer arranque puede tardar **varios segundos** (cold start) hasta que Postgres responda con normalidad. No es un fallo del código: es habitual en el free tier. Para probar con respuesta inmediata, usá el **setup con Docker** (sección más arriba en este README).

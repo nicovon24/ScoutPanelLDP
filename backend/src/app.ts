@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 import playerRoutes from "./routes/players";
 import teamRoutes from "./routes/teams";
 import seasonRoutes from "./routes/seasons";
@@ -38,6 +39,7 @@ app.use(
   })
 );
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(cookieParser());
 app.use(express.json());
 
 // ── Rutas públicas ─────────────────────────────────────────────────────────────
@@ -51,7 +53,7 @@ app.get("/health", (_req: Request, res: Response) => {
 app.use("/api/players",   requireAuth, playerRoutes);
 app.use("/api/teams",     requireAuth, teamRoutes);
 app.use("/api/seasons",   requireAuth, seasonRoutes);
-app.use("/api/shortlist", shortlistRoutes);
+app.use("/api/shortlist", requireAuth, shortlistRoutes);
 app.use("/api/analytics", requireAuth, analyticsRoutes);
 
 // ── Middleware global de errores (debe ir último) ────────────────────────────
