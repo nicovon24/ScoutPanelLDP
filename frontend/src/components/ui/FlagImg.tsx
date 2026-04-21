@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 const COUNTRY_ISO: Record<string, string> = {
   // Sudamérica
   "Argentina":       "ar",
@@ -20,6 +22,7 @@ const COUNTRY_ISO: Record<string, string> = {
   "Guatemala":       "gt",
   "El Salvador":     "sv",
   "Panamá":          "pa",
+  "Panama":          "pa",
   "Cuba":            "cu",
   "Jamaica":         "jm",
   // Norteamérica
@@ -82,16 +85,45 @@ const COUNTRY_ISO: Record<string, string> = {
   "Australia":       "au",
 };
 
+/** ISO 3166-1 alpha-2 → slug flagcdn.com (minúsculas salvo subdivisiones). */
+const ISO_ALPHA2: Record<string, string> = {
+  AR: "ar", BR: "br", UY: "uy", PY: "py", CO: "co", CL: "cl", BO: "bo", PE: "pe", EC: "ec", VE: "ve",
+  MX: "mx", CR: "cr", HN: "hn", GT: "gt", SV: "sv", PA: "pa", CU: "cu", JM: "jm",
+  US: "us", CA: "ca",
+  ES: "es", FR: "fr", IT: "it", DE: "de", PT: "pt",
+  NL: "nl", BE: "be", HR: "hr", RS: "rs", CH: "ch", TR: "tr", AM: "am", UA: "ua", PL: "pl", SI: "si", AT: "at", DK: "dk", SE: "se", NO: "no",
+  SN: "sn", CI: "ci", GH: "gh", NG: "ng", MA: "ma", CM: "cm", DZ: "dz",
+  JP: "jp", KR: "kr", AU: "au",
+  GB: "gb", UK: "gb",
+  ENG: "gb-eng",
+};
+
+export function resolveFlagCode(raw: string | undefined | null): string | undefined {
+  const input = (raw ?? "").trim();
+  if (!input) return undefined;
+  if (COUNTRY_ISO[input]) return COUNTRY_ISO[input];
+  const lower = input.toLowerCase();
+  for (const k of Object.keys(COUNTRY_ISO)) {
+    if (k.toLowerCase() === lower) return COUNTRY_ISO[k];
+  }
+  if (/^[A-Za-z]{2}$/.test(input)) {
+    return ISO_ALPHA2[input.toUpperCase()];
+  }
+  return undefined;
+}
+
 interface FlagImgProps {
   nationality: string;
   /** Tamaño base en px (alto). Ancho = alto × 4/3. Default 15 */
   size?: number;
   className?: string;
+  /** Si el país no está en el mapa, mostrar esto (ej. icono Globe). */
+  fallback?: ReactNode;
 }
 
-export default function FlagImg({ nationality, size = 15, className = "" }: FlagImgProps) {
-  const code = COUNTRY_ISO[nationality];
-  if (!code) return null;
+export default function FlagImg({ nationality, size = 15, className = "", fallback = null }: FlagImgProps) {
+  const code = resolveFlagCode(nationality);
+  if (!code) return <>{fallback}</>;
 
   const w = Math.round(size * (4 / 3));
   // flagcdn.com size variants: 20x15, 40x30, 80x60, 160x120, 320x240

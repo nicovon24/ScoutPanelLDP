@@ -3,7 +3,7 @@ import { Button, ButtonProps } from "@nextui-org/react";
 import React from "react";
 
 interface AppButtonProps extends Omit<ButtonProps, "variant"> {
-  variant?: "primary" | "secondary" | "danger" | "ghost" | "light";
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "light" | "gradient";
   children: React.ReactNode;
   className?: string;
 }
@@ -14,7 +14,9 @@ export default function AppButton({ variant = "primary", className = "", childre
     secondary: "bg-white/[0.05] hover:bg-white/[0.08] text-primary font-bold",
     danger: "bg-transparent text-muted hover:text-danger hover:bg-danger/5 border border-white/[0.05]",
     ghost: "bg-transparent border border-white/[0.1] hover:bg-white/[0.05] text-primary",
-    light: "bg-transparent hover:bg-white/5 text-muted hover:text-primary",
+    light: "bg-transparent hover:bg-white/5 text-muted hover:text-primary min-w-0",
+    gradient:
+      "!bg-gradient-to-br !from-[#00E094] !to-[#00C47F] !text-mainBg border-0 shadow-[0_4px_22px_rgba(0,224,148,0.28)] hover:shadow-[0_6px_30px_rgba(0,224,148,0.4)] hover:-translate-y-px disabled:opacity-60 disabled:shadow-none relative overflow-hidden group",
   };
 
   const selectedVariant = variants[variant as keyof typeof variants] || variants.primary;

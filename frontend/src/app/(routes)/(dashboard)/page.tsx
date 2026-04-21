@@ -4,15 +4,16 @@ import { SlidersHorizontal, LayoutGrid, List, Search, X } from "lucide-react";
 import api from "@/lib/api";
 import { useScoutStore, DEFAULT_FILTERS } from "@/store/useScoutStore";
 import type { Player, Team } from "@/types";
-import { Select, SelectItem, Button, Input, type Selection } from "@nextui-org/react";
+import { Select, SelectItem, Input, type Selection } from "@nextui-org/react";
 import AppButton from "@/components/ui/AppButton";
-import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
+import { sharedSelectClasses, sharedSelectItemClasses, searchFieldInputClassNames } from "@/components/ui/sharedStyles";
 
 // Components
 import PlayerGrid from "@/components/home/PlayerGrid";
 import PlayerTable from "@/components/home/PlayerTable";
 import FilterSidebar, { POSITIONS_LIST } from "@/components/home/FilterSidebar";
 import Pagination from "@/components/home/Pagination";
+import SortSelect from "@/components/home/SortSelect";
 
 function HomeContent() {
   const { setFilterPanelOpen, pageSize, setPageSize, searchFilters, setSearchFilters, _hasHydrated } = useScoutStore();
@@ -118,18 +119,37 @@ function HomeContent() {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* View Toggle */}
           <div className="flex p-1 bg-white/[0.03] border border-white/[0.05] rounded-xl overflow-hidden">
-            <Button isIconOnly onClick={() => setView("grid")} className={`min-w-9 w-9 h-9 sm:w-10 sm:h-10 sm:min-w-10 rounded-lg transition-all ${view === "grid" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
+            <AppButton
+              type="button"
+              isIconOnly
+              variant="light"
+              disableRipple
+              onPress={() => setView("grid")}
+              className={`min-w-9 w-9 h-9 sm:w-10 sm:h-10 sm:min-w-10 rounded-lg transition-all ${view === "grid" ? "bg-white/10 text-primary shadow-sm" : "text-muted"}`}
+              aria-label="Vista grilla"
+            >
               <LayoutGrid size={16} />
-            </Button>
-            <Button isIconOnly onClick={() => setView("table")} className={`min-w-9 w-9 h-9 sm:w-10 sm:h-10 sm:min-w-10 rounded-lg transition-all ${view === "table" ? "bg-white/10 text-primary shadow-sm" : "bg-transparent text-muted hover:text-secondary"}`}>
+            </AppButton>
+            <AppButton
+              type="button"
+              isIconOnly
+              variant="light"
+              disableRipple
+              onPress={() => setView("table")}
+              className={`min-w-9 w-9 h-9 sm:w-10 sm:h-10 sm:min-w-10 rounded-lg transition-all ${view === "table" ? "bg-white/10 text-primary shadow-sm" : "text-muted"}`}
+              aria-label="Vista tabla"
+            >
               <List size={16} />
-            </Button>
+            </AppButton>
           </div>
 
           {activeFilterCount > 0 && (
-            <Button
+            <AppButton
+              type="button"
               isIconOnly
-              onClick={() => {
+              variant="light"
+              disableRipple
+              onPress={() => {
                 const resetState = {
                   q: "", position: "", teamId: "",
                   ageMin: "", ageMax: "",
@@ -139,11 +159,11 @@ function HomeContent() {
                 updateFiltersAndStore(resetState);
                 setInputQ("");
               }}
-              className="h-9 w-9 min-w-9 sm:h-11 sm:w-11 sm:min-w-11 rounded-xl bg-[#e05a5a]/10 text-[#e05a5a] border border-[#e05a5a]/25 hover:bg-[#e05a5a]/20 transition-all"
+              className="h-9 w-9 min-w-9 sm:h-11 sm:w-11 sm:min-w-11 rounded-xl bg-[#e05a5a]/10 text-[#e05a5a] border border-[#e05a5a]/25 hover:bg-[#e05a5a]/20"
               aria-label="Limpiar filtros"
             >
               <X size={16} strokeWidth={2.5} />
-            </Button>
+            </AppButton>
           )}
 
           <AppButton
@@ -163,24 +183,36 @@ function HomeContent() {
       </div>
 
       {/* ── Search & Quick Bar ── */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 bg-white/[0.02] border border-white/[0.05] p-3 sm:p-4 rounded-2xl shadow-sm">
-        <div className="w-full sm:w-auto sm:flex-1 sm:max-w-[320px]">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-5 sm:gap-6 bg-white/[0.02] border border-white/[0.05] p-4 sm:p-6 rounded-2xl shadow-sm">
+        <div className="w-full sm:w-auto sm:flex-1 sm:max-w-[340px]">
           <Input
+            label="Buscar jugadores"
+            labelPlacement="outside"
             value={inputQ}
             onChange={(e) => { setInputQ(e.target.value); setPage(1); }}
-            placeholder="Buscar por jugador..."
-            startContent={<Search size={16} className="text-muted flex-shrink-0" />}
+            placeholder="Nombre, club…"
+            startContent={<Search size={16} className="text-muted flex-shrink-0 pl-0.5" />}
             endContent={
-              inputQ && (
-                <button onClick={() => { setInputQ(""); setPage(1); }}>
-                  <X size={15} className="text-secondary transition-colors" />
-                </button>
-              )
+              inputQ ? (
+                <AppButton
+                  type="button"
+                  isIconOnly
+                  variant="light"
+                  radius="full"
+                  className="min-w-8 w-8 h-8 text-secondary"
+                  onPress={() => { setInputQ(""); setPage(1); }}
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X size={15} />
+                </AppButton>
+              ) : null
             }
             variant="flat"
             classNames={{
-              inputWrapper: "h-11 bg-card border border-white/10 rounded-xl group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
-              input: "text-sm sm:text-base text-primary placeholder:text-secondary"
+              ...searchFieldInputClassNames,
+              inputWrapper:
+                "h-12 min-h-12 bg-card border border-white/10 rounded-xl pl-3.5 pr-1 group-data-[focus=true]:border-green/45 group-data-[focus=true]:shadow-[0_0_20px_rgba(0,224,148,0.1)]",
+              input: "text-sm sm:text-base text-primary placeholder:text-secondary pl-0.5",
             }}
           />
         </div>
@@ -230,40 +262,22 @@ function HomeContent() {
         </div>
 
         {/* Sort Selector */}
-        <div className="w-full max-w-[200px] hidden lg:block ml-auto">
-          <Select
-            labelPlacement="outside"
-            placeholder="Ordenar por"
-            selectedKeys={[filters.sortBy]}
-            onChange={(e) => {
-              if (e.target.value) {
-                updateFiltersAndStore({ sortBy: e.target.value });
-              }
-            }}
-            classNames={{
-              trigger: `${sharedSelectClasses.trigger} h-12`,
-              value: sharedSelectClasses.value,
-              popoverContent: sharedSelectClasses.popoverContent,
-            }}
-            aria-label="Ordenar por"
-          >
-            <SelectItem key="rating_desc" textValue="Rating (Mayor)" classNames={sharedSelectItemClasses}>Rating (Mayor)</SelectItem>
-            <SelectItem key="value_desc" textValue="Valor (Mayor)" classNames={sharedSelectItemClasses}>Valor (Mayor)</SelectItem>
-            <SelectItem key="value_asc" textValue="Valor (Menor)" classNames={sharedSelectItemClasses}>Valor (Menor)</SelectItem>
-            <SelectItem key="age_asc" textValue="Edad (Menor)" classNames={sharedSelectItemClasses}>Edad (Menor)</SelectItem>
-            <SelectItem key="age_desc" textValue="Edad (Mayor)" classNames={sharedSelectItemClasses}>Edad (Mayor)</SelectItem>
-          </Select>
+        <div className="w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px] ml-0 lg:ml-auto">
+          <SortSelect
+            value={filters.sortBy}
+            onChange={(sortBy) => updateFiltersAndStore({ sortBy })}
+          />
         </div>
       </div>
 
       {/* ── Active Filters Chips ── */}
       {_hasHydrated && activeFilterCount > 0 && (
         <div className="flex flex-wrap items-center gap-2 mt-[-8px]">
-          <span className="text-[10px] font-black text-muted uppercase tracking-[0.15em] mr-2">Filtros activos:</span>
+          <span className="text-2xs font-black text-muted uppercase tracking-[0.15em] mr-2">Filtros activos:</span>
           
           {filters.position && filters.position.split(",").map(pos => (
             <div key={pos} className="flex items-center gap-1.5 bg-[#34d35a]/10 border border-[#34d35a]/20 px-2 py-1 rounded-lg">
-              <span className="text-[10px] font-black text-green uppercase">{pos}</span>
+              <span className="text-2xs font-black text-green uppercase">{pos}</span>
               <button onClick={() => {
                 const arr = filters.position.split(",").filter(p => p !== pos);
                 updateFiltersAndStore({ position: arr.join(",") });
@@ -275,7 +289,7 @@ function HomeContent() {
             const teamName = teams.find(t => t.id?.toString() === tid)?.name || "Club";
             return (
               <div key={tid} className="flex items-center gap-1.5 bg-[#34d35a]/10 border border-[#34d35a]/20 px-2 py-1 rounded-lg">
-                <span className="text-[10px] font-black text-green uppercase">{teamName}</span>
+                <span className="text-2xs font-black text-green uppercase">{teamName}</span>
                 <button onClick={() => {
                   const arr = filters.teamId.split(",").filter(p => p !== tid);
                   updateFiltersAndStore({ teamId: arr.join(",") });
@@ -286,14 +300,14 @@ function HomeContent() {
 
           {(filters.ageMin || filters.ageMax) && (
             <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded-lg">
-              <span className="text-[10px] font-black text-purple-400 uppercase">Edad: {filters.ageMin || "0"}-{filters.ageMax || "50"}</span>
+              <span className="text-2xs font-black text-purple-400 uppercase">Edad: {filters.ageMin || "0"}-{filters.ageMax || "50"}</span>
               <button onClick={() => updateFiltersAndStore({ ageMin: "", ageMax: "" })} className="text-purple-400/60 hover:text-purple-400"><X size={10} strokeWidth={3} /></button>
             </div>
           )}
 
           {(filters.marketValueMin || filters.marketValueMax) && (
             <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 px-2 py-1 rounded-lg">
-              <span className="text-[10px] font-black text-orange-400 uppercase">
+              <span className="text-2xs font-black text-orange-400 uppercase">
                 {filters.marketValueMin ? `${filters.marketValueMin}M€` : "0"} — {filters.marketValueMax ? `${filters.marketValueMax}M€` : "∞"}
               </span>
               <button onClick={() => updateFiltersAndStore({ marketValueMin: "", marketValueMax: "" })} className="text-orange-400/60 hover:text-orange-400"><X size={10} strokeWidth={3} /></button>
@@ -302,7 +316,7 @@ function HomeContent() {
 
           {filters.nationality && (
             <div className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
-              <span className="text-[10px] font-black text-cyan-400 uppercase">{filters.nationality}</span>
+              <span className="text-2xs font-black text-cyan-400 uppercase">{filters.nationality}</span>
               <button onClick={() => updateFiltersAndStore({ nationality: "" })} className="text-cyan-400/60 hover:text-cyan-400"><X size={10} strokeWidth={3} /></button>
             </div>
           )}
@@ -311,7 +325,7 @@ function HomeContent() {
             const label = ct === "PERMANENT" ? "Permanente" : ct === "LOAN" ? "Préstamo" : "Libre";
             return (
               <div key={ct} className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/20 px-2 py-1 rounded-lg">
-                <span className="text-[10px] font-black text-violet-400 uppercase">{label}</span>
+                <span className="text-2xs font-black text-violet-400 uppercase">{label}</span>
                 <button onClick={() => {
                   const arr = filters.contractType.split(",").filter(v => v !== ct);
                   updateFiltersAndStore({ contractType: arr.join(",") });
@@ -331,7 +345,7 @@ function HomeContent() {
               updateFiltersAndStore(resetState);
               setInputQ("");
             }}
-            className="text-[10px] font-black text-danger uppercase tracking-[0.1em] hover:underline ml-2"
+            className="text-2xs font-black text-danger uppercase tracking-[0.1em] hover:underline ml-2"
           >
             Limpiar todo
           </button>

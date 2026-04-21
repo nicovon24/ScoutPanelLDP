@@ -23,7 +23,7 @@ function GroupTab({ label, active, onClick }: { label: string; active: boolean; 
   return (
     <button
       onClick={onClick}
-      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider
+      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-2xs sm:text-xs font-black uppercase tracking-wider
                   transition-all whitespace-nowrap
                   ${active
           ? "bg-green/15 text-green border border-green/25 shadow-[0_0_12px_rgba(0,224,148,0.1)]"
@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
       {/* ── Page header ────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">
+          <p className="text-2xs font-bold text-muted uppercase tracking-widest mb-1">
             Estadísticas de Liga
           </p>
           <h1 className="text-xl font-black text-primary flex items-center gap-2">
@@ -228,7 +228,7 @@ export default function AnalyticsPage() {
           <div className="flex-1" />
 
           {/* Metric badge + sort dir */}
-          <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-2xs">
             <span className="text-muted font-bold uppercase tracking-widest hidden sm:inline">Ordenado por:</span>
             <span className="font-black text-green bg-green/10 border border-green/20 px-2 py-1 rounded-md uppercase tracking-wider">
               {activeColLabel} {sortDir === "asc" ? "↑" : "↓"}
@@ -247,7 +247,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Hint */}
-        <p className="text-[10px] text-muted/50 font-medium -mt-1">
+        <p className="text-2xs text-muted/50 font-medium -mt-1">
           Hacé clic en el encabezado de columna para ordenar · Clic doble alterna el orden
         </p>
 

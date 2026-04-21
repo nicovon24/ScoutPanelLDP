@@ -329,12 +329,12 @@ export default function PlayerDetailPage() {
             <>
               <div className="h-px bg-border/60" />
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted mb-3">Stats clave</p>
+                <p className="text-2xs font-black uppercase tracking-[0.18em] text-muted mb-3">Stats clave</p>
                 <div className="grid grid-cols-2 gap-3">
                   {keyStats.map(({ label, value, accent }) => (
                     <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 flex flex-col gap-0.5">
                       <span className={`text-lg font-black leading-none ${accent}`}>{value}</span>
-                      <span className="text-[10px] text-muted uppercase tracking-wide">{label}</span>
+                      <span className="text-2xs text-muted uppercase tracking-wide">{label}</span>
                     </div>
                   ))}
                 </div>

@@ -65,7 +65,7 @@ export default function SoccerFieldPositions({ selected, onSelect }: Props) {
               }
             }}
             className={`absolute -translate-x-1/2 -translate-y-1/2 w-[34px] h-[34px] rounded-full 
-                        flex items-center justify-center text-[9px] font-black transition-all duration-300
+                        flex items-center justify-center text-2xs font-black transition-all duration-300
                         ${active
                 ? `bg-green text-[#081009] shadow-[0_0_20px_rgba(52,211,90,0.55),0_0_40px_rgba(52,211,90,0.2)] scale-110 z-10`
                 : "bg-[#0E1710]/90 text-[#7aab82] border-[1.5px] border-[#34d35a]/30 hover:border-green hover:text-green hover:bg-[#34d35a]/15 hover:scale-115"}`}

@@ -101,12 +101,12 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
         {/* Header */}
         <div className="relative p-5 lg:p-7 border-b border-white/[0.05] flex items-center justify-between bg-[#0E1710] z-10">
           <div className="flex items-center gap-3 lg:gap-4">
-            <div className="w-[36px] h-[36px] lg:w-[42px] lg:h-[42px] rounded-[10px] bg-[#34d35a]/15 border border-[#34d35a]/30 flex items-center justify-center text-green shadow-[0_0_15px_rgba(52,211,90,0.1)]">
+            <div className="w-[36px] h-[36px] lg:w-[42px] lg:h-[42px] rounded-2xs bg-[#34d35a]/15 border border-[#34d35a]/30 flex items-center justify-center text-green shadow-[0_0_15px_rgba(52,211,90,0.1)]">
               <Filter size={20} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
               <h2 className="text-[18px] lg:text-[22px] font-black text-primary uppercase tracking-tight leading-none font-sans">Filtros Avanzados</h2>
-              <p className="text-[9px] lg:text-[10px] text-green tracking-[0.15em] uppercase font-bold mt-1 lg:mt-1.5 opacity-80">Configuración de búsqueda</p>
+              <p className="text-2xs lg:text-2xs text-green tracking-[0.15em] uppercase font-bold mt-1 lg:mt-1.5 opacity-80">Configuración de búsqueda</p>
             </div>
           </div>
           <button
@@ -123,7 +123,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
 
             {/* ── Left Column: Posición ── */}
             <div className="space-y-4 lg:space-y-6">
-              <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
+              <label className="text-2xs lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Posición
               </label>
 
@@ -146,7 +146,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                   renderValue={(items) => (
                     <div className="flex flex-wrap gap-1">
                       {items.map((item) => (
-                        <span key={item.key} className="bg-green/10 text-green text-[10px] px-2 py-0.5 rounded-md font-black">
+                        <span key={item.key} className="bg-green/10 text-green text-2xs px-2 py-0.5 rounded-md font-black">
                           {item.key}
                         </span>
                       ))}
@@ -186,13 +186,13 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
 
               {/* Club & Perfil */}
               <div className="space-y-4 lg:space-y-5">
-                <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
+                <label className="text-2xs lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Club & Perfil
                 </label>
 
                 {/* Club actual */}
                 <div className="space-y-2">
-                  <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Club actual</span>
+                  <span className="text-2xs lg:text-2xs font-black uppercase tracking-[0.2em] text-secondary">Club actual</span>
                   <Select
                     selectionMode="multiple"
                     items={[
@@ -211,7 +211,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                     renderValue={(items) => (
                       <div className="flex flex-wrap gap-1">
                         {items.map((item) => (
-                          <span key={item.key} className="bg-[#34d35a]/20 text-[#34d35a] text-[10px] px-2 py-0.5 rounded-md font-black flex items-center gap-1">
+                          <span key={item.key} className="bg-[#34d35a]/20 text-[#34d35a] text-2xs px-2 py-0.5 rounded-md font-black flex items-center gap-1">
                             {item.data?.logoUrl && (
                               <Avatar
                                 src={item.data.logoUrl}
@@ -238,7 +238,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                         classNames={sharedSelectItemClasses}
                       >
                         <div className="flex gap-2 items-center">
-                          <Avatar alt={item.name} fallback={<div className="bg-[#34d35a]/20 text-[#34d35a] font-bold w-full h-full flex items-center justify-center text-[10px]">{item.name.substring(0, 2)}</div>} className="w-5 h-5 flex-shrink-0 bg-transparent" src={item.logoUrl} />
+                          <Avatar alt={item.name} fallback={<div className="bg-[#34d35a]/20 text-[#34d35a] font-bold w-full h-full flex items-center justify-center text-2xs">{item.name.substring(0, 2)}</div>} className="w-5 h-5 flex-shrink-0 bg-transparent" src={item.logoUrl} />
                           <span className="text-xs font-bold">{item.name}</span>
                         </div>
                       </SelectItem>
@@ -249,9 +249,9 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                 {/* Presupuesto Min / Max */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Presupuesto (M€)</span>
+                    <span className="text-2xs lg:text-2xs font-black uppercase tracking-[0.2em] text-secondary">Presupuesto (M€)</span>
                     {(filters.marketValueMin || filters.marketValueMax) && (
-                      <span className="bg-[#34d35a]/15 border border-[#34d35a]/30 px-2 py-0.5 rounded-lg text-green font-black text-[10px]">
+                      <span className="bg-[#34d35a]/15 border border-[#34d35a]/30 px-2 py-0.5 rounded-lg text-green font-black text-2xs">
                         {filters.marketValueMin || "0"} — {filters.marketValueMax || "∞"} M€
                       </span>
                     )}
@@ -287,7 +287,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
 
               {/* Tipo de contrato */}
               <div className="space-y-3">
-                <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
+                <label className="text-2xs lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Tipo de contrato
                 </label>
                 <div className="flex gap-2">
@@ -320,7 +320,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
 
               {/* Nacionalidad */}
               <div className="space-y-3">
-                <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
+                <label className="text-2xs lg:text-[11px] font-black uppercase tracking-[0.2em] text-[#7aab82] flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-green shadow-[0_0_8px_#34d35a]" /> Nacionalidad
                 </label>
                 <Select
@@ -352,7 +352,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
               <div className="space-y-5 lg:space-y-6">
                 <div className="bg-[#131f15] border border-white/5 rounded-2xl p-4 lg:p-5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] lg:text-[10px] font-bold uppercase text-secondary tracking-[0.2em]">Edad del jugador</span>
+                    <span className="text-2xs lg:text-2xs font-bold uppercase text-secondary tracking-[0.2em]">Edad del jugador</span>
                     {(filters.ageMin || filters.ageMax) && (
                       <span className="bg-[#34d35a]/15 border border-[#34d35a]/30 px-2 lg:px-3 py-1 rounded-lg text-green font-black text-[11px] lg:text-[12px]">
                         {filters.ageMin || "Mín"} — {filters.ageMax || "Máx"} años
@@ -373,7 +373,7 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
 
                 <div className="bg-[#131f15] border border-white/5 rounded-2xl p-4 lg:p-5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] lg:text-[10px] font-bold uppercase text-secondary tracking-[0.2em]">Rating Mín.</span>
+                    <span className="text-2xs lg:text-2xs font-bold uppercase text-secondary tracking-[0.2em]">Rating Mín.</span>
                     <div className="text-lg lg:text-xl font-black text-green leading-none">
                       {filters.minRating || "6.0"}<span className="text-[11px] lg:text-[12px] text-[#3d6645] ml-1">/ 10</span>
                     </div>

@@ -98,13 +98,13 @@ export default function LeagueTable({ entries, cols, metric, sortDir, onSort, lo
             <tr className="border-b border-white/[0.05]">
               {/* # — sticky solo en lg+ (en móvil tapa stats al scrollear en horizontal) */}
               <th className="z-10 bg-[#0e0e0e] px-3 sm:px-4 py-3 text-left lg:sticky lg:left-0
-                             text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted w-10">
+                             text-2xs sm:text-2xs font-black uppercase tracking-widest text-muted w-10">
                 #
               </th>
 
               {/* Jugador — sticky solo en lg+ */}
               <th className="z-10 bg-[#0e0e0e] px-3 sm:px-4 py-3 text-left lg:sticky lg:left-10
-                             text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted
+                             text-2xs sm:text-2xs font-black uppercase tracking-widest text-muted
                              border-r border-white/[0.04]">
                 Jugador
               </th>
@@ -114,7 +114,7 @@ export default function LeagueTable({ entries, cols, metric, sortDir, onSort, lo
                 <th
                   key={col.key}
                   onClick={() => col.sortable && onSort(col.key as LeaderboardMetric)}
-                  className={`bg-white/[0.02] px-3 sm:px-4 py-3 text-right text-[9px] sm:text-[10px]
+                  className={`bg-white/[0.02] px-3 sm:px-4 py-3 text-right text-2xs sm:text-2xs
                               font-black uppercase tracking-widest whitespace-nowrap select-none
                               ${col.sortable ? "cursor-pointer hover:text-primary transition-colors" : ""}
                               ${col.key === metric ? "text-green" : "text-muted"}`}
@@ -154,14 +154,14 @@ export default function LeagueTable({ entries, cols, metric, sortDir, onSort, lo
                         {entry.name}
                       </p>
                       <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 flex-wrap">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-muted bg-white/5 px-1 sm:px-1.5 py-0.5 rounded">
+                        <span className="text-2xs sm:text-2xs font-bold text-muted bg-white/5 px-1 sm:px-1.5 py-0.5 rounded">
                           {entry.position}
                         </span>
                         {entry.teamLogoUrl && (
                           <Image src={entry.teamLogoUrl} alt="" width={13} height={13} className="object-contain hidden sm:block" unoptimized />
                         )}
                         {entry.teamName && (
-                          <span className="text-[9px] sm:text-[10px] text-muted truncate hidden sm:inline">{entry.teamName}</span>
+                          <span className="text-2xs sm:text-2xs text-muted truncate hidden sm:inline">{entry.teamName}</span>
                         )}
                         {entry.nationality && (
                           <FlagImg nationality={entry.nationality} size={10} />

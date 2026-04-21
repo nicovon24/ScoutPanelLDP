@@ -108,13 +108,13 @@ export default function EvolutionBarChart({ data, mode, onChangeMode }: Props) {
         <div className="flex bg-input/50 rounded-lg p-1 border border-border h-7">
           <button
             onClick={() => onChangeMode("year")}
-            className={`px-3 flex items-center justify-center rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${mode === "year" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
+            className={`px-3 flex items-center justify-center rounded-md text-2xs font-black uppercase tracking-widest transition-all ${mode === "year" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
           >
             Anual
           </button>
           <button
             onClick={() => onChangeMode("month")}
-            className={`px-3 flex items-center justify-center rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${mode === "month" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
+            className={`px-3 flex items-center justify-center rounded-md text-2xs font-black uppercase tracking-widest transition-all ${mode === "month" ? "bg-card text-green shadow-sm" : "text-muted hover:text-secondary"}`}
           >
             Mensual
           </button>
@@ -146,7 +146,7 @@ export default function EvolutionBarChart({ data, mode, onChangeMode }: Props) {
                   if (d.rating <= 0 && !d.injured) return null;
                   return (
                     <div className="bg-[#1a1a1a] border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-md">
-                      <p className="text-[10px] font-black text-muted uppercase tracking-widest mb-1">
+                      <p className="text-2xs font-black text-muted uppercase tracking-widest mb-1">
                         {d.month} {d.year}
                       </p>
                       <div className="flex items-center gap-2">
@@ -158,13 +158,13 @@ export default function EvolutionBarChart({ data, mode, onChangeMode }: Props) {
                           <span className="text-lg font-black text-muted">—</span>
                         )}
                         {d.injured && (
-                          <span className="bg-danger/20 text-danger text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
+                          <span className="bg-danger/20 text-danger text-2xs font-black px-1.5 py-0.5 rounded uppercase">
                             Lesión
                           </span>
                         )}
                       </div>
                       {d.injured && d.injuryName && (
-                        <p className="text-[10px] text-danger font-medium mt-1 leading-tight max-w-[130px]">
+                        <p className="text-2xs text-danger font-medium mt-1 leading-tight max-w-[130px]">
                           {d.injuryName}
                         </p>
                       )}

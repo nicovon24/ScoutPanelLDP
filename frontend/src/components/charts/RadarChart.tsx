@@ -41,7 +41,7 @@ const CustomTooltip = ({
   if (!active || !payload) return null;
   return (
     <div className="bg-card border border-border rounded-xl px-4 py-2 shadow-2xl backdrop-blur-md">
-      <p className="font-black text-primary uppercase tracking-[0.1em] text-[10px] mb-2">{label}</p>
+      <p className="font-black text-primary uppercase tracking-[0.1em] text-2xs mb-2">{label}</p>
       <div className="space-y-1.5">
         {payload.map((p, i) => {
           let c = colorA ?? "#00E094";

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import Image from "next/image";
 import { Select, SelectItem, Input } from "@nextui-org/react";
-import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
+import { sharedSelectClasses, sharedSelectItemClasses, searchBarLabelClass } from "@/components/ui/sharedStyles";
 import { useScoutStore } from "@/store/useScoutStore";
 import FlagImg from "@/components/ui/FlagImg";
 
@@ -33,9 +33,11 @@ interface Props {
   fullWidth?: boolean;
   /** Modo compacto para sidebar: selector como píldoras, input full width */
   compact?: boolean;
+  /** Una sola fila, sin etiqueta arriba — encaja en el topbar fijo */
+  inline?: boolean;
 }
 
-export default function SearchBar({ fullWidth = false, compact = false }: Props) {
+export default function SearchBar({ fullWidth = false, compact = false, inline = false }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult | null>(null);
@@ -115,18 +117,18 @@ export default function SearchBar({ fullWidth = false, compact = false }: Props)
     : "Buscar jugador o club...";
 
   return (
-    <div ref={wrapperRef} className={`relative w-full ${fullWidth ? "" : "max-w-xl"}`}>
+    <div ref={wrapperRef} className={`relative w-full ${fullWidth ? "max-w-3xl" : "max-w-xl"}`}>
 
       {/* ── COMPACT mode: pills arriba + input full width ─────────────────────── */}
       {compact ? (
-        <div className="space-y-2">
-          {/* Type pills */}
-          <div className="flex gap-1.5">
+        <div className="space-y-4">
+          <span className={searchBarLabelClass}>Buscar</span>
+          <div className="flex gap-2">
             {TYPE_PILLS.map(({ key, icon: Icon }) => (
               <button
                 key={key}
                 onClick={() => setType(key)}
-                className={`flex items-center justify-center gap-1.5 flex-1 h-8 rounded-lg text-[11px] font-black
+                className={`flex items-center justify-center gap-1.5 flex-1 h-9 rounded-lg text-[11px] font-black
                             transition-all border
                             ${type === key
                               ? "bg-green/15 border-green/30 text-green shadow-[0_0_8px_rgba(0,224,148,0.12)]"
@@ -137,40 +139,92 @@ export default function SearchBar({ fullWidth = false, compact = false }: Props)
             ))}
           </div>
 
-          {/* Input */}
-          <div className="flex items-center gap-2 bg-card border border-white/[0.06] rounded-xl px-3 h-10
+          <div className="flex items-center gap-2.5 bg-card border border-white/[0.06] rounded-xl pl-4 pr-3 h-11 min-h-11
                           focus-within:border-green/40 focus-within:shadow-[0_0_16px_rgba(0,224,148,0.08)]
                           transition-all">
             {loading
               ? <div className="w-3.5 h-3.5 border-2 border-green/30 border-t-green rounded-full animate-spin flex-shrink-0" />
-              : <Search size={14} className="text-muted flex-shrink-0" />}
+              : <Search size={16} className="text-muted flex-shrink-0" />}
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={handleFocus}
               placeholder={placeholder}
-              className="flex-1 bg-transparent text-sm text-primary placeholder:text-muted outline-none min-w-0"
+              className="flex-1 bg-transparent text-sm text-primary placeholder:text-muted outline-none min-w-0 py-2 pl-0.5"
             />
             {query && (
-              <button onClick={() => { setQuery(""); setOpen(true); }} className="flex-shrink-0">
+              <button type="button" onClick={() => { setQuery(""); setOpen(true); }} className="flex-shrink-0">
                 <X size={13} className="text-muted hover:text-secondary transition-colors" />
               </button>
             )}
           </div>
         </div>
-      ) : (
-        /* ── NORMAL mode: select lateral + input ─────────────────────────────── */
-        <div className="flex items-center bg-card border border-white/[0.05] rounded-xl
+      ) : inline ? (
+        /* ── INLINE (topbar): una fila, altura fija ─────────────────────────────── */
+        <div className="flex items-center h-11 min-h-11 max-h-11 bg-card border border-white/[0.05] rounded-xl
                         transition-all duration-200 focus-within:border-green/40
-                        focus-within:shadow-[0_0_20px_rgba(0,224,148,0.1)] overflow-hidden">
-          {/* Type Selector */}
-          <div className="w-[200px] border-r border-white/[0.05] bg-white/[0.02] flex items-center">
+                        focus-within:shadow-[0_0_16px_rgba(0,224,148,0.1)] overflow-hidden">
+          <div className="w-[148px] sm:w-[168px] flex-shrink-0 border-r border-white/[0.05] bg-white/[0.02] h-full flex items-center">
             <Select
               selectedKeys={[type]}
               onChange={(e) => { if (e.target.value) setType(e.target.value as "all" | "players" | "clubs"); }}
               size="sm"
               classNames={{
-                trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-3 h-12 min-h-12 border-none rounded-none w-full",
+                trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-2.5 h-11 min-h-11 max-h-11 border-none rounded-none w-full",
+                value: "text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[#7aab82] group-data-[hover=true]:text-primary leading-none truncate",
+                popoverContent: sharedSelectClasses.popoverContent,
+                innerWrapper: "gap-0.5 min-w-0",
+                selectorIcon: "text-muted flex-shrink-0"
+              }}
+              aria-label="Filtro"
+            >
+              <SelectItem key="all" value="all" classNames={sharedSelectItemClasses}>Todo</SelectItem>
+              <SelectItem key="players" value="players" classNames={sharedSelectItemClasses}>Jugadores</SelectItem>
+              <SelectItem key="clubs" value="clubs" classNames={sharedSelectItemClasses}>Clubes</SelectItem>
+            </Select>
+          </div>
+          <div className="flex-1 min-w-0 h-full flex items-center">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={handleFocus}
+              placeholder={placeholder}
+              startContent={
+                loading
+                  ? <div className="w-3.5 h-3.5 border-2 border-green/30 border-t-green rounded-full animate-spin flex-shrink-0" />
+                  : <Search size={15} className="text-muted flex-shrink-0" />
+              }
+              endContent={
+                query && (
+                  <button type="button" onClick={() => { setQuery(""); setOpen(true); }} className="pr-2 flex-shrink-0">
+                    <X size={14} className="text-muted hover:text-secondary transition-colors" />
+                  </button>
+                )
+              }
+              variant="flat"
+              classNames={{
+                base: "h-11 min-h-11 w-full",
+                mainWrapper: "h-11 min-h-11",
+                inputWrapper: "h-11 min-h-11 max-h-11 bg-transparent border-none shadow-none rounded-none pl-3 pr-1 hover:bg-transparent data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent",
+                input: "text-sm text-primary placeholder:text-secondary"
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        /* ── NORMAL mode: etiqueta + select + input ───────────────────────────── */
+        <div className="space-y-4">
+          <span className={searchBarLabelClass}>Buscar</span>
+          <div className="flex items-stretch bg-card border border-white/[0.05] rounded-xl min-h-11 h-11
+                          transition-all duration-200 focus-within:border-green/40
+                          focus-within:shadow-[0_0_20px_rgba(0,224,148,0.1)] overflow-hidden">
+          <div className="w-[180px] sm:w-[200px] border-r border-white/[0.05] bg-white/[0.02] flex items-stretch flex-shrink-0">
+            <Select
+              selectedKeys={[type]}
+              onChange={(e) => { if (e.target.value) setType(e.target.value as "all" | "players" | "clubs"); }}
+              size="sm"
+              classNames={{
+                trigger: "bg-transparent hover:bg-transparent data-[hover=true]:bg-transparent shadow-none px-3 h-11 min-h-11 border-none rounded-none w-full",
                 value: "text-[11px] font-black uppercase tracking-widest text-[#7aab82] group-data-[hover=true]:text-primary leading-none",
                 popoverContent: sharedSelectClasses.popoverContent,
                 innerWrapper: "gap-1",
@@ -184,8 +238,7 @@ export default function SearchBar({ fullWidth = false, compact = false }: Props)
             </Select>
           </div>
 
-          {/* Input */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 flex items-stretch h-11 min-h-11">
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -193,25 +246,26 @@ export default function SearchBar({ fullWidth = false, compact = false }: Props)
               placeholder={placeholder}
               startContent={
                 loading
-                  ? <div className="w-4 h-4 border-2 border-green/30 border-t-green rounded-full animate-spin flex-shrink-0" />
+                  ? <div className="w-3.5 h-3.5 border-2 border-green/30 border-t-green rounded-full animate-spin flex-shrink-0" />
                   : <Search size={16} className="text-muted flex-shrink-0" />
               }
               endContent={
                 query && (
-                  <button onClick={() => { setQuery(""); setOpen(true); }}>
+                  <button type="button" onClick={() => { setQuery(""); setOpen(true); }} className="pr-2 flex-shrink-0">
                     <X size={15} className="text-muted hover:text-secondary transition-colors" />
                   </button>
                 )
               }
               variant="flat"
               classNames={{
-                base: "h-12",
-                mainWrapper: "h-full",
-                inputWrapper: "h-full bg-transparent border-none shadow-none hover:bg-transparent data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent",
-                input: "text-base text-primary placeholder:text-secondary"
+                base: "h-full min-h-11 w-full",
+                mainWrapper: "h-full min-h-11",
+                inputWrapper: "h-full min-h-11 bg-transparent border-none shadow-none rounded-none pl-3 pr-1 hover:bg-transparent data-[hover=true]:bg-transparent group-data-[focus=true]:bg-transparent",
+                input: "text-sm text-primary placeholder:text-secondary"
               }}
             />
           </div>
+        </div>
         </div>
       )}
 
@@ -230,7 +284,7 @@ export default function SearchBar({ fullWidth = false, compact = false }: Props)
           {/* Players */}
           {showPlayers && (
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted/60
+              <p className="text-2xs font-black uppercase tracking-widest text-muted/60
                             px-4 py-2.5 border-b border-white/[0.03] bg-white/[0.01]">
                 {isSuggesting ? "Jugadores" : "Resultados · Jugadores"}
               </p>
@@ -275,7 +329,7 @@ export default function SearchBar({ fullWidth = false, compact = false }: Props)
           {/* Teams */}
           {showTeams && (
             <div className={(type === "all" && showPlayers) ? "border-t border-white/[0.05]" : ""}>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted/60
+              <p className="text-2xs font-black uppercase tracking-widest text-muted/60
                             px-4 py-2.5 border-b border-white/[0.03] bg-white/[0.01]">
                 {isSuggesting ? "Clubes" : "Resultados · Clubes"}
               </p>

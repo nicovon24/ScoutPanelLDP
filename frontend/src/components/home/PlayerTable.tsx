@@ -63,7 +63,7 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
               {/* Jugador — sticky solo en lg+ (móvil: toda la fila scrollea junta) */}
               <th
                 className="z-10 bg-[#0e0e0e] px-4 sm:px-6 py-3.5 text-left lg:sticky lg:left-0
-                           text-[10px] font-black uppercase tracking-widest text-muted
+                           text-2xs font-black uppercase tracking-widest text-muted
                            border-r border-white/[0.04]"
               >
                 Jugador
@@ -73,7 +73,7 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
                 <th
                   key={col.key}
                   onClick={() => col.sortable && handleSort(col.key)}
-                  className={`px-3 sm:px-5 py-3.5 text-[10px] font-black uppercase tracking-widest text-muted
+                  className={`px-3 sm:px-5 py-3.5 text-2xs font-black uppercase tracking-widest text-muted
                               bg-white/[0.02] whitespace-nowrap select-none
                               ${col.align === "right" ? "text-right" : "text-left"}
                               ${col.sortable ? "cursor-pointer hover:text-primary transition-colors" : ""}
@@ -120,7 +120,7 @@ export default function PlayerTable({ players, loading, sortBy, onSort }: Props)
 
                   {/* Posición */}
                   <td className="px-3 sm:px-5 py-3">
-                    <span className={`badge text-[10px] font-black ${posStyle(p.position)}`}>
+                    <span className={`badge text-2xs font-black ${posStyle(p.position)}`}>
                       {p.position}
                     </span>
                   </td>

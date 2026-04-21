@@ -173,7 +173,7 @@ export default function ComparePage() {
 
       {/* overflow-hidden cortaba el scroll; un solo overflow-x-auto para todo el bloque */}
       <div
-        className="bg-surface border border-border rounded-[14px] w-full min-w-0
+        className="bg-surface border border-border rounded-base w-full min-w-0
                    overflow-x-auto overflow-y-visible overscroll-x-contain
                    [-webkit-overflow-scrolling:touch] [touch-action:pan-x_pan-y]"
       >
@@ -215,7 +215,7 @@ export default function ComparePage() {
                       <button onClick={() => handleClearSlot(i)}
                         className="flex items-center gap-1.5 text-white/40 hover:text-danger hover:bg-danger/10 px-3 py-1 rounded-full transition-all group">
                         <X size={14} strokeWidth={3} />
-                        <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline">Sacar</span>
+                        <span className="text-2xs font-black uppercase tracking-widest hidden group-hover:inline">Sacar</span>
                       </button>
                     </div>
                   )}
@@ -226,7 +226,7 @@ export default function ComparePage() {
                       <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${C.glow} ${C.text}`}>
                         <Search size={18} strokeWidth={2.5} />
                       </div>
-                      <p className="text-[10px] sm:text-[11px] font-extrabold text-muted uppercase tracking-wide">
+                      <p className="text-2xs sm:text-[11px] font-extrabold text-muted uppercase tracking-wide">
                         {i === 0 ? "Primer jugador" : i === 1 ? "Segundo jugador" : "Tercer jugador"}
                       </p>
                       <div className="w-full max-w-[180px] sm:max-w-[220px] z-50">
@@ -253,19 +253,19 @@ export default function ComparePage() {
                         <p className="text-sm sm:text-[16px] font-black tracking-[-0.01em] leading-[1.2] mb-1.5 sm:mb-2">{data.name}</p>
                       </Link>
                       <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2 flex-wrap justify-center">
-                        <span className={`text-[9px] font-black tracking-[0.1em] uppercase px-2 py-[3px] rounded bg-white/[0.04] ${C.text}`}>{data.position}</span>
+                        <span className={`text-2xs font-black tracking-[0.1em] uppercase px-2 py-[3px] rounded bg-white/[0.04] ${C.text}`}>{data.position}</span>
                         {rv && (
                           <div className="flex items-center gap-1 bg-white/[0.06] rounded px-2 py-[3px]">
                             <span className={`text-[12px] sm:text-[13px] font-black ${ratingColor}`}>{rv.toFixed(1)}</span>
-                            <span className="text-[9px] font-bold text-muted uppercase">Rating</span>
+                            <span className="text-2xs font-bold text-muted uppercase">Rating</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-[10px] sm:text-[11px] font-bold text-muted mb-2 sm:mb-3 truncate max-w-full px-2">
+                      <p className="text-2xs sm:text-[11px] font-bold text-muted mb-2 sm:mb-3 truncate max-w-full px-2">
                         {data.team?.name || "Sin Equipo"} · {data.nationality}
                       </p>
                       <div className="inline-flex items-center gap-1.5 bg-white/[0.04] border border-white/5 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5">
-                        <span className="text-[9px] sm:text-[10px] font-black text-secondary">
+                        <span className="text-2xs sm:text-2xs font-black text-secondary">
                           {seasons.find(sz => String(sz.id) === selectedSeasonId)?.name || "—"}
                         </span>
                       </div>
@@ -283,7 +283,7 @@ export default function ComparePage() {
               <div className="w-9 h-9 rounded-full border-[1.5px] border-dashed border-border flex items-center justify-center text-muted group-hover:border-[#00e87a]/40 group-hover:text-[#00e87a] transition-all">
                 <Plus size={16} strokeWidth={2.5} />
               </div>
-              <span className="text-[9px] font-extrabold text-muted tracking-[0.1em] uppercase"
+              <span className="text-2xs font-extrabold text-muted tracking-[0.1em] uppercase"
                 style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>Agregar</span>
             </button>
           )}
@@ -292,12 +292,12 @@ export default function ComparePage() {
         {/* ── COMPARISON CONTENT ────────────────────────────────────────────── */}
         {!bothLoaded ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-            <div className="w-14 h-14 rounded-[14px] bg-surface-2 border border-border flex items-center justify-center text-muted">
+            <div className="w-14 h-14 rounded-base bg-surface-2 border border-border flex items-center justify-center text-muted">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="2" y="3" width="9" height="18" rx="2" /><rect x="13" y="3" width="9" height="18" rx="2" />
               </svg>
             </div>
-            <p className="text-[15px] font-black text-secondary">Seleccioná al menos 2 jugadores</p>
+            <p className="text-md font-black text-secondary">Seleccioná al menos 2 jugadores</p>
             <p className="text-[12px] font-semibold text-muted max-w-[290px] leading-[1.75]">
               Buscá en los slots de arriba para comparar estadísticas. Podés agregar un{" "}
               <strong className="text-secondary font-extrabold">tercer jugador</strong> con el botón +.
@@ -309,7 +309,7 @@ export default function ComparePage() {
             <div className="flex items-center justify-center gap-6 p-3.5 border-b border-border bg-surface-2/50 backdrop-blur-sm sticky top-0 z-30">
               {slots.map((s, i) => (
                 <div key={i} className={`flex items-center gap-1.5 text-[11px] font-extrabold transition-opacity ${s ? "text-secondary opacity-100" : "text-muted opacity-40"}`}>
-                  <div className="w-[10px] h-[10px] rounded-[3px]" style={{ background: COLORS[i].hex }} />
+                  <div className="w-2xs h-2xs rounded-[3px]" style={{ background: COLORS[i].hex }} />
                   {s ? playersData[i]?.name?.split(" ")[0] || "…" : `Slot ${i + 1}`}
                 </div>
               ))}
@@ -356,7 +356,7 @@ export default function ComparePage() {
               />
 
               <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-l from-[#141414] to-transparent
-                              pointer-events-none sm:hidden rounded-br-[14px]" />
+                              pointer-events-none sm:hidden rounded-br-base" />
             </div>
 
             {/* Radar section — full width, no horizontal scroll needed */}
