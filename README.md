@@ -8,7 +8,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y compará jugadore
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | Next.js 14 (App Router) · TypeScript · Tailwind CSS · Zustand · Recharts · React-hot-toast |
+| Frontend | Next.js 14 (App Router) · TypeScript · Tailwind CSS · **HeroUI** (anteriormente NextUI) · Zustand · Recharts · React-hot-toast |
 | Backend | Node.js 20 · Express 4 · Drizzle ORM · Zod |
 | Base de datos | PostgreSQL 16 |
 | Auth | JWT + cookies + bcrypt |
@@ -83,7 +83,7 @@ La arquitectura y las etapas de implementación siguieron un orden claro para no
 1. **Planificación** — alcance MVP, modelo de datos y rutas principales.
 2. **Core** — decisiones de stack, estructura de carpetas (`backend/` + `frontend/`), contratos generales.
 3. **Backend** — Express, Drizzle, `schema.ts`, rutas REST, auth JWT, seed.
-4. **Frontend** — Next.js App Router, listado, ficha, comparador base, integración con API.
+4. **Frontend** — Next.js App Router, listado, ficha, comparador base, integración con API, **HeroUI / NextUI** (`@nextui-org/react`) para inputs, selects y patrones de UI.
 5. **Segunda ola (v2)** — más analítica en backend (`/api/analytics`) y en frontend: reportes, export PDF/Excel, sección **clubes**, refinos de UX y datos en ficha.
 6. **Tests** — Vitest + Supertest en endpoints; unit en lógica y store del front; Playwright para E2E y smoke contra prod.
 7. **Docker y deploy online** — `docker-compose` reproducible; despliegue en Vercel + Render + Supabase.
@@ -96,6 +96,23 @@ En **Cursor** se conectaron **MCPs** (ver también fila en *Decisiones técnicas
 
 - **PostgreSQL** — consultas e inspección contra el esquema real al tocar migraciones, seeds o índices.
 - **Sequential Thinking** — razonamiento por pasos explícitos en tareas que cruzan backend y frontend (ej. orden: API → tipos → UI → tests).
+
+### Bruno (API) en lugar de Postman
+
+Para **probar y documentar** las llamadas HTTP del backend se usó **[Bruno](https://www.usebruno.com/)** en lugar de Postman: principalmente para pruebas del backend.
+
+### Ramas Git del plan de implementación inicial
+
+El desarrollo se ejecutó **por ramas**, alineadas al orden del plan (núcleo → API → front → analítica v2 → tests), con integración hacia `main`. El `docker-compose.yml` de la raíz documenta el stack local y se fue alineando con esas ramas.
+
+| Orden | Rama | Rol aproximado |
+|------:|------|----------------|
+| 1 | `feat/core` | Base del proyecto: stack, estructura `backend/` + `frontend/`, primeros criterios |
+| 2 | `feat/backend-api` | Express, Drizzle, `schema`, rutas REST, auth JWT, seed |
+| 3 | `feat/frontend` | Next.js App Router, listado, ficha, comparador, consumo de API |
+| 4 | `feat/advanced-analytics-v2` | Segunda ola: `/api/analytics`, reportes, export PDF/Excel, clubes, refinos de ficha |
+| 5 | `feat/testing` | Vitest + Supertest (integración backend), unit en front, Playwright E2E |
+| — | `main` | Rama estable (referencia de despliegue) |
 
 ### Cómo se fueron sumando features
 
@@ -282,7 +299,7 @@ app/
     ├── package.json
     └── src/
         ├── app/             # Next.js App Router (rutas = URLs)
-        ├── components/      # layout, home, charts, player, compare, analytics, ui
+        ├── components/      # layout, home, charts, player, compare, analytics, ui (HeroUI / NextUI + Tailwind)
         ├── store/           # Zustand (auth, compare, favoritos, UI)
         ├── lib/             # cliente API (Axios), radar, export PDF/Excel
         ├── hooks/
@@ -400,6 +417,7 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 | ORM | Drizzle (vs Prisma) | Más liviano, TypeScript nativo, sin generación de código. |
 | Estado global | Zustand (vs Redux) | Sin boilerplate, suficiente para la complejidad del panel. |
 | Charts | Recharts (vs Chart.js) | Radar nativo, integración React de primera clase. |
+| UI de componentes | **HeroUI** (antes **NextUI**; paquete npm `@nextui-org/react`) | El proyecto sigue el paquete legacy mientras exista migración oficial a `@heroui/*`. Sobre Tailwind: `Input`, `Select`, `Avatar`, modales y estilos coherentes con menos CSS custom; se combina con clases propias (`sharedStyles`, tema oscuro LDP). |
 | Infra local | Docker Compose | Todo el stack levanta con un comando. |
 | Ratings en DB | JSONB en `player_ratings` | Flexibilidad temporal sin saturar la UI con columnas fijas. |
 | Comparador | `seasonId` explícito por request | Garantiza comparación justa entre jugadores. |
@@ -413,6 +431,7 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 | Tests E2E | Playwright con `@smoke` tags | Happy path en browser real; smoke corre automáticamente post-deploy en prod. |
 | Proceso con IA | **GSD** (*get-shit-done*, TÂCHES) para **Claude Code** | Sistema liviano de meta-prompting, *context engineering* y desarrollo por especificación: mejor orden de trabajo, menos contexto ruidoso y revisiones acotadas al repo. Repo: https://github.com/gsd-build/get-shit-done |
 | Herramientas IDE | **MCPs** — PostgreSQL + Sequential Thinking (Cursor) | Postgres ancla decisiones de esquema y datos; Sequential Thinking desglosa cambios multi-capa antes de tocar código (menos errores de orden entre API, tipos y UI). |
+| Exploración HTTP | **Bruno** (en lugar de Postman) | Colecciones versionables y entornos por URL de API; ver sección *Bruno (API)* en *Flujo de trabajo*. |
 
 ---
 
