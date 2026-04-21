@@ -62,7 +62,7 @@ Esto construye las imágenes y levanta:
 |----------|-----|
 | Frontend (Next.js) | http://localhost:3000 |
 | Backend (Express API) | http://localhost:4000/api |
-| Base de datos (PostgreSQL) | localhost:5432 |
+| Base de datos (PostgreSQL) | localhost:5433 |
 
 Las migraciones de base de datos corren **automáticamente** al iniciar el backend.
 
@@ -71,6 +71,7 @@ Las migraciones de base de datos corren **automáticamente** al iniciar el backe
 Ir a **http://localhost:3000** en el browser.
 
 **Usuario demo:** `demo@gmail.com` / `123456`
+**Usuario demo 2:** `productionuser@gmail.com` / `123456`
 
 ### Comandos útiles
 
@@ -150,7 +151,7 @@ La suite está organizada en **4 capas independientes**. Cada capa testea un niv
 
 Los tests **unit e integration corren antes del deploy** (en tu máquina o en GitHub Actions). Son una red de seguridad pre-deploy, no tienen sentido contra una URL deployada.
 
-Los **E2E** son los únicos que apuntan a una URL real. Están diseñados para correr en 3 entornos sin cambiar el código — solo cambia la variable `BASE_URL`. Los tests marcados con `@smoke` (login, happy path, protección de rutas) son seguros de correr en producción porque usan el usuario demo y no generan datos sucios.
+Los **E2E** son los únicos que apuntan a una URL real. Están diseñados para correr en 3 entornos sin cambiar el código — solo cambia la variable `BASE_URL`. **En local** tenés que tener **frontend y backend corriendo a la vez** (por ejemplo `http://localhost:3000` y `http://localhost:4000`): Playwright abre el navegador contra el front, y las acciones de la app llaman al API; si falta uno de los dos, los tests fallan por timeouts o errores de red. En staging/prod el deploy ya expone ambos servicios. Los tests marcados con `@smoke` (login, happy path, protección de rutas) son seguros de correr en producción porque usan el usuario demo y no generan datos sucios.
 
 ### Correr los tests
 
@@ -199,7 +200,7 @@ app/
 │   ├── Dockerfile
 │   ├── entrypoint.sh        # corre migraciones y luego node dist/index.js
 │   ├── drizzle.config.ts
-│   ├── vitest.config.ts
+│   ├── vitest.config.mts
 │   ├── package.json
 │   └── src/
 │       ├── index.ts         # arranque del servidor HTTP
@@ -219,7 +220,7 @@ app/
 │           └── seed-data/   # datos por entidad (equipos, jugadores, stats…)
 └── frontend/
     ├── Dockerfile
-    ├── vitest.config.ts
+    ├── vitest.config.mts
     ├── package.json
     └── src/
         ├── app/             # Next.js App Router (rutas = URLs)
