@@ -17,6 +17,38 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y compará jugadore
 
 ---
 
+## Enlaces y entornos
+
+### Producción
+
+| Qué | Enlace |
+|-----|--------|
+| **Panel (frontend, Vercel)** | https://scout-panel-ldp.vercel.app |
+| **API (backend, Render)** | La URL exacta va en `NEXT_PUBLIC_API_URL` del proyecto en Vercel (debe terminar en `/api`).
+
+**Usuarios demo** (misma contraseña para todos: **`123456`**):
+
+| Email | Uso típico |
+|-------|------------|
+| `demo@gmail.com` | Prueba manual del panel |
+| `productionuser@gmail.com` | Cuenta extra de demo en el seed |
+
+> La base en producción (Supabase) puede tardar unos segundos en el primer request si el proyecto estaba pausado (free tier). Ver nota al final del README.
+
+### Desarrollo local
+
+| Qué | Enlace / host |
+|-----|----------------|
+| **Frontend (Next.js)** | http://localhost:3000 |
+| **Backend (Express, API)** | http://localhost:4000/api |
+| **Postgres (Docker Compose)** | `localhost:5433` — credenciales por defecto en `docker-compose.yml` / `.env.example` (`POSTGRES_*`) |
+
+Con `npm run dev` en `frontend/` y `backend/` (sin Docker para las apps), la DB puede levantarse solo con `docker compose up db -d` y `DATABASE_URL` apuntando al puerto mapeado.
+
+Las mismas cuentas demo y contraseña **`123456`** aplican tras correr `npm run db:seed` en el backend contra esa base.
+
+---
+
 ## Features implementadas
 
 ### Obligatorias (MVP)
@@ -102,9 +134,7 @@ Las migraciones de base de datos corren **automáticamente** al iniciar el backe
 
 ### Abrir la app
 
-Ir a **http://localhost:3000** en el browser.
-
-**Usuarios demo** (misma contraseña `123456`): `demo@gmail.com` · `apiuser@gmail.com` (usado en E2E) · `productionuser@gmail.com`
+Ir a **http://localhost:3000** en el browser. Usuarios demo y contraseñas: ver la sección **Enlaces y entornos** más arriba.
 
 ### Comandos útiles
 
