@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Shield, Users } from "lucide-react";
+import { ArrowLeft, Globe, Loader2, Shield, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -131,7 +131,11 @@ export default function ClubPage() {
             <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
               {/* Country */}
               <div className="flex items-center gap-1.5 text-sm text-secondary font-semibold">
-                <FlagImg nationality={team.country} size={13} />
+                <FlagImg
+                  nationality={team.country}
+                  size={13}
+                  fallback={<Globe size={13} className="text-muted flex-shrink-0" aria-hidden />}
+                />
                 {team.country}
               </div>
 
@@ -179,19 +183,19 @@ export default function ClubPage() {
                     <table className="w-full border-collapse" style={{ minWidth: 520 }}>
                       <thead>
                         <tr className="border-b border-white/[0.05] bg-white/[0.02]">
-                          <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-muted">
+                          <th className="px-4 py-2.5 text-left text-2xs font-black uppercase tracking-widest text-muted">
                             Jugador
                           </th>
-                          <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-muted">
+                          <th className="px-4 py-2.5 text-left text-2xs font-black uppercase tracking-widest text-muted">
                             Posición
                           </th>
-                          <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-muted hidden sm:table-cell">
+                          <th className="px-4 py-2.5 text-left text-2xs font-black uppercase tracking-widest text-muted hidden sm:table-cell">
                             Edad
                           </th>
-                          <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-widest text-muted">
+                          <th className="px-4 py-2.5 text-right text-2xs font-black uppercase tracking-widest text-muted">
                             Valor
                           </th>
-                          <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-widest text-muted hidden sm:table-cell">
+                          <th className="px-4 py-2.5 text-right text-2xs font-black uppercase tracking-widest text-muted hidden sm:table-cell">
                             Contrato
                           </th>
                         </tr>
@@ -231,8 +235,12 @@ export default function ClubPage() {
                                   </p>
                                   {p.nationality && (
                                     <div className="flex items-center gap-1 mt-0.5">
-                                      <FlagImg nationality={p.nationality} size={10} />
-                                      <span className="text-[10px] text-muted">{p.nationality}</span>
+                                      <FlagImg
+                                        nationality={p.nationality}
+                                        size={10}
+                                        fallback={<Globe size={10} className="text-muted flex-shrink-0" aria-hidden />}
+                                      />
+                                      <span className="text-2xs text-muted">{p.nationality}</span>
                                     </div>
                                   )}
                                 </div>
@@ -241,7 +249,7 @@ export default function ClubPage() {
 
                             {/* Position */}
                             <td className="px-4 py-3">
-                              <span className={`badge text-[10px] ${posStyle(p.position)}`}>
+                              <span className={`badge text-2xs ${posStyle(p.position)}`}>
                                 {p.position}
                               </span>
                             </td>
@@ -265,11 +273,11 @@ export default function ClubPage() {
                             {/* Contract */}
                             <td className="px-4 py-3 text-right hidden sm:table-cell">
                               <div>
-                                <span className="text-[10px] font-bold text-secondary">
+                                <span className="text-2xs font-bold text-secondary">
                                   {contractLabel(p.contractType)}
                                 </span>
                                 {p.contractUntil && (
-                                  <p className="text-[10px] text-muted mt-0.5">
+                                  <p className="text-2xs text-muted mt-0.5">
                                     hasta {p.contractUntil.slice(0, 4)}
                                   </p>
                                 )}

@@ -5,8 +5,11 @@ import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { Input } from "@nextui-org/react";
 import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
+import AppButton from "@/components/ui/AppButton";
+import { authInputClassNames } from "@/components/ui/sharedStyles";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,7 +33,9 @@ export default function LoginPage() {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
         ?? "Credenciales incorrectas";
       toast.error(msg);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,9 +43,7 @@ export default function LoginPage() {
 
       {/* ── Decoración: campo de fútbol ── */}
       <div className="pointer-events-none select-none">
-        {/* Línea del medio */}
         <div className="fixed inset-x-0 top-1/2 h-px bg-green/[0.045]" />
-        {/* Círculo central */}
         <div
           className="fixed rounded-full border border-green/[0.06]"
           style={{ width: 420, height: 420, top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}
@@ -49,7 +52,6 @@ export default function LoginPage() {
           className="fixed rounded-full border border-green/[0.10]"
           style={{ width: 80, height: 80, top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}
         />
-        {/* Números de esquina */}
         <span
           className="fixed top-[-12px] left-[-6px] font-black text-green/[0.035] leading-none"
           style={{ fontSize: 180, fontFamily: "'Nunito Sans', sans-serif", letterSpacing: "-4px" }}
@@ -62,7 +64,6 @@ export default function LoginPage() {
         >
           1
         </span>
-        {/* Grain */}
         <div
           className="fixed inset-0 opacity-[0.35]"
           style={{
@@ -71,18 +72,15 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* ── Orbs de luz ── */}
       <div className="fixed top-[18%] left-[-5%] w-[320px] h-[320px] rounded-full bg-green/[0.07] blur-[90px] pointer-events-none" />
       <div className="fixed bottom-[8%] right-[4%] w-[260px] h-[260px] rounded-full bg-blue/[0.05] blur-[80px] pointer-events-none" />
 
-      {/* ── Contenido ── */}
       <motion.div
         className="relative z-10 w-full max-w-[600px] flex flex-col items-center gap-8"
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       >
-        {/* Brand */}
         <div className="flex flex-col items-center gap-3">
           <svg viewBox="0 0 40 40" className="w-14 h-14 text-green fill-current drop-shadow-[0_0_16px_rgba(0,224,148,0.35)]">
             <path d="M20 2L3 11V29L20 38L37 29V11L20 2ZM33.5 12.8V27.2L20 34.5L6.5 27.2V12.8L20 5.5L33.5 12.8Z" />
@@ -99,7 +97,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Card */}
         <div
           className="w-full rounded-xl p-8 relative overflow-hidden"
           style={{
@@ -108,7 +105,6 @@ export default function LoginPage() {
             backdropFilter: "blur(14px)",
           }}
         >
-          {/* Borde superior gradiente */}
           <div
             className="absolute top-0 left-0 right-0 h-px"
             style={{ background: "linear-gradient(90deg, transparent, rgba(0,224,148,0.35), transparent)" }}
@@ -118,70 +114,63 @@ export default function LoginPage() {
             Iniciar <span className="text-green">sesión</span>
           </h2>
 
-          <form onSubmit={handleLogin} noValidate className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-muted mb-2 uppercase tracking-[1.5px]">
-                Email
-              </label>
-              <input
-                type="email" value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="demo@gmail.com"
-                className="field"
-                autoComplete="email"
-              />
-            </div>
+          <form onSubmit={handleLogin} noValidate className="space-y-8 pt-2">
+            <Input
+              label="Email"
+              labelPlacement="outside"
+              type="email"
+              value={email}
+              onValueChange={setEmail}
+              placeholder="demo@gmail.com"
+              autoComplete="email"
+              variant="bordered"
+              classNames={authInputClassNames}
+            />
 
-            <div>
-              <label className="block text-xs font-semibold text-muted mb-2 uppercase tracking-[1.5px]">
-                Contraseña
-              </label>
-              <div className="relative">
-                <input
-                  type={showPwd ? "text" : "password"} value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="field pr-11"
-                  autoComplete="current-password"
-                />
-                <button
+            <Input
+              label="Contraseña"
+              labelPlacement="outside"
+              type={showPwd ? "text" : "password"}
+              value={password}
+              onValueChange={setPassword}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              variant="bordered"
+              classNames={{ ...authInputClassNames}}
+              endContent={
+                <AppButton
                   type="button"
-                  onClick={() => setShowPwd(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors"
+                  isIconOnly
+                  variant="light"
+                  radius="full"
+                  className="text-muted hover:text-secondary -mr-1"
+                  onPress={() => setShowPwd((v) => !v)}
+                  aria-label={showPwd ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
+                </AppButton>
+              }
+            />
 
-            {/* Botón con shimmer */}
-            <button
+            <AppButton
               type="submit"
+              variant="gradient"
               disabled={loading}
-              className="group relative w-full mt-2 h-12 rounded-lg overflow-hidden border-0 outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-150"
-              style={{
-                background: "linear-gradient(135deg, #00E094, #00C47F)",
-                boxShadow: "0 4px 22px rgba(0,224,148,0.28)",
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 30px rgba(0,224,148,0.40)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 22px rgba(0,224,148,0.28)"; }}
+              className="w-full mt-2 h-12 rounded-xl font-black uppercase tracking-[2.5px] text-sm"
             >
-              {/* Shimmer */}
               <span
-                className="absolute top-0 left-[-100%] w-[60%] h-full group-hover:left-[160%] transition-[left] duration-500"
+                className="absolute top-0 left-[-100%] w-[60%] h-full group-hover:left-[160%] transition-[left] duration-500 pointer-events-none"
                 style={{ background: "rgba(255,255,255,0.18)", transform: "skewX(-20deg)" }}
               />
-              <span className="relative flex items-center justify-center gap-2 text-mainBg font-black uppercase tracking-[2.5px] text-[15px]">
+              <span className="relative flex items-center justify-center gap-2">
                 {loading && <Loader2 size={15} className="animate-spin" />}
                 {loading ? "Ingresando..." : "Ingresar"}
               </span>
-            </button>
+            </AppButton>
           </form>
         </div>
 
-        {/* Footer */}
         <div className="flex flex-col items-center gap-3">
-
           <div className="flex items-center gap-1.5 text-xs text-muted">
             <UserPlus size={12} />
             <span>¿No tenés cuenta?</span>

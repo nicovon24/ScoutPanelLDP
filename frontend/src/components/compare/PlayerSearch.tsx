@@ -87,7 +87,7 @@ export default function PlayerSearch({ onSelect, excludeIds = [] }: Props) {
     <div ref={wrapperRef} className="relative w-full text-left">
       {/* Input */}
       <div
-        className="flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-3 py-[9px]
+        className="flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-3 py-2xs
                    focus-within:border-green/40 focus-within:shadow-[0_0_14px_rgba(0,224,148,0.08)] transition-all"
       >
         {loading
@@ -115,13 +115,13 @@ export default function PlayerSearch({ onSelect, excludeIds = [] }: Props) {
       {open && displayed.length > 0 && (
         <div
           className="absolute left-0 right-0 top-full mt-1
-                     bg-[#141414] border border-white/[0.08] rounded-[10px] shadow-2xl
+                     bg-[#141414] border border-white/[0.08] rounded-2xs shadow-2xl
                      max-h-[260px] overflow-y-auto ring-1 ring-black/60"
           style={{ zIndex: 9999 }}
         >
           {q.length < 2 && (
             <div className="px-3 pt-2.5 pb-1">
-              <span className="text-[9px] font-black uppercase tracking-[0.16em] text-muted/60">
+              <span className="text-2xs font-black uppercase tracking-[0.16em] text-muted/60">
                 Sugeridos
               </span>
             </div>
@@ -135,14 +135,14 @@ export default function PlayerSearch({ onSelect, excludeIds = [] }: Props) {
                          hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors text-left last:border-0"
             >
               <div className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center
-                              text-[10px] font-black text-secondary shrink-0 overflow-hidden">
+                              text-2xs font-black text-secondary shrink-0 overflow-hidden">
                 {p.photoUrl
                   ? <Image src={p.photoUrl} alt={p.name} width={28} height={28} className="object-cover" unoptimized />
                   : <User size={13} className="text-muted" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[12px] font-extrabold text-primary truncate">{p.name}</p>
-                <p className="text-[10px] text-muted truncate">{p.position} · {p.nationality}</p>
+                <p className="text-2xs text-muted truncate">{p.position} · {p.nationality}</p>
               </div>
             </button>
           ))}

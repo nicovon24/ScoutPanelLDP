@@ -52,8 +52,8 @@ export default function Topbar() {
       </div>
 
       {/* Center: Search — oculto en mobile (está en el sidebar) */}
-      <div className="hidden lg:flex justify-center flex-1 min-w-0">
-        <SearchBar />
+      <div className="hidden lg:flex justify-center flex-1 min-w-0 px-2">
+        <SearchBar inline fullWidth />
       </div>
 
       {/* Right actions */}

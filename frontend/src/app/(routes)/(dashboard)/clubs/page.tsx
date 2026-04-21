@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Globe, Loader2, Shield, Users } from "lucide-react";
+import { Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -114,8 +114,7 @@ export default function ClubsPage() {
                 <p className="text-sm font-black text-primary truncate group-hover:text-green transition-colors">
                   {team.name}
                 </p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Globe size={11} className="text-muted flex-shrink-0" />
+                <div className="flex items-center gap-1.5 mt-1 min-w-0">
                   <span className="text-[11px] text-muted truncate">{team.country}</span>
                 </div>
               </div>

@@ -51,9 +51,9 @@ function SingleStatRow({ label, value, pct, accent }: {
   label: string; value: string; pct: number; accent: string;
 }) {
   return (
-    <div className="flex items-center gap-3 py-[10px] border-b border-border/40 last:border-0">
-      <span className="text-[13px] sm:text-[14px] text-secondary font-medium flex-1 min-w-0">{label}</span>
-      <span className="text-[14px] sm:text-[15px] font-black text-primary w-12 sm:w-16 text-right flex-shrink-0">{value}</span>
+    <div className="flex items-center gap-3 py-2xs border-b border-border/40 last:border-0">
+      <span className="text-[13px] sm:text-base text-secondary font-medium flex-1 min-w-0">{label}</span>
+      <span className="text-base sm:text-md font-black text-primary w-12 sm:w-16 text-right flex-shrink-0">{value}</span>
       <div className="hidden sm:block w-[120px] flex-shrink-0 h-[5px] rounded-full bg-input overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700 shadow-[0_0_6px_rgba(255,255,255,0.06)]"
@@ -66,9 +66,9 @@ function SingleStatRow({ label, value, pct, accent }: {
 
 function SingleGeneralRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-[10px] border-b border-border/40 last:border-0">
-      <span className="text-[14px] text-secondary font-medium">{label}</span>
-      <span className="text-[15px] font-black text-primary">{value}</span>
+    <div className="flex items-center justify-between py-2xs border-b border-border/40 last:border-0">
+      <span className="text-base text-secondary font-medium">{label}</span>
+      <span className="text-md font-black text-primary">{value}</span>
     </div>
   );
 }
@@ -116,11 +116,11 @@ function MultiStatRow({
           <Fragment key={i}>
             {i > 0 && <div className="border-r border-border" />}
             <div className="flex items-center gap-2 px-4 py-2.5 border-r border-border last:border-0">
-              <span className={`text-[15px] font-black tracking-[-0.01em] min-w-[38px]
+              <span className={`text-md font-black tracking-[-0.01em] min-w-[38px]
                 ${win ? C.text : isTie ? "text-primary" : "text-primary/60"}`}>
                 {v}{unit}
               </span>
-              {win && <span className={`text-[9px] font-black ${C.text}`}>▲</span>}
+              {win && <span className={`text-2xs font-black ${C.text}`}>▲</span>}
               <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden max-w-[72px] ml-auto">
                 <div className={`h-full rounded-full transition-all duration-500 ${C.bg}`} style={{ width: `${pct}%` }} />
               </div>
@@ -147,7 +147,7 @@ function MultiGeneralRow({
         <Fragment key={i}>
           {i > 0 && <div className="border-r border-border" />}
           <div className="flex items-center px-4 py-2.5 border-r border-border last:border-0">
-            <span className="text-[14px] font-black text-primary">{vals[i] ?? "—"}</span>
+            <span className="text-base font-black text-primary">{vals[i] ?? "—"}</span>
           </div>
         </Fragment>
       ))}

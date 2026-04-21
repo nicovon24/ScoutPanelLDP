@@ -53,7 +53,7 @@ export default function Sidebar() {
         <div className="lg:hidden mb-5 space-y-3">
           {/* Close button */}
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted/50">Menú</span>
+            <span className="text-2xs font-black uppercase tracking-[0.2em] text-muted/50">Menú</span>
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="w-9 h-9 rounded-xl flex items-center justify-center

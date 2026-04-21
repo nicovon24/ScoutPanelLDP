@@ -17,7 +17,7 @@ function SummaryCard({ icon, label, value, sub, accent }: CardProps) {
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-muted">{label}</p>
+        <p className="text-2xs font-black uppercase tracking-[0.14em] text-muted">{label}</p>
         <p className="text-xl font-black text-primary leading-tight">{value}</p>
         {sub && <p className="text-xs text-secondary font-medium">{sub}</p>}
       </div>

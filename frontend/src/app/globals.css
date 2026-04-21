@@ -89,7 +89,7 @@
 
   /* ── Buttons ─────────────────────────── */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-[14px] font-semibold transition-all duration-200 cursor-pointer select-none whitespace-nowrap border-0 outline-none;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-base font-semibold transition-all duration-200 cursor-pointer select-none whitespace-nowrap border-0 outline-none;
   }
 
   .btn-primary {
@@ -202,7 +202,7 @@
 
   /* ── Input / Select ─────────────────── */
   .field {
-    @apply w-full bg-input border border-border rounded-lg text-primary px-4 py-2.5 text-[14px] outline-none transition-colors duration-150 placeholder:text-muted;
+    @apply w-full bg-input border border-border rounded-lg text-primary px-4 py-2.5 text-base outline-none transition-colors duration-150 placeholder:text-muted;
   }
 
   .field:focus {
@@ -210,7 +210,7 @@
   }
 
   .select-field {
-    @apply bg-input border border-border rounded-lg text-primary pl-4 pr-10 py-[9px] text-[14px] outline-none cursor-pointer transition-colors duration-150 appearance-none;
+    @apply bg-input border border-border rounded-lg text-primary pl-4 pr-10 py-2xs text-base outline-none cursor-pointer transition-colors duration-150 appearance-none;
   }
 
   .select-field:focus {
