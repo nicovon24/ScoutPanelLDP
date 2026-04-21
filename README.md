@@ -107,9 +107,19 @@ La suite está organizada en **4 capas independientes**. Cada capa testea un niv
 | Capa | Runner | Archivos | Qué cubre |
 |------|--------|----------|-----------|
 | **Backend — Unit** | Vitest (Node) | `backend/src/__tests__/unit/authSchemas.test.ts` | Schemas Zod (`loginSchema`, `registerSchema`) en aislamiento: validaciones de email, password, nombre, normalización a lowercase |
-| **Backend — Integration** | Vitest + Supertest | `backend/src/__tests__/integration/auth.integration.test.ts` | Endpoints HTTP reales contra la DB: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `GET /health` |
+| **Backend — Integration** | Vitest + Supertest | `backend/src/__tests__/integration/` | 4 archivos · endpoints HTTP reales contra la DB (ver detalle abajo) |
 | **Frontend — Unit** | Vitest (jsdom) | `frontend/src/__tests__/unit/` | 5 archivos · funciones puras y store de Zustand (ver detalle abajo) |
 | **E2E** | Playwright | `e2e/happy-path.spec.ts` | Flujo completo en browser: login → dashboard → detalle de jugador → comparar · protección de rutas · viewport mobile |
+
+### Detalle — Backend Integration
+
+| Archivo | Endpoints cubiertos | Casos representativos |
+|---------|--------------------|-----------------------|
+| `auth.integration.test.ts` | `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` · `GET /health` | 201 registro · 409 email duplicado · 401 credenciales incorrectas · token adulterado · normalización a lowercase |
+| `players.integration.test.ts` | `GET /api/players` · `/nationalities` · `/search` · `/compare` · `/:id` | paginación · filtro por posición · búsqueda · 400 ID inválido · 404 no encontrado · protección JWT |
+| `teams.integration.test.ts` | `GET /api/teams` · `GET /api/teams/:id` | array de equipos con campos obligatorios · roster de jugadores · 400 ID inválido · 404 no encontrado · protección JWT |
+| `shortlist.integration.test.ts` | `GET /api/shortlist` · `/ids` · `POST /:playerId` · `DELETE /:playerId` | agregar/quitar favorito · idempotencia (sin duplicados) · 400 ID inválido · 404 jugador no existe · 404 entrada no encontrada al borrar · protección JWT |
+| `analytics.integration.test.ts` | `GET /api/analytics/leaderboard` · `/summary` | ranking secuencial · todas las métricas válidas · filtro por posición · limit · 400 métrica inválida · 400 seasonId inválido · protección JWT |
 
 ### Detalle — Frontend Unit
 
