@@ -8,12 +8,12 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | Next.js 14 (App Router) · TypeScript · Tailwind CSS · Zustand · Recharts |
+| Frontend | Next.js 14 (App Router) · TypeScript · Tailwind CSS · Zustand · Recharts · React-hot-toast |
 | Backend | Node.js 20 · Express 4 · Drizzle ORM · Zod |
 | Base de datos | PostgreSQL 16 |
-| Auth | JWT + bcrypt |
+| Auth | JWT + cookies + bcrypt |
 | Tests | Vitest · Supertest · Playwright |
-| Deploy | Docker Compose (local) · Vercel + Railway + Supabase (prod) |
+| Deploy | Docker Compose (local) · Vercel + Render + Supabase (prod) |
 
 ---
 
@@ -328,6 +328,27 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 
 ---
 
+## Decisiones técnicas
+
+| Área | Tecnología / Decisión | Razón |
+|---|---|---|
+| ORM | Drizzle (vs Prisma) | Más liviano, TypeScript nativo, sin generación de código. |
+| Estado global | Zustand (vs Redux) | Sin boilerplate, suficiente para la complejidad del panel. |
+| Charts | Recharts (vs Chart.js) | Radar nativo, integración React de primera clase. |
+| Infra local | Docker Compose | Todo el stack levanta con un comando. |
+| Ratings en DB | JSONB en `player_ratings` | Flexibilidad temporal sin saturar la UI con columnas fijas. |
+| Comparador | `seasonId` explícito por request | Garantiza comparación justa entre jugadores. |
+| Lesiones | Tabla separada `player_injuries` | Permite filtrar por temporada y tipo; mantiene `players` limpia. |
+| Panel de filtros | Drawer lateral (portal) + Zustand | Filtros combinados complejos sin romper el layout y que se mantienen en memoria al refrescar; portal resuelve z-index y scroll en mobile. |
+| Skeletons | Componentes custom con shimmer (`framer-motion`) | Replican la forma exacta de cada vista, eliminando layout shift. |
+| Reportes | Leaderboard client-side + export PDF/Excel (SheetJS/jsPDF) | Filtrado instantáneo sin round-trips; dataset por temporada es acotado. |
+| Clubes | Vista dedicada `/clubs` + `/clubs/[id]` | Contexto de plantel completo reutilizando `/api/teams` sin endpoints extra. |
+| Tests unitarios | Vitest — lógica pura (radar, stats, store, utils) | Cubre la lógica crítica (normalización radar, límite comparador) sin montar componentes. |
+| Tests de integración | Vitest + Supertest contra DB real | Valida contrato HTTP real (status, JSON shape, JWT) sin mocks que enmascaren bugs. |
+| Tests E2E | Playwright con `@smoke` tags | Happy path en browser real; smoke corre automáticamente post-deploy en staging/prod. |
+
+---
+
 ## Paleta de colores LDP
 
 | Variable | Hex | Uso |
@@ -350,3 +371,10 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 - **Rate limiting más granular** — por endpoint y por user ID además de por IP
 - **Integración con API real** — Transfermarkt / SofaScore para datos actualizados
 - **Refresh token** — el JWT actual expira en 7 días sin rotación automática
+- **CI/CD** — pipeline que corra lint + tests backend + frontend + e2e en PR; gates de migraciones en deploy.
+
+---
+
+## Nota sobre producción (Supabase gratuito)
+
+La base en producción corre en **Supabase en plan gratuito**. En ese tier el proyecto puede **pausarse** si no recibe tráfico durante un rato; al volver a usarlo, el primer arranque puede tardar **varios minutos** (cold start) hasta que Postgres responda con normalidad. No es un fallo del código: es habitual en el free tier. Para probar con respuesta inmediata, usá el **setup con Docker** (sección más arriba en este README).
