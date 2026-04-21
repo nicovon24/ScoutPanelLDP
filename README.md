@@ -12,7 +12,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 | Backend | Node.js 20 · Express 4 · Drizzle ORM · Zod |
 | Base de datos | PostgreSQL 16 |
 | Auth | JWT + bcrypt |
-| Tests | Vitest · Supertest |
+| Tests | Vitest · Supertest · Playwright |
 | Deploy | Docker Compose (local) · Vercel + Railway + Supabase (prod) |
 
 ---
@@ -23,7 +23,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 - Búsqueda y filtros: por posición, nacionalidad, equipo, rango de edad
 - Comparador side-by-side de hasta 3 jugadores con radar chart overlay y tabla comparativa
 - Schema con 9 tablas relacionales y seed realista con jugadores del fútbol argentino
-- Unit tests en backend y frontend con Vitest
+- Tests en 4 capas: unit (Vitest) en backend y frontend · integration (Vitest + Supertest) para todos los endpoints · E2E (Playwright) con happy path y smoke tests para staging/prod
 - Docker Compose — toda la infraestructura levanta con un comando
 - README con instrucciones, decisiones técnicas y mejoras pendientes
 
@@ -48,7 +48,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 git clone <repo-url> && cd app
 
 # 2. Variables de entorno
-cp doc/env.example .env
+cp .env.example .env
 # (editar .env si querés cambiar credenciales — los defaults funcionan)
 
 # 3. Levantar toda la infraestructura con Docker
@@ -84,7 +84,7 @@ docker-compose up db -d
 
 # 2. Backend
 cd backend
-cp ../doc/env.example .env   # ajustar DATABASE_URL si es necesario
+cp ../.env.example .env   # ajustar DATABASE_URL si es necesario
 npm install
 npm run db:migrate
 npm run db:seed
@@ -109,13 +109,12 @@ La suite está organizada en **4 capas independientes**. Cada capa testea un niv
 | **Backend — Unit** | Vitest (Node) | `backend/src/__tests__/unit/authSchemas.test.ts` | Schemas Zod (`loginSchema`, `registerSchema`) en aislamiento: validaciones de email, password, nombre, normalización a lowercase |
 | **Backend — Integration** | Vitest + Supertest | `backend/src/__tests__/integration/` | 4 archivos · endpoints HTTP reales contra la DB (ver detalle abajo) |
 | **Frontend — Unit** | Vitest (jsdom) | `frontend/src/__tests__/unit/` | 5 archivos · funciones puras y store de Zustand (ver detalle abajo) |
-| **E2E** | Playwright | `e2e/happy-path.spec.ts` | Flujo completo en browser: login → dashboard → detalle de jugador → comparar · protección de rutas · viewport mobile |
+| **E2E** | Playwright | `global-tests/e2e-happy-path.spec.ts` | Flujo completo en browser: login → dashboard → detalle de jugador → comparar · protección de rutas · viewport mobile |
 
 ### Detalle — Backend Integration
 
 | Archivo | Endpoints cubiertos | Casos representativos |
 |---------|--------------------|-----------------------|
-| `auth.integration.test.ts` | `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` · `GET /health` | 201 registro · 409 email duplicado · 401 credenciales incorrectas · token adulterado · normalización a lowercase |
 | `players.integration.test.ts` | `GET /api/players` · `/nationalities` · `/search` · `/compare` · `/:id` | paginación · filtro por posición · búsqueda · 400 ID inválido · 404 no encontrado · protección JWT |
 | `teams.integration.test.ts` | `GET /api/teams` · `GET /api/teams/:id` | array de equipos con campos obligatorios · roster de jugadores · 400 ID inválido · 404 no encontrado · protección JWT |
 | `shortlist.integration.test.ts` | `GET /api/shortlist` · `/ids` · `POST /:playerId` · `DELETE /:playerId` | agregar/quitar favorito · idempotencia (sin duplicados) · 400 ID inválido · 404 jugador no existe · 404 entrada no encontrada al borrar · protección JWT |
@@ -168,19 +167,27 @@ Monorepo **plano** (dos aplicaciones hermanas), no `apps/frontend`. La raíz del
 ```
 app/
 ├── docker-compose.yml       # PostgreSQL + build opcional backend/frontend
-├── .env                     # (no versionado) copiar desde doc/env.example
+├── .env                     # (no versionado) copiar desde .env.example
+├── .env.example             # plantilla con todas las variables documentadas
+├── playwright.config.ts     # configuración E2E (BASE_URL por env var)
+├── e2e/
+│   └── e2e-happy-path.spec.ts   # tests E2E: login, flujo completo, smoke @prod
 ├── README.md
 ├── backend/
 │   ├── Dockerfile
 │   ├── drizzle.config.ts
+│   ├── vitest.config.ts
 │   ├── package.json
 │   └── src/
 │       ├── index.ts         # arranque del servidor HTTP
-│       ├── app.ts           # Express: CORS, montaje de rutas, /health
+│       ├── app.ts           # Express: CORS (multi-origin), montaje de rutas, /health
 │       ├── routes/          # auth, players, teams, seasons, shortlist, analytics
 │       ├── middleware/      # errorHandler global
 │       ├── helpers/         # utilidades (p. ej. generación de carrera)
 │       ├── types/           # tipos TS, ampliación de Express (req.user)
+│       ├── __tests__/
+│       │   ├── unit/        # authSchemas.test.ts — schemas Zod en aislamiento
+│       │   └── integration/ # auth · players · teams · shortlist · analytics
 │       └── db/
 │           ├── schema.ts    # tablas Drizzle (fuente de verdad)
 │           ├── index.ts     # pool + instancia db
@@ -189,14 +196,18 @@ app/
 │           └── seed-data/   # datos por entidad (equipos, jugadores, stats…)
 └── frontend/
     ├── Dockerfile
+    ├── vitest.config.ts
     ├── package.json
     └── src/
         ├── app/             # Next.js App Router (rutas = URLs)
-        ├── components/     # layout, home, charts, player, compare, analytics, ui
-        ├── store/          # Zustand (auth, compare, favoritos, UI)
-        ├── lib/            # cliente API (Axios), radar, export PDF/Excel
+        ├── components/      # layout, home, charts, player, compare, analytics, ui
+        ├── store/           # Zustand (auth, compare, favoritos, UI)
+        ├── lib/             # cliente API (Axios), radar, export PDF/Excel
         ├── hooks/
-        └── types/
+        ├── types/
+        └── __tests__/
+            ├── setup.ts     # mocks globales (next/navigation, next/image, js-cookie)
+            └── unit/        # utils · analyticsConfig · playerStats · radarNorm · useScoutStore
 ```
 
 **Flujo resumido:** el navegador habla solo con Next.js; el frontend llama al backend con `Authorization: Bearer <JWT>` (salvo registro/login). Express valida el token en las rutas bajo `/api` que lo requieren.
@@ -300,3 +311,12 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 | Secundario B | `#7533FC` | Tags de posición, acentos, gradientes |
 | Alerta lesión | `#E53E3E` | Puntos de lesión en line chart |
 | Tipografía | Nunito Sans | Todos los textos |
+
+---
+
+## Qué mejoraría con más tiempo
+
+- **CI/CD con GitHub Actions** — lint + test (unit + integration) + build en cada PR; E2E smoke automático post-deploy
+- **Rate limiting más granular** — por endpoint y por user ID además de por IP
+- **Integración con API real** — Transfermarkt / SofaScore para datos actualizados
+- **Refresh token** — el JWT actual expira en 7 días sin rotación automática
