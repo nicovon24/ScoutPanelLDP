@@ -140,7 +140,14 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
     const passwordHash = await bcrypt.hash(password, 12);
     const [user] = await db.insert(users).values({ email, passwordHash, name }).returning();
 
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     res.status(201).json({
+      token,
       user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (error) {
