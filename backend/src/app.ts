@@ -11,17 +11,27 @@ import { errorHandler } from "./middleware/errorHandler";
 
 export const app = express();
 
+// ALLOWED_ORIGINS: lista de orígenes exactos separados por coma.
+// ALLOWED_ORIGIN_PATTERNS: lista de patrones regex separados por coma (para Vercel preview branches, etc.)
+// Ejemplos:
+//   ALLOWED_ORIGINS=http://localhost:3000,https://scoutpanel.com
+//   ALLOWED_ORIGIN_PATTERNS=https://.*\.vercel\.app,https://scout-panel-.*\.vercel\.app
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : ["http://localhost:3000"];
 
+const allowedOriginPatterns = process.env.ALLOWED_ORIGIN_PATTERNS
+  ? process.env.ALLOWED_ORIGIN_PATTERNS.split(",").map((p) => new RegExp(p.trim()))
+  : [];
+
 app.use(
   cors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Requests sin Origin (Postman, Supertest, curl, server-to-server) siempre pasan
       if (!origin) return callback(null, true);
-      if (allowedOrigins.some((o) => origin === o)) {
-        return callback(null, true);
-      }
+      const exactMatch   = allowedOrigins.some((o) => origin === o);
+      const patternMatch = allowedOriginPatterns.some((re) => re.test(origin));
+      if (exactMatch || patternMatch) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,

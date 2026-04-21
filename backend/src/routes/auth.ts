@@ -31,13 +31,13 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
 };
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
-const registerSchema = z.object({
+export const registerSchema = z.object({
   email: z.string().email("El email no tiene un formato válido").max(255).transform((v) => v.trim().toLowerCase()),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").max(72),
   name: z.string().min(1, "El nombre es requerido").max(100).transform((v) => v.trim()),
 });
 
-const loginSchema = z.object({
+export const loginSchema = z.object({
   email: z.string().email("El email no tiene un formato válido").transform((v) => v.trim().toLowerCase()),
   password: z.string().min(1, "La contraseña es requerida"),
 });

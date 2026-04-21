@@ -35,6 +35,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y comparar jugadore
 - Historial de lesiones por jugador con correlación en line chart de rating
 - Export a PDF y Excel desde la vista **Reportes** (tablas de analytics)
 - Sección clubes para elegir un equipo y ver todos sus jugadores
+- Historial de valores del mercado y mostrar en un gráfico mensual si ese mes estuvo lesionado se muestra en rojo
 
 ---
 
@@ -97,17 +98,66 @@ npm run dev                  # http://localhost:3000
 
 ---
 
-## Correr tests
+## Tests
+
+La suite está organizada en **4 capas independientes**. Cada capa testea un nivel distinto del stack, sin duplicados reales entre ellas.
+
+### Mapa de cobertura
+
+| Capa | Runner | Archivos | Qué cubre |
+|------|--------|----------|-----------|
+| **Backend — Unit** | Vitest (Node) | `backend/src/__tests__/unit/authSchemas.test.ts` | Schemas Zod (`loginSchema`, `registerSchema`) en aislamiento: validaciones de email, password, nombre, normalización a lowercase |
+| **Backend — Integration** | Vitest + Supertest | `backend/src/__tests__/integration/` | 4 archivos · endpoints HTTP reales contra la DB (ver detalle abajo) |
+| **Frontend — Unit** | Vitest (jsdom) | `frontend/src/__tests__/unit/` | 5 archivos · funciones puras y store de Zustand (ver detalle abajo) |
+| **E2E** | Playwright | `e2e/happy-path.spec.ts` | Flujo completo en browser: login → dashboard → detalle de jugador → comparar · protección de rutas · viewport mobile |
+
+### Detalle — Backend Integration
+
+| Archivo | Endpoints cubiertos | Casos representativos |
+|---------|--------------------|-----------------------|
+| `auth.integration.test.ts` | `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` · `GET /health` | 201 registro · 409 email duplicado · 401 credenciales incorrectas · token adulterado · normalización a lowercase |
+| `players.integration.test.ts` | `GET /api/players` · `/nationalities` · `/search` · `/compare` · `/:id` | paginación · filtro por posición · búsqueda · 400 ID inválido · 404 no encontrado · protección JWT |
+| `teams.integration.test.ts` | `GET /api/teams` · `GET /api/teams/:id` | array de equipos con campos obligatorios · roster de jugadores · 400 ID inválido · 404 no encontrado · protección JWT |
+| `shortlist.integration.test.ts` | `GET /api/shortlist` · `/ids` · `POST /:playerId` · `DELETE /:playerId` | agregar/quitar favorito · idempotencia (sin duplicados) · 400 ID inválido · 404 jugador no existe · 404 entrada no encontrada al borrar · protección JWT |
+| `analytics.integration.test.ts` | `GET /api/analytics/leaderboard` · `/summary` | ranking secuencial · todas las métricas válidas · filtro por posición · limit · 400 métrica inválida · 400 seasonId inválido · protección JWT |
+
+### Detalle — Frontend Unit
+
+| Archivo | Módulo testeado | Casos representativos |
+|---------|----------------|-----------------------|
+| `utils.test.ts` | `@/lib/utils` | `calcAge` (null, fecha inválida, hoy = 0) · `posStyle` (GK/CF/CM/CB, lowercase, fallback) · `fmt` (null, decimales, strings) · `fmtPct` · `contractTypeLabel` |
+| `analyticsConfig.test.ts` | `@/lib/analyticsConfig` | `formatCell` con tipos `int`, `pct`, `float`; valores null/NaN/0 |
+| `playerStats.test.ts` | `@/lib/playerStats` | `posGroup` (todas las posiciones + fallback) · `reorderSections` (sección relevante primero según posición) · `fmtNum` · `asNum` · `buildRatingHistory` (modo monthly y yearly) · `buildValueHistory` |
+| `radarNorm.test.ts` | `@/lib/radarNorm` | `buildSingleRadar` (valores 0-100, stats vacías, null/undefined) · `buildMultiRadar` (2 y 3 jugadores, presencia de `playerC`) |
+| `useScoutStore.test.ts` | `@/store/useScoutStore` | Favoritos (add/remove/isFavorite, sin duplicados) · Comparación (cap 3, removeFromCompare, clearCompare, isInCompare) · `setSearchFilters` (merge parcial) |
+
+Los tests **unit e integration corren antes del deploy** (en tu máquina o en GitHub Actions). Son una red de seguridad pre-deploy, no tienen sentido contra una URL deployada.
+
+Los **E2E** son los únicos que apuntan a una URL real. Están diseñados para correr en 3 entornos sin cambiar el código — solo cambia la variable `BASE_URL`. Los tests marcados con `@smoke` (login, happy path, protección de rutas) son seguros de correr en producción porque usan el usuario demo y no generan datos sucios.
+
+### Correr los tests
 
 ```bash
-# Backend (unit tests)
+# Backend — unit + integration (requiere DB corriendo)
 cd backend && npm test
 
-# Frontend (unit tests) — requiere instalar dependencias de test
-cd frontend
-npm install -D vitest @vitejs/plugin-react @testing-library/jest-dom jsdom
-npm test
+# Backend — solo unit (sin DB)
+cd backend && npx vitest run src/__tests__/unit
+
+# Frontend — unit
+cd frontend && npm test
+
+# E2E — local (requiere frontend :3000 y backend :4000 corriendo)
+npm run test:e2e               # headless
+npm run test:e2e:headed        # con browser visible
+npm run test:e2e:ui            # UI interactiva de Playwright
+
+# E2E — staging y producción (solo tests @smoke)
+npm run test:e2e:staging
+npm run test:e2e:prod
 ```
+
+> **Nota:** los tests de integración del backend usan la DB real definida en `DATABASE_URL`. Crean usuarios con emails únicos (timestamp) y los limpian en `afterAll`, por lo que no requieren una DB de test separada.
 
 ---
 
@@ -250,13 +300,3 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 | Secundario B | `#7533FC` | Tags de posición, acentos, gradientes |
 | Alerta lesión | `#E53E3E` | Puntos de lesión en line chart |
 | Tipografía | Nunito Sans | Todos los textos |
-
----
-
-## Qué mejoraría con más tiempo
-
-- **Rate limiting más granular** — por endpoint y por user ID además de por IP
-- **Integración con API real** — Transfermarkt / SofaScore para datos actualizados
-- **CI/CD con GitHub Actions** — lint + test + build en cada PR
-- **Más métricas** — xA acumulado, duelos 1v1 detallados, heatmaps de posición
-- **WebSockets** — notificaciones en tiempo real para cambios en shortlist compartida
