@@ -7,6 +7,7 @@ import { Select, SelectItem } from "@nextui-org/react";
 import api from "@/lib/api";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 import { POSITION_GROUPS, POSITION_GROUP_KEYS } from "@/lib/analyticsConfig";
+import AppButton from "@/components/ui/AppButton";
 import LeagueTable from "@/components/analytics/LeagueTable";
 import LeagueSummaryCards from "@/components/analytics/LeagueSummaryCards";
 import ExportMenu from "@/components/analytics/ExportMenu";
@@ -21,16 +22,18 @@ import type {
 // ── Position group tab ────────────────────────────────────────────────────────
 function GroupTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-2xs sm:text-xs font-black uppercase tracking-wider
-                  transition-all whitespace-nowrap
+    <AppButton
+      type="button"
+      variant="light"
+      disableRipple
+      onPress={onClick}
+      className={`!min-h-0 h-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-2xs sm:text-xs font-black uppercase tracking-wider whitespace-nowrap bg-transparent
                   ${active
           ? "bg-green/15 text-green border border-green/25 shadow-[0_0_12px_rgba(0,224,148,0.1)]"
           : "text-muted hover:text-secondary hover:bg-white/[0.03] border border-transparent"}`}
     >
       {label}
-    </button>
+    </AppButton>
   );
 }
 
@@ -215,12 +218,17 @@ export default function AnalyticsPage() {
                          focus:outline-none focus:border-green/40 focus:bg-input/80 transition-all"
             />
             {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-primary transition-colors"
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 !min-w-0 w-7 h-7 min-w-7 bg-transparent text-muted hover:text-primary"
+                aria-label="Limpiar búsqueda"
               >
                 <X size={13} />
-              </button>
+              </AppButton>
             )}
           </div>
 
@@ -269,15 +277,18 @@ export default function AnalyticsPage() {
               {filteredEntries.length} jugadores · página {page} de {totalPages}
             </p>
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10
-                           text-muted hover:text-primary hover:border-white/20 disabled:opacity-30
-                           disabled:cursor-not-allowed transition-all"
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => setPage((p) => Math.max(1, p - 1))}
+                isDisabled={page === 1}
+                className="w-8 h-8 min-w-8 rounded-lg border border-white/10 text-muted hover:text-primary hover:border-white/20 disabled:opacity-30 bg-transparent"
+                aria-label="Página anterior"
               >
                 <ChevronLeft size={14} />
-              </button>
+              </AppButton>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
@@ -290,28 +301,34 @@ export default function AnalyticsPage() {
                   p === "…" ? (
                     <span key={`ellipsis-${i}`} className="w-8 text-center text-muted text-xs">…</span>
                   ) : (
-                    <button
+                    <AppButton
                       key={p}
-                      onClick={() => setPage(p as number)}
-                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border
+                      type="button"
+                      variant="light"
+                      disableRipple
+                      onPress={() => setPage(p as number)}
+                      className={`!min-h-8 w-8 h-8 min-w-8 rounded-lg text-xs font-bold border bg-transparent
                                   ${page === p
                           ? "bg-green/15 text-green border-green/25"
                           : "text-muted border-white/10 hover:text-primary hover:border-white/20"}`}
                     >
                       {p}
-                    </button>
+                    </AppButton>
                   )
                 )}
 
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10
-                           text-muted hover:text-primary hover:border-white/20 disabled:opacity-30
-                           disabled:cursor-not-allowed transition-all"
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                isDisabled={page === totalPages}
+                className="w-8 h-8 min-w-8 rounded-lg border border-white/10 text-muted hover:text-primary hover:border-white/20 disabled:opacity-30 bg-transparent"
+                aria-label="Página siguiente"
               >
                 <ChevronRight size={14} />
-              </button>
+              </AppButton>
             </div>
           </div>
         )}

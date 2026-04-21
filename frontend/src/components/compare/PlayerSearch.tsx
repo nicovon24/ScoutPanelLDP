@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Loader2, X, Search, User } from "lucide-react";
 import Image from "next/image";
 import api from "@/lib/api";
+import AppButton from "@/components/ui/AppButton";
 import type { SearchHit } from "@/types";
 
 interface Props {
@@ -87,7 +88,7 @@ export default function PlayerSearch({ onSelect, excludeIds = [] }: Props) {
     <div ref={wrapperRef} className="relative w-full text-left">
       {/* Input */}
       <div
-        className="flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-3 py-2xs
+        className="flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-lg px-3 py-2.5 sm:py-3
                    focus-within:border-green/40 focus-within:shadow-[0_0_14px_rgba(0,224,148,0.08)] transition-all"
       >
         {loading
@@ -102,12 +103,17 @@ export default function PlayerSearch({ onSelect, excludeIds = [] }: Props) {
           className="flex-1 bg-transparent text-[12px] font-bold text-primary placeholder:text-muted outline-none min-w-0"
         />
         {q && (
-          <button
-            onClick={() => { setQ(""); setRes([]); inputRef.current?.focus(); }}
-            className="flex-shrink-0"
+          <AppButton
+            type="button"
+            isIconOnly
+            variant="light"
+            disableRipple
+            onPress={() => { setQ(""); setRes([]); inputRef.current?.focus(); }}
+            className="!min-w-0 w-7 h-7 min-w-7 flex-shrink-0 bg-transparent text-muted hover:text-secondary"
+            aria-label="Limpiar búsqueda"
           >
-            <X size={12} className="text-muted hover:text-secondary transition-colors" />
-          </button>
+            <X size={12} />
+          </AppButton>
         )}
       </div>
 
@@ -127,12 +133,15 @@ export default function PlayerSearch({ onSelect, excludeIds = [] }: Props) {
             </div>
           )}
           {displayed.map(p => (
-            <button
+            <AppButton
               key={p.id}
-              onMouseDown={e => e.preventDefault()}  /* evita blur del input */
-              onClick={() => handleSelect(p)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.05]
-                         hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors text-left last:border-0"
+              type="button"
+              variant="light"
+              disableRipple
+              onMouseDown={(e) => e.preventDefault()}
+              onPress={() => handleSelect(p)}
+              className="!rounded-none w-full !min-h-0 h-auto justify-start gap-2 px-3 py-2.5 border-b border-white/[0.05]
+                         hover:bg-white/[0.05] active:bg-white/[0.08] text-left last:border-0 bg-transparent font-normal"
             >
               <div className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center
                               text-2xs font-black text-secondary shrink-0 overflow-hidden">
@@ -144,7 +153,7 @@ export default function PlayerSearch({ onSelect, excludeIds = [] }: Props) {
                 <p className="text-[12px] font-extrabold text-primary truncate">{p.name}</p>
                 <p className="text-2xs text-muted truncate">{p.position} · {p.nationality}</p>
               </div>
-            </button>
+            </AppButton>
           ))}
         </div>
       )}

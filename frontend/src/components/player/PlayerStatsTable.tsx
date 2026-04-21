@@ -1,14 +1,17 @@
 "use client";
 import { Fragment } from "react";
 import { asNum, SECTIONS, reorderSections } from "@/lib/playerStats";
-import type { Player, SectionDef } from "@/types";
+import type { Player, PlayerStat, SectionDef } from "@/types";
 
 // ── Public types ───────────────────────────────────────────────────────────────
 export interface PlayerEntry {
   player: Player;
-  /** Indexed by stat key — kept as Record to allow dynamic key access (r.k) */
-  stat: Record<string, unknown>;
+  stat: PlayerStat;
   color?: { text: string; bg: string; hex: string };
+}
+
+function statAsBag(stat: PlayerStat): Record<string, unknown> {
+  return stat as Record<string, unknown>;
 }
 
 interface Props {
@@ -23,6 +26,13 @@ interface Props {
   onlySections?: string[];
   /** Exclude these section labels */
   excludeSections?: string[];
+  /**
+   * Comparación: mismo `gridTemplateColumns` que el header (slots + columna “+” opcional).
+   * Si no se pasa, se calcula solo con `entries.length`.
+   */
+  compareGridTemplateColumns?: string;
+  /** Tracks vacíos al final del grid (p. ej. 1 para la columna del botón Agregar). */
+  compareTrailingEmptyTracks?: number;
 }
 
 // ── Layout constants (matching compare page) ───────────────────────────────────
@@ -88,11 +98,12 @@ function MultiSectionHeader({ label, colsStyle }: { label: string; colsStyle: st
 }
 
 function MultiStatRow({
-  label, vals, nums, colors, unit = "", higherIsBetter = true, colsStyle, count,
+  label, vals, nums, colors, unit = "", higherIsBetter = true, colsStyle, count, trailingEmptyTracks = 0,
 }: {
   label: string; vals: string[]; nums: number[];
   colors: typeof DEFAULT_COLORS; unit?: string;
   higherIsBetter?: boolean; colsStyle: string; count: number;
+  trailingEmptyTracks?: number;
 }) {
   const maxAbs = Math.max(...nums, 0.001);
   const winVal = higherIsBetter ? Math.max(...nums) : Math.min(...nums);
@@ -115,7 +126,11 @@ function MultiStatRow({
         return (
           <Fragment key={i}>
             {i > 0 && <div className="border-r border-border" />}
-            <div className="flex items-center gap-2 px-4 py-2.5 border-r border-border last:border-0">
+            <div
+              className={`flex items-center gap-2 px-4 py-2.5 border-r border-border ${
+                trailingEmptyTracks === 0 && i === count - 1 ? "last:border-0" : ""
+              }`}
+            >
               <span className={`text-md font-black tracking-[-0.01em] min-w-[38px]
                 ${win ? C.text : isTie ? "text-primary" : "text-primary/60"}`}>
                 {v}{unit}
@@ -128,13 +143,22 @@ function MultiStatRow({
           </Fragment>
         );
       })}
+      {Array.from({ length: trailingEmptyTracks }).map((_, ti) => (
+        <div
+          key={`trail-stat-${ti}`}
+          className={`border-r border-border bg-transparent min-w-0 ${
+            ti === trailingEmptyTracks - 1 ? "last:border-0" : ""
+          }`}
+          aria-hidden
+        />
+      ))}
     </div>
   );
 }
 
 function MultiGeneralRow({
-  label, vals, colsStyle, count,
-}: { label: string; vals: string[]; colsStyle: string; count: number }) {
+  label, vals, colsStyle, count, trailingEmptyTracks = 0,
+}: { label: string; vals: string[]; colsStyle: string; count: number; trailingEmptyTracks?: number }) {
   return (
     <div
       className="grid border-t border-border hover:bg-white/[0.016] transition-colors"
@@ -146,10 +170,21 @@ function MultiGeneralRow({
       {Array.from({ length: count }).map((_, i) => (
         <Fragment key={i}>
           {i > 0 && <div className="border-r border-border" />}
-          <div className="flex items-center px-4 py-2.5 border-r border-border last:border-0">
+          <div
+            className={`flex items-center px-4 py-2.5 border-r border-border ${
+              trailingEmptyTracks === 0 && i === count - 1 ? "last:border-0" : ""
+            }`}
+          >
             <span className="text-base font-black text-primary">{vals[i] ?? "—"}</span>
           </div>
         </Fragment>
+      ))}
+      {Array.from({ length: trailingEmptyTracks }).map((_, ti) => (
+        <div
+          key={`trail-gen-${ti}`}
+          className={`border-r border-border bg-transparent min-w-0 ${ti === trailingEmptyTracks - 1 ? "last:border-0" : ""}`}
+          aria-hidden
+        />
       ))}
     </div>
   );
@@ -159,8 +194,9 @@ function MultiGeneralRow({
 function SingleSections({ sections, player, stat }: {
   sections: SectionDef[];
   player: Player;
-  stat: Record<string, unknown>;
+  stat: PlayerStat;
 }) {
+  const bag = statAsBag(stat);
   return (
     <>
       {sections.map((sec, sIdx) => (
@@ -171,8 +207,8 @@ function SingleSections({ sections, player, stat }: {
               <SingleGeneralRow key={rIdx} label={r.l} value={r.fn(player, stat)} />
             ))
             : sec.rows.map((r, rIdx) => {
-              const raw     = r.compute ? r.compute(stat) : asNum(stat[r.k]);
-              const display = raw === 0 && stat[r.k] == null ? "—"
+              const raw     = r.compute ? r.compute(bag) : asNum(bag[r.k]);
+              const display = raw === 0 && bag[r.k] == null ? "—"
                 : (r.d != null && r.d > 0 ? raw.toFixed(r.d) : String(Math.round(raw))) + (r.u ?? "");
               const pct     = Math.min(100, (raw / r.max) * 100);
               return (
@@ -194,6 +230,8 @@ export default function PlayerStatsTable({
   columns = 1,
   onlySections,
   excludeSections,
+  compareGridTemplateColumns,
+  compareTrailingEmptyTracks = 0,
 }: Props) {
   const isSingle = entries.length === 1;
   const count    = entries.length;
@@ -262,7 +300,8 @@ export default function PlayerStatsTable({
   const playerColsTemplate = Array.from({ length: count })
     .map((_, i) => (i === 0 ? "minmax(140px, 1fr)" : `${VS_W}px minmax(140px, 1fr)`))
     .join(" ");
-  const colsStyle = `${LABEL_W}px ${playerColsTemplate}`;
+  const colsStyle = compareGridTemplateColumns ?? `${LABEL_W}px ${playerColsTemplate}`;
+  const trailing = compareTrailingEmptyTracks;
 
   return (
     <div>
@@ -277,6 +316,7 @@ export default function PlayerStatsTable({
                 vals={entries.map(e => r.fn(e.player, e.stat))}
                 colsStyle={colsStyle}
                 count={count}
+                trailingEmptyTracks={trailing}
               />
             ))
             : sec.rows.map((r, rIdx) => (
@@ -284,15 +324,20 @@ export default function PlayerStatsTable({
                 key={rIdx}
                 label={r.l}
                 vals={entries.map(e => {
-                  const v = r.compute ? r.compute(e.stat) : asNum(e.stat[r.k]);
-                  if (v === 0 && e.stat[r.k] == null) return "—";
+                  const b = statAsBag(e.stat);
+                  const v = r.compute ? r.compute(b) : asNum(b[r.k]);
+                  if (v === 0 && b[r.k] == null) return "—";
                   return (r.d != null && r.d > 0 ? v.toFixed(r.d) : String(Math.round(v))) + (r.u ?? "");
                 })}
-                nums={entries.map(e => r.compute ? r.compute(e.stat) : asNum(e.stat[r.k]))}
+                nums={entries.map(e => {
+                  const b = statAsBag(e.stat);
+                  return r.compute ? r.compute(b) : asNum(b[r.k]);
+                })}
                 colors={colors}
                 higherIsBetter={!r.lower}
                 colsStyle={colsStyle}
                 count={count}
+                trailingEmptyTracks={trailing}
               />
             ))
           }
@@ -308,4 +353,9 @@ export function getCompareColsStyle(slotCount: number): string {
     .map((_, i) => (i === 0 ? "minmax(140px, 1fr)" : `${VS_W}px minmax(140px, 1fr)`))
     .join(" ");
   return `${LABEL_W}px ${playerColsTemplate}`;
+}
+
+/** Misma plantilla que el header de comparar (slots + columna opcional del botón +). */
+export function getCompareLayoutColsStyle(slotCount: number, includeAddColumn: boolean): string {
+  return `${getCompareColsStyle(slotCount)}${includeAddColumn ? " 64px" : ""}`;
 }

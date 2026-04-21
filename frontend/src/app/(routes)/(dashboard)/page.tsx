@@ -44,15 +44,18 @@ function HomeContent() {
     setPage(1);
   }, [_hasHydrated, setSearchFilters]);
 
-  // Debounced search — only passes the changed field, no stale closure risk
+  // Preventing double fetch when _hasHydrated flips to true on mount.
+  // Debounced search — skips the update if q hasn't actually changed (avoids
+  // a spurious second fetch when _hasHydrated flips to true on mount).
   useEffect(() => {
     if (!_hasHydrated) return;
+    if (inputQ === (searchFilters?.q ?? "")) return;
     const t = setTimeout(() => {
       setSearchFilters({ q: inputQ });
       setPage(1);
     }, 500);
     return () => clearTimeout(t);
-  }, [inputQ, _hasHydrated, setSearchFilters]);
+  }, [inputQ, _hasHydrated, setSearchFilters, searchFilters?.q]);
 
   // Initial load
   useEffect(() => {
@@ -150,13 +153,7 @@ function HomeContent() {
               variant="light"
               disableRipple
               onPress={() => {
-                const resetState = {
-                  q: "", position: "", teamId: "",
-                  ageMin: "", ageMax: "",
-                  minRating: "6.0", marketValueMin: "", marketValueMax: "",
-                  nationality: "", contractType: "", sortBy: "rating_desc"
-                };
-                updateFiltersAndStore(resetState);
+                updateFiltersAndStore({ ...DEFAULT_FILTERS });
                 setInputQ("");
               }}
               className="h-9 w-9 min-w-9 sm:h-11 sm:w-11 sm:min-w-11 rounded-xl bg-[#e05a5a]/10 text-[#e05a5a] border border-[#e05a5a]/25 hover:bg-[#e05a5a]/20"
@@ -167,7 +164,8 @@ function HomeContent() {
           )}
 
           <AppButton
-            onClick={() => setFilterPanelOpen(true)}
+            type="button"
+            onPress={() => setFilterPanelOpen(true)}
             variant={activeFilterCount > 0 ? "primary" : "secondary"}
             className="h-9 sm:h-11 px-3 sm:px-5 gap-1.5 sm:gap-2 text-sm"
           >
@@ -278,10 +276,20 @@ function HomeContent() {
           {filters.position && filters.position.split(",").map(pos => (
             <div key={pos} className="flex items-center gap-1.5 bg-[#34d35a]/10 border border-[#34d35a]/20 px-2 py-1 rounded-lg">
               <span className="text-2xs font-black text-green uppercase">{pos}</span>
-              <button onClick={() => {
-                const arr = filters.position.split(",").filter(p => p !== pos);
-                updateFiltersAndStore({ position: arr.join(",") });
-              }} className="text-green/60 hover:text-green"><X size={10} strokeWidth={3} /></button>
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => {
+                  const arr = filters.position.split(",").filter(p => p !== pos);
+                  updateFiltersAndStore({ position: arr.join(",") });
+                }}
+                className="!min-w-0 w-5 h-5 min-w-5 text-green/60 hover:text-green"
+                aria-label={`Quitar filtro ${pos}`}
+              >
+                <X size={10} strokeWidth={3} />
+              </AppButton>
             </div>
           ))}
 
@@ -290,10 +298,20 @@ function HomeContent() {
             return (
               <div key={tid} className="flex items-center gap-1.5 bg-[#34d35a]/10 border border-[#34d35a]/20 px-2 py-1 rounded-lg">
                 <span className="text-2xs font-black text-green uppercase">{teamName}</span>
-                <button onClick={() => {
-                  const arr = filters.teamId.split(",").filter(p => p !== tid);
-                  updateFiltersAndStore({ teamId: arr.join(",") });
-                }} className="text-green/60 hover:text-green"><X size={10} strokeWidth={3} /></button>
+                <AppButton
+                  type="button"
+                  isIconOnly
+                  variant="light"
+                  disableRipple
+                  onPress={() => {
+                    const arr = filters.teamId.split(",").filter(p => p !== tid);
+                    updateFiltersAndStore({ teamId: arr.join(",") });
+                  }}
+                  className="!min-w-0 w-5 h-5 min-w-5 text-green/60 hover:text-green"
+                  aria-label="Quitar club del filtro"
+                >
+                  <X size={10} strokeWidth={3} />
+                </AppButton>
               </div>
             );
           })}
@@ -301,7 +319,17 @@ function HomeContent() {
           {(filters.ageMin || filters.ageMax) && (
             <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded-lg">
               <span className="text-2xs font-black text-purple-400 uppercase">Edad: {filters.ageMin || "0"}-{filters.ageMax || "50"}</span>
-              <button onClick={() => updateFiltersAndStore({ ageMin: "", ageMax: "" })} className="text-purple-400/60 hover:text-purple-400"><X size={10} strokeWidth={3} /></button>
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => updateFiltersAndStore({ ageMin: "", ageMax: "" })}
+                className="!min-w-0 w-5 h-5 min-w-5 text-purple-400/60 hover:text-purple-400"
+                aria-label="Quitar filtro de edad"
+              >
+                <X size={10} strokeWidth={3} />
+              </AppButton>
             </div>
           )}
 
@@ -310,14 +338,34 @@ function HomeContent() {
               <span className="text-2xs font-black text-orange-400 uppercase">
                 {filters.marketValueMin ? `${filters.marketValueMin}M€` : "0"} — {filters.marketValueMax ? `${filters.marketValueMax}M€` : "∞"}
               </span>
-              <button onClick={() => updateFiltersAndStore({ marketValueMin: "", marketValueMax: "" })} className="text-orange-400/60 hover:text-orange-400"><X size={10} strokeWidth={3} /></button>
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => updateFiltersAndStore({ marketValueMin: "", marketValueMax: "" })}
+                className="!min-w-0 w-5 h-5 min-w-5 text-orange-400/60 hover:text-orange-400"
+                aria-label="Quitar filtro de presupuesto"
+              >
+                <X size={10} strokeWidth={3} />
+              </AppButton>
             </div>
           )}
 
           {filters.nationality && (
             <div className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-lg">
               <span className="text-2xs font-black text-cyan-400 uppercase">{filters.nationality}</span>
-              <button onClick={() => updateFiltersAndStore({ nationality: "" })} className="text-cyan-400/60 hover:text-cyan-400"><X size={10} strokeWidth={3} /></button>
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => updateFiltersAndStore({ nationality: "" })}
+                className="!min-w-0 w-5 h-5 min-w-5 text-cyan-400/60 hover:text-cyan-400"
+                aria-label="Quitar filtro de nacionalidad"
+              >
+                <X size={10} strokeWidth={3} />
+              </AppButton>
             </div>
           )}
 
@@ -326,29 +374,36 @@ function HomeContent() {
             return (
               <div key={ct} className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/20 px-2 py-1 rounded-lg">
                 <span className="text-2xs font-black text-violet-400 uppercase">{label}</span>
-                <button onClick={() => {
-                  const arr = filters.contractType.split(",").filter(v => v !== ct);
-                  updateFiltersAndStore({ contractType: arr.join(",") });
-                }} className="text-violet-400/60 hover:text-violet-400"><X size={10} strokeWidth={3} /></button>
+                <AppButton
+                  type="button"
+                  isIconOnly
+                  variant="light"
+                  disableRipple
+                  onPress={() => {
+                    const arr = filters.contractType.split(",").filter(v => v !== ct);
+                    updateFiltersAndStore({ contractType: arr.join(",") });
+                  }}
+                  className="!min-w-0 w-5 h-5 min-w-5 text-violet-400/60 hover:text-violet-400"
+                  aria-label="Quitar tipo de contrato"
+                >
+                  <X size={10} strokeWidth={3} />
+                </AppButton>
               </div>
             );
           })}
 
-          <button
-            onClick={() => {
-              const resetState = {
-                q: "", position: "", teamId: "",
-                ageMin: "", ageMax: "",
-                minRating: "6.0", marketValueMin: "", marketValueMax: "",
-                nationality: "", contractType: "", sortBy: "rating_desc"
-              };
-              updateFiltersAndStore(resetState);
+          <AppButton
+            type="button"
+            variant="light"
+            disableRipple
+            onPress={() => {
+              updateFiltersAndStore({ ...DEFAULT_FILTERS });
               setInputQ("");
             }}
-            className="text-2xs font-black text-danger uppercase tracking-[0.1em] hover:underline ml-2"
+            className="!min-h-0 h-auto py-0 px-0 ml-2 text-2xs font-black text-danger uppercase tracking-[0.1em] hover:underline bg-transparent"
           >
             Limpiar todo
-          </button>
+          </AppButton>
         </div>
       )}
 
@@ -413,13 +468,7 @@ function HomeContent() {
         filters={filters}
         setFilters={(n) => updateFiltersAndStore(n)}
         onReset={() => {
-          const resetState = {
-            q: "", position: "", teamId: "",
-            ageMin: "", ageMax: "",
-            minRating: "6.0", marketValueMin: "", marketValueMax: "",
-            nationality: "", contractType: "", sortBy: "rating_desc"
-          };
-          updateFiltersAndStore(resetState);
+          updateFiltersAndStore({ ...DEFAULT_FILTERS });
           setInputQ("");
         }}
       />

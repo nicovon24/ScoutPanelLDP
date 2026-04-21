@@ -42,8 +42,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/register", { email, password, name });
-      setAuth(data.token, data.user);
-      toast.success("¡Cuenta creada! Bienvenido/a.");
+      //setAuth(data.token, data.user);
+      toast.success("¡Cuenta creada! Bienvenido.");
       router.replace("/");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error

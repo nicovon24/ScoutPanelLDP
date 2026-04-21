@@ -5,11 +5,13 @@ import { Home, BarChart2, Star, TrendingUp, LogOut, Menu, ChevronLeft, X, Shield
 import { useScoutStore } from "@/store/useScoutStore";
 import LinkNext from "next/link";
 import SearchBar from "@/components/ui/SearchBar";
+import AppButton from "@/components/ui/AppButton";
+import api from "@/lib/api";
 
 const NAV_ITEMS = [
   { href: "/",          icon: Home,        label: "Jugadores" },
   { href: "/compare",   icon: BarChart2,   label: "Comparar" },
-  { href: "/favorites", icon: Star,        label: "Favoritos" },
+  { href: "/shortlist", icon: Star,        label: "Favoritos" },
   { href: "/analytics", icon: TrendingUp,  label: "Reportes" },
   { href: "/clubs",     icon: Shield,      label: "Clubes" },
 ];
@@ -19,10 +21,10 @@ export default function Sidebar() {
   const {
     compareList, clearAuth,
     sidebarExpanded, setSidebarExpanded,
-    token, shortlistIds, favorites,
+    token, user, shortlistIds, favorites,
     mobileMenuOpen, setMobileMenuOpen,
   } = useScoutStore();
-  const favCount = token ? shortlistIds.length : favorites.length;
+  const favCount = (token || user) ? shortlistIds.length : favorites.length;
 
   // Cerrar el drawer mobile al cambiar de ruta (ej: navegación desde el SearchBar)
   useEffect(() => {
@@ -54,13 +56,17 @@ export default function Sidebar() {
           {/* Close button */}
           <div className="flex items-center justify-between">
             <span className="text-2xs font-black uppercase tracking-[0.2em] text-muted/50">Menú</span>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center
-                         text-secondary hover:text-primary hover:bg-white/5 transition-all"
+            <AppButton
+              type="button"
+              isIconOnly
+              variant="light"
+              disableRipple
+              onPress={() => setMobileMenuOpen(false)}
+              className="w-9 h-9 min-w-9 rounded-xl text-secondary hover:text-primary hover:bg-white/5"
+              aria-label="Cerrar menú"
             >
               <X size={18} />
-            </button>
+            </AppButton>
           </div>
 
           {/* SearchBar compacto (píldoras de tipo + input full width) */}
@@ -70,14 +76,18 @@ export default function Sidebar() {
         </div>
 
         {/* ── Desktop toggle button ────────────────────────────────────────────── */}
-        <button
-          onClick={() => setSidebarExpanded(!sidebarExpanded)}
-          className={`hidden lg:flex mb-10 w-11 h-11 rounded-xl items-center justify-center
-                     text-secondary hover:text-primary hover:bg-white/5 transition-all
+        <AppButton
+          type="button"
+          isIconOnly
+          variant="light"
+          disableRipple
+          onPress={() => setSidebarExpanded(!sidebarExpanded)}
+          className={`hidden lg:flex mb-10 w-11 h-11 min-w-11 rounded-xl text-secondary hover:text-primary hover:bg-white/5
                      ${sidebarExpanded ? "self-end" : ""}`}
+          aria-label={sidebarExpanded ? "Contraer barra lateral" : "Expandir barra lateral"}
         >
           {sidebarExpanded ? <ChevronLeft size={22} /> : <Menu size={22} />}
-        </button>
+        </AppButton>
 
         {/* ── Nav ─────────────────────────────────────────────────────────────── */}
         <nav className="flex flex-col gap-2 flex-1 w-full">
@@ -129,7 +139,7 @@ export default function Sidebar() {
                 )}
 
                 {/* Favorites Badge */}
-                {href === "/favorites" && favCount > 0 && (
+                {href === "/shortlist" && favCount > 0 && (
                   <span className={`absolute flex items-center justify-center rounded-full bg-gold text-mainBg text-2xs font-black
                                    shadow-[0_0_10px_rgba(232,168,56,0.35)]
                                    ${sidebarExpanded ? "right-4 w-5 h-5" : "lg:top-1.5 lg:right-1.5 lg:w-4 lg:h-4 right-4 w-5 h-5"}`}>
@@ -146,10 +156,19 @@ export default function Sidebar() {
         </nav>
 
         {/* ── Logout ──────────────────────────────────────────────────────────── */}
-        <button
-          onClick={() => { clearAuth(); window.location.href = "/login"; }}
-          className={`w-full h-12 rounded-xl flex items-center transition-all group relative
-                     text-muted hover:bg-danger/10 hover:text-danger
+        <AppButton
+          type="button"
+          variant="light"
+          disableRipple
+          onPress={async () => {
+            try {
+              await api.post("/auth/logout");
+            } catch { /* ignore */ }
+            clearAuth();
+            window.location.href = "/login";
+          }}
+          className={`!min-h-12 h-12 w-full rounded-xl justify-start group relative
+                     text-muted hover:bg-danger/10 hover:text-danger bg-transparent
                      ${sidebarExpanded ? "px-4 gap-4" : "lg:justify-center px-4 gap-4"}`}
         >
           <LogOut size={18} />
@@ -164,7 +183,7 @@ export default function Sidebar() {
               <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-danger rotate-45" />
             </div>
           )}
-        </button>
+        </AppButton>
       </aside>
     </>
   );

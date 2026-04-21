@@ -1,23 +1,23 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import toast from "react-hot-toast";
+import { appToast } from "@/lib/appToast";
 import { useScoutStore } from "@/store/useScoutStore";
 import api from "@/lib/api";
 import type { ShortlistPlayer } from "@/types";
 
+// Module-level singleton: prevents concurrent calls when multiple components
+// using this hook mount at the same time before the first request resolves.
+let _fetchingPromise: Promise<void> | null = null;
+
 /**
  * Hook unificado de favoritos.
- * - Con sesión (token): usa el backend /api/shortlist (persistido por usuario).
- * - Sin sesión: usa el store local de Zustand.
- *
- * Fixes:
- * WR-02: en fallo de API no se setea shortlistFetched=true → se reintenta en el
- *        próximo montaje en lugar de quedar bloqueado para toda la sesión.
- * WR-06: pendingRef evita race conditions por doble click rápido.
+ * - Con sesión (JWT en memoria o cookie httpOnly + user restaurado): usa /api/shortlist.
+ * - Sin sesión: store local de Zustand.
  */
 export function useShortlist() {
   const {
     token,
+    user,
     favorites,
     addFavorite: localAdd,
     removeFavorite: localRemove,
@@ -30,63 +30,65 @@ export function useShortlist() {
     setShortlistFetched,
   } = useScoutStore();
 
-  // WR-06: track in-flight mutations to prevent race conditions
+  const serverSession = !!(token || user);
+
   const pendingIds = useRef<Set<number>>(new Set());
 
-  // Carga los IDs del servidor solo una vez por sesión exitosa
   useEffect(() => {
-    if (!token || shortlistFetched) return;
-    api.get<number[]>("/shortlist/ids")
+    if (!serverSession || shortlistFetched || _fetchingPromise) return;
+    _fetchingPromise = api.get<number[]>("/shortlist/ids")
       .then(({ data }) => {
         setShortlistIds(data);
-        setShortlistFetched(true); // solo en éxito
+        setShortlistFetched(true);
       })
       .catch(() => {
-        // WR-02: en fallo NO marcamos como fetched → se reintentará al remontar
         console.warn("useShortlist: fallo al cargar shortlist, se reintentará.");
+      })
+      .finally(() => {
+        _fetchingPromise = null;
       });
-  }, [token, shortlistFetched, setShortlistIds, setShortlistFetched]);
+  }, [serverSession, shortlistFetched, setShortlistIds, setShortlistFetched]);
 
   const isFavorite = useCallback(
-    (id: number) => (token ? shortlistIds.includes(id) : localIsFav(id)),
-    [token, shortlistIds, localIsFav],
+    (id: number) => (serverSession ? shortlistIds.includes(id) : localIsFav(id)),
+    [serverSession, shortlistIds, localIsFav],
   );
 
   const addFavorite = useCallback(
     async (player: ShortlistPlayer) => {
-      if (pendingIds.current.has(player.id)) return; // WR-06: guard
-      if (token) {
+      if (pendingIds.current.has(player.id)) return;
+      if (serverSession) {
         pendingIds.current.add(player.id);
         try {
           await api.post(`/shortlist/${player.id}`);
           addShortlistId(player.id);
-          toast.success(`${player.name} agregado a tu lista`);
+          appToast.success(`${player.name} agregado a tu lista`);
         } catch (e) {
           console.error("Error agregando a shortlist", e);
-          toast.error("No se pudo agregar el jugador");
+          appToast.error("No se pudo agregar el jugador");
         } finally {
           pendingIds.current.delete(player.id);
         }
       } else {
         localAdd(player);
-        toast.success(`${player.name} agregado a tu lista`);
+        appToast.success(`${player.name} agregado a tu lista`);
       }
     },
-    [token, addShortlistId, localAdd],
+    [serverSession, addShortlistId, localAdd],
   );
 
   const removeFavorite = useCallback(
     async (id: number) => {
-      if (pendingIds.current.has(id)) return; // WR-06: guard
-      if (token) {
+      if (pendingIds.current.has(id)) return;
+      if (serverSession) {
         pendingIds.current.add(id);
         try {
           await api.delete(`/shortlist/${id}`);
           removeShortlistId(id);
-          toast("Jugador removido de tu lista", { icon: "✕" });
+          appToast.neutral("Jugador removido de tu lista", { icon: "✕" });
         } catch (e) {
           console.error("Error quitando de shortlist", e);
-          toast.error("No se pudo quitar el jugador");
+          appToast.error("No se pudo quitar el jugador");
         } finally {
           pendingIds.current.delete(id);
         }
@@ -94,16 +96,14 @@ export function useShortlist() {
         localRemove(id);
       }
     },
-    [token, removeShortlistId, localRemove],
+    [serverSession, removeShortlistId, localRemove],
   );
 
   return {
     isFavorite,
     addFavorite,
     removeFavorite,
-    /** true cuando hay sesión activa */
-    isLoggedIn: !!token,
-    /** Favoritos locales (sin sesión) */
+    isLoggedIn: serverSession,
     localFavorites: favorites,
   };
 }

@@ -1,5 +1,7 @@
 "use client";
 import SearchBar from "@/components/ui/SearchBar";
+import AppButton from "@/components/ui/AppButton";
+import api from "@/lib/api";
 import { useScoutStore } from "@/store/useScoutStore";
 import { LogOut, Menu } from "lucide-react";
 import Link from "next/link";
@@ -27,7 +29,12 @@ function Logo() {
 export default function Topbar() {
   const { user, clearAuth, mobileMenuOpen, setMobileMenuOpen, sidebarExpanded } = useScoutStore();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      /* ignore */
+    }
     clearAuth();
     window.location.href = "/login";
   };
@@ -41,13 +48,17 @@ export default function Topbar() {
       {/* Left: hamburger (mobile) + branding */}
       <div className="flex items-center gap-3 flex-shrink-0">
         {/* Hamburger — only on mobile/tablet */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center
-                     text-secondary hover:text-primary hover:bg-white/5 transition-all"
+        <AppButton
+          type="button"
+          isIconOnly
+          variant="light"
+          disableRipple
+          onPress={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="lg:hidden w-9 h-9 min-w-9 rounded-xl text-secondary hover:text-primary hover:bg-white/5"
+          aria-label="Abrir menú"
         >
           <Menu size={20} />
-        </button>
+        </AppButton>
         <Logo />
       </div>
 
@@ -63,14 +74,18 @@ export default function Topbar() {
             <span className="text-sm font-bold text-primary leading-tight">{user?.name ?? "Scout"}</span>
             <span className="text-2xs text-muted uppercase font-black tracking-widest">PRO Account</span>
           </div>
-          <button
-            onClick={handleLogout}
+          <AppButton
+            type="button"
+            isIconOnly
+            variant="light"
+            disableRipple
+            onPress={handleLogout}
             title="Cerrar sesión"
-            className="w-9 h-9 rounded-xl flex items-center justify-center
-                       text-danger hover:bg-danger/10 transition-all border border-danger/10"
+            className="w-9 h-9 min-w-9 rounded-xl text-danger hover:bg-danger/10 border border-danger/10"
+            aria-label="Cerrar sesión"
           >
             <LogOut size={16} />
-          </button>
+          </AppButton>
         </div>
       </div>
     </header>

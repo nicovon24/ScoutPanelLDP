@@ -1,5 +1,6 @@
 "use client";
 import { Toaster, ToastBar, toast } from "react-hot-toast";
+import AppButton from "@/components/ui/AppButton";
 
 export function AppToaster() {
   return (
@@ -36,26 +37,17 @@ export function AppToaster() {
             <>
               {icon}
               {message}
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                style={{
-                  marginLeft: "8px",
-                  flexShrink: 0,
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#959595",
-                  fontSize: "16px",
-                  lineHeight: 1,
-                  padding: "0 2px",
-                  transition: "color 0.15s",
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#F2F2F2"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#959595"; }}
+              <AppButton
+                type="button"
+                isIconOnly
+                variant="light"
+                disableRipple
+                onPress={() => toast.dismiss(t.id)}
+                className="!min-w-0 w-6 h-6 min-w-6 p-0 ml-2 text-[#959595] hover:text-[#F2F2F2] bg-transparent"
                 aria-label="Cerrar"
               >
                 ×
-              </button>
+              </AppButton>
             </>
           )}
         </ToastBar>

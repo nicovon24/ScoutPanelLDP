@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/api";
 import type { Team } from "@/types";
+import { Input } from "@nextui-org/react";
+import { searchFieldInputClassNames } from "@/components/ui/sharedStyles";
 
 interface TeamWithCount extends Team {
   id: number;
@@ -45,16 +47,21 @@ export default function ClubsPage() {
           </p>
         </div>
 
-        {/* Search */}
         <div className="relative w-full sm:w-64">
-          <input
+          <Input
+            aria-label="Buscar club o país"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onValueChange={setSearch}
             placeholder="Buscar club o país..."
-            className="w-full bg-card border border-white/[0.05] rounded-xl px-4 py-2.5 text-sm
-                       text-primary placeholder:text-muted focus:outline-none
-                       focus:border-green/40 focus:shadow-[0_0_16px_rgba(0,224,148,0.08)]
-                       transition-all"
+            variant="flat"
+            classNames={{
+              ...searchFieldInputClassNames,
+              base: "w-full gap-0",
+              label: "hidden",
+              inputWrapper:
+                "h-11 min-h-11 bg-card border border-white/[0.05] rounded-xl px-3 py-0 shadow-none group-data-[focus=true]:border-green/40 group-data-[focus=true]:shadow-[0_0_16px_rgba(0,224,148,0.08)]",
+              input: "text-sm text-primary placeholder:text-muted",
+            }}
           />
         </div>
       </div>

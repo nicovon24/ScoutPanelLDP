@@ -1,15 +1,12 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { and, eq, desc } from "drizzle-orm";
 import { db } from "../db";
 import { shortlistEntries, players, playerStats } from "../db/schema";
-import { requireAuth } from "./auth";
 
 const router = Router();
 
-router.use(requireAuth);
-
 // GET /api/shortlist — favoritos del usuario con datos de jugador + equipo + última stat
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const entries = await db.query.shortlistEntries.findMany({
@@ -29,13 +26,12 @@ router.get("/", async (req: Request, res: Response) => {
     });
     res.json(entries.map((e) => ({ ...e.player, addedAt: e.addedAt })));
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 
 // GET /api/shortlist/ids — solo IDs para checks rápidos de isFavorite
-router.get("/ids", async (req: Request, res: Response) => {
+router.get("/ids", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const entries = await db.query.shortlistEntries.findMany({
@@ -44,13 +40,12 @@ router.get("/ids", async (req: Request, res: Response) => {
     });
     res.json(entries.map((e) => e.playerId));
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 
 // POST /api/shortlist/:playerId — agregar jugador a favoritos
-router.post("/:playerId", async (req: Request, res: Response) => {
+router.post("/:playerId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const playerId = parseInt(req.params.playerId);
@@ -65,13 +60,12 @@ router.post("/:playerId", async (req: Request, res: Response) => {
 
     res.status(201).json({ ok: true });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 
 // DELETE /api/shortlist/:playerId — quitar jugador de favoritos
-router.delete("/:playerId", async (req: Request, res: Response) => {
+router.delete("/:playerId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const playerId = parseInt(req.params.playerId);
@@ -93,8 +87,7 @@ router.delete("/:playerId", async (req: Request, res: Response) => {
 
     res.json({ ok: true });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(error);
   }
 });
 

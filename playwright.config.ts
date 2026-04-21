@@ -1,8 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// BASE_URL permite apuntar a local, staging o producción sin cambiar el código:
+// BASE_URL permite apuntar a local, producción sin cambiar el código:
 //   local:      BASE_URL=http://localhost:3000 npx playwright test
-//   staging:    BASE_URL=https://staging.scoutpanel.com npx playwright test
 //   producción: BASE_URL=https://scoutpanel.com npx playwright test --grep @smoke
 const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
 

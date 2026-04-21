@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { pool } from "../db";
 
 const router = Router();
@@ -31,7 +31,7 @@ const METRIC_MAP: Record<string, MetricDef> = {
 };
 
 // ─── GET /api/analytics/leaderboard ──────────────────────────────────────────
-router.get("/leaderboard", async (req: Request, res: Response) => {
+router.get("/leaderboard", async (req: Request, res: Response, next: NextFunction) => {
   const metric    = String(req.query.metric   ?? "rating");
   const seasonId  = req.query.seasonId  ? Number(req.query.seasonId)  : null;
   const positions = req.query.positions ? String(req.query.positions) : null;
@@ -161,13 +161,12 @@ router.get("/leaderboard", async (req: Request, res: Response) => {
     }));
     res.json(rows);
   } catch (err) {
-    console.error("[analytics/leaderboard]", err);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(err);
   }
 });
 
 // ─── GET /api/analytics/summary ──────────────────────────────────────────────
-router.get("/summary", async (req: Request, res: Response) => {
+router.get("/summary", async (req: Request, res: Response, next: NextFunction) => {
   const seasonId = req.query.seasonId ? Number(req.query.seasonId) : null;
 
   if (seasonId !== null && (isNaN(seasonId) || seasonId < 1)) {
@@ -201,8 +200,7 @@ router.get("/summary", async (req: Request, res: Response) => {
       totalMatches:  Number(row.totalMatches)  || 0,
     });
   } catch (err) {
-    console.error("[analytics/summary]", err);
-    res.status(500).json({ error: "Error interno del servidor" });
+    next(err);
   }
 });
 

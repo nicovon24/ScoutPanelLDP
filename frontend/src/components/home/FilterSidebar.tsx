@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Filter, Trash2, CheckCircle2 } from "lucide-react";
@@ -6,6 +7,7 @@ import SoccerFieldPositions from "./SoccerFieldPositions";
 import { Select, SelectItem, Input, Avatar } from "@nextui-org/react";
 import { sharedSelectClasses, sharedSelectItemClasses } from "@/components/ui/sharedStyles";
 import api from "@/lib/api";
+import AppButton from "@/components/ui/AppButton";
 
 
 export const POSITIONS_LIST = [
@@ -109,12 +111,17 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
               <p className="text-2xs lg:text-2xs text-green tracking-[0.15em] uppercase font-bold mt-1 lg:mt-1.5 opacity-80">Configuración de búsqueda</p>
             </div>
           </div>
-          <button
-            onClick={() => setFilterPanelOpen(false)}
-            className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center text-green bg-[#34d35a]/10 hover:bg-[#34d35a]/20 border border-[#34d35a]/20 rounded-xl transition-all shadow-[0_0_15px_rgba(52,211,90,0.1)]"
+          <AppButton
+            type="button"
+            isIconOnly
+            variant="light"
+            disableRipple
+            onPress={() => setFilterPanelOpen(false)}
+            className="w-9 h-9 min-w-9 lg:w-10 lg:h-10 lg:min-w-10 text-green bg-[#34d35a]/10 hover:bg-[#34d35a]/20 border border-[#34d35a]/20 rounded-xl shadow-[0_0_15px_rgba(52,211,90,0.1)]"
+            aria-label="Cerrar filtros"
           >
             <X size={20} strokeWidth={2.5} />
-          </button>
+          </AppButton>
         </div>
 
         {/* Content */}
@@ -295,9 +302,12 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                     const selectedContracts = filters.contractType ? filters.contractType.split(",") : [];
                     const active = selectedContracts.includes(opt.id);
                     return (
-                      <button
+                      <AppButton
                         key={opt.id}
-                        onClick={() => {
+                        type="button"
+                        variant="light"
+                        disableRipple
+                        onPress={() => {
                           let next = [...selectedContracts];
                           if (active) {
                             next = next.filter(v => v !== opt.id);
@@ -306,13 +316,13 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
                           }
                           update("contractType", next.join(","));
                         }}
-                        className={`flex-1 h-[44px] lg:h-[48px] rounded-xl border text-[11px] lg:text-[12px] font-black transition-all
+                        className={`flex-1 min-h-[44px] h-[44px] lg:min-h-[48px] lg:h-[48px] rounded-xl border text-[11px] lg:text-[12px] font-black transition-all
                                   ${active
                             ? "bg-[#34d35a]/15 border-green text-green shadow-[0_0_15px_rgba(52,211,90,0.1)]"
                             : "bg-[#131f15] border-white/10 text-[#7aab82] hover:border-white/20"}`}
                       >
                         {opt.label}
-                      </button>
+                      </AppButton>
                     );
                   })}
                 </div>
@@ -392,20 +402,26 @@ export default function FilterSidebar({ teams, filters, setFilters, onReset }: P
 
         {/* Footer */}
         <div className="p-5 lg:p-7 lg:px-8 border-t border-white/[0.05] bg-[#0E1710] flex gap-3 lg:gap-4 relative z-10 shadow-[0_-15px_40px_rgba(0,0,0,0.4)]">
-          <button
-            onClick={onReset}
-            className="w-1/3 h-[50px] lg:h-[58px] rounded-xl bg-[#e05a5a]/10 border border-[#e05a5a]/25 text-[#e05a5a] font-black uppercase tracking-widest text-[11px] lg:text-[13px] hover:bg-[#e05a5a]/20 transition-all flex items-center justify-center gap-2"
+          <AppButton
+            type="button"
+            variant="danger"
+            disableRipple
+            onPress={onReset}
+            className="w-1/3 min-h-[50px] h-[50px] lg:min-h-[58px] lg:h-[58px] gap-2 bg-[#e05a5a]/10 border border-[#e05a5a]/25 text-[#e05a5a] font-black uppercase tracking-widest text-[11px] lg:text-[13px] hover:bg-[#e05a5a]/20"
           >
             <Trash2 size={16} />
             Limpiar
-          </button>
-          <button
-            onClick={() => setFilterPanelOpen(false)}
-            className="flex-1 h-[50px] lg:h-[58px] rounded-xl bg-green text-[#081009] font-black uppercase tracking-widest text-sm lg:text-base hover:bg-[#50e870] transition-all flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(52,211,90,0.3)]"
+          </AppButton>
+          <AppButton
+            type="button"
+            variant="primary"
+            disableRipple
+            onPress={() => setFilterPanelOpen(false)}
+            className="flex-1 min-h-[50px] h-[50px] lg:min-h-[58px] lg:h-[58px] gap-2 shadow-[0_8px_30px_rgba(52,211,90,0.3)] hover:bg-[#50e870]"
           >
             <CheckCircle2 size={18} />
             APLICAR
-          </button>
+          </AppButton>
         </div>
       </aside>
     </div>,

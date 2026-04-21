@@ -6,35 +6,36 @@ import { useScoutStore } from "@/store/useScoutStore";
 import { useShortlist } from "@/hooks/useShortlist";
 import api from "@/lib/api";
 import PlayerCard from "@/components/player/PlayerCard";
+import AppButton from "@/components/ui/AppButton";
 import Link from "next/link";
+import type { Player } from "@/types";
 
-export default function FavoritesPage() {
-  const { token, favorites } = useScoutStore();
+export default function ShortlistPage() {
+  const { token, user, favorites } = useScoutStore();
   const { removeFavorite } = useShortlist();
+  const serverSession = !!(token || user);
 
-  const [players, setPlayers] = useState<any[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      // Con sesión: traer la shortlist completa del backend (1 sola llamada)
+    if (serverSession) {
       setLoading(true);
-      api.get("/shortlist")
+      api.get<Player[]>("/shortlist")
         .then(({ data }) => setPlayers(data))
         .catch(console.error)
         .finally(() => setLoading(false));
     } else {
-      // Sin sesión: enriquecer el store local con datos individuales
       if (favorites.length === 0) { setPlayers([]); return; }
       setLoading(true);
-      Promise.all(favorites.map((f) => api.get(`/players/${f.id}`).then((r) => r.data)))
+      Promise.all(favorites.map((f) => api.get<Player>(`/players/${f.id}`).then((r) => r.data)))
         .then(setPlayers)
         .catch(console.error)
         .finally(() => setLoading(false));
     }
-  }, [token, favorites]);
+  }, [serverSession, favorites]);
 
-  const isEmpty = token ? !loading && players.length === 0 : favorites.length === 0;
+  const isEmpty = serverSession ? !loading && players.length === 0 : favorites.length === 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -42,7 +43,7 @@ export default function FavoritesPage() {
         <div className="flex items-center gap-2">
           <Star size={18} className="text-gold" fill="currentColor" />
           <h1 className="text-xl font-bold text-primary">Favoritos</h1>
-          {!token && (
+          {!serverSession && (
             <span className="badge badge-muted text-2xs">local</span>
           )}
         </div>
@@ -51,7 +52,7 @@ export default function FavoritesPage() {
         )}
       </div>
 
-      {!token && (
+      {!serverSession && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/50 bg-white/[0.02] text-sm text-secondary">
           <Star size={13} className="text-gold flex-shrink-0" />
           <span>
@@ -80,14 +81,17 @@ export default function FavoritesPage() {
           {players.map((p) => (
             <div key={p.id} className="relative group/card">
               <PlayerCard player={p} hideFavBtn />
-              <button
+              <AppButton
+                type="button"
+                variant="light"
+                disableRipple
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   removeFavorite(p.id);
                   setPlayers((prev) => prev.filter((pl) => pl.id !== p.id));
                 }}
-                className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5
+                className="absolute top-3 right-3 z-10 !min-h-0 h-auto gap-1.5 px-2.5 py-1.5
                            rounded-full bg-black/75 border border-white/10 backdrop-blur-sm
                            text-gold text-[11px] font-bold
                            hover:bg-danger/20 hover:border-danger/30 hover:text-danger
@@ -98,7 +102,7 @@ export default function FavoritesPage() {
               >
                 <Star size={11} fill="currentColor" />
                 <span>Quitar</span>
-              </button>
+              </AppButton>
             </div>
           ))}
         </div>

@@ -2,6 +2,7 @@
 import { useScoutStore } from "@/store/useScoutStore";
 import { useRouter } from "next/navigation";
 import { BarChart2, X } from "lucide-react";
+import AppButton from "@/components/ui/AppButton";
 import Image from "next/image";
 
 export default function CompareBar() {
@@ -22,10 +23,17 @@ export default function CompareBar() {
                 : p.name[0]}
             </div>
             <span className="text-sm font-medium text-primary max-w-[100px] truncate">{p.name}</span>
-            <button onClick={() => removeFromCompare(p.id)}
-                    className="text-muted hover:text-danger transition-colors">
+            <AppButton
+              type="button"
+              isIconOnly
+              variant="light"
+              disableRipple
+              onPress={() => removeFromCompare(p.id)}
+              className="!min-w-0 w-7 h-7 min-w-7 text-muted hover:text-danger bg-transparent"
+              aria-label={`Quitar ${p.name} de comparar`}
+            >
               <X size={14} />
-            </button>
+            </AppButton>
           </div>
         ))}
 
@@ -34,19 +42,29 @@ export default function CompareBar() {
         )}
 
         {compareList.length === 2 && (
-          <button
-            onClick={() => { router.push(`/compare?ids=${compareList.map(p => p.id).join(",")}`); }}
-            className="btn btn-primary text-xs py-1.5 px-3 ml-2"
+          <AppButton
+            type="button"
+            variant="primary"
+            disableRipple
+            onPress={() => { router.push(`/compare?ids=${compareList.map(p => p.id).join(",")}`); }}
+            className="!min-h-0 h-auto text-xs py-1.5 px-3 ml-2 gap-1.5"
           >
             <BarChart2 size={14} />
             Comparar
-          </button>
+          </AppButton>
         )}
 
-        <button onClick={clearCompare}
-                className="text-muted hover:text-danger transition-colors ml-1">
+        <AppButton
+          type="button"
+          isIconOnly
+          variant="light"
+          disableRipple
+          onPress={clearCompare}
+          className="!min-w-0 w-8 h-8 min-w-8 text-muted hover:text-danger bg-transparent ml-1"
+          aria-label="Limpiar comparación"
+        >
           <X size={16} />
-        </button>
+        </AppButton>
       </div>
     </div>
   );

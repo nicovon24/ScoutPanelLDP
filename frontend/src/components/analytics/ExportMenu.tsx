@@ -4,6 +4,7 @@ import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import type { LeaderboardEntry, PositionGroup, LeaderboardMetric } from "@/types";
 import type { ColDef } from "@/lib/analyticsConfig";
 import { exportToExcel, exportToPDF } from "@/lib/analyticsExport";
+import AppButton from "@/components/ui/AppButton";
 
 interface Props {
   entries: LeaderboardEntry[];
@@ -42,12 +43,14 @@ export default function ExportMenu({ entries, cols, group, metric, seasonName, d
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        disabled={disabled || loading !== null}
-        className="flex items-center gap-2 h-9 px-3 rounded-lg border border-white/10 bg-white/[0.03]
-                   text-secondary hover:text-primary hover:border-white/20 transition-all
-                   text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+      <AppButton
+        type="button"
+        variant="ghost"
+        disableRipple
+        onPress={() => setOpen((v) => !v)}
+        isDisabled={disabled || loading !== null}
+        className="!min-h-9 h-9 gap-2 px-3 rounded-lg border border-white/10 bg-white/[0.03]
+                   text-secondary hover:text-primary hover:border-white/20 text-xs font-bold disabled:opacity-40"
       >
         {loading ? (
           <Loader2 size={14} className="animate-spin" />
@@ -55,28 +58,34 @@ export default function ExportMenu({ entries, cols, group, metric, seasonName, d
           <Download size={14} />
         )}
         Exportar
-      </button>
+      </AppButton>
 
       {open && (
         <div className="absolute right-0 top-[calc(100%+6px)] w-44 bg-popover border border-white/10
                         rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in">
-          <button
-            onClick={() => handleExport("excel")}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-secondary
-                       hover:bg-white/5 hover:text-green transition-colors"
+          <AppButton
+            type="button"
+            variant="light"
+            disableRipple
+            onPress={() => handleExport("excel")}
+            className="!rounded-none w-full !min-h-0 h-auto justify-start gap-3 px-4 py-3 text-sm font-bold text-secondary
+                       hover:bg-white/5 hover:text-green bg-transparent font-normal"
           >
             <FileSpreadsheet size={15} className="text-green flex-shrink-0" />
             Excel (.xlsx)
-          </button>
+          </AppButton>
           <div className="h-px bg-white/5" />
-          <button
-            onClick={() => handleExport("pdf")}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-secondary
-                       hover:bg-white/5 hover:text-blue-400 transition-colors"
+          <AppButton
+            type="button"
+            variant="light"
+            disableRipple
+            onPress={() => handleExport("pdf")}
+            className="!rounded-none w-full !min-h-0 h-auto justify-start gap-3 px-4 py-3 text-sm font-bold text-secondary
+                       hover:bg-white/5 hover:text-blue-400 bg-transparent font-normal"
           >
             <FileText size={15} className="text-blue-400 flex-shrink-0" />
             PDF (.pdf)
-          </button>
+          </AppButton>
         </div>
       )}
     </div>
