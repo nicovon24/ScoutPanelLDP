@@ -27,7 +27,7 @@ function setAccessTokenCookie(res: Response, token: string): void {
   res.cookie(ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: isProd,
-    sameSite: "none",
+    sameSite: isProd ? "none" : "lax",
     maxAge: COOKIE_MAX_AGE_MS,
     path: "/",
   });
@@ -39,7 +39,7 @@ export function clearAccessTokenCookie(res: Response): void {
   res.clearCookie(ACCESS_TOKEN_COOKIE, {
     path: "/",
     httpOnly: true,
-    sameSite: "none",
+    sameSite: isProd ? "none" : "lax",
     secure: isProd,
   });
 }
