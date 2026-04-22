@@ -62,8 +62,6 @@ interface ScoutState {
   token: string | null;
   user: { id: number; name: string; email: string } | null;
   setAuth: (token: string, user: ScoutState["user"]) => void;
-  /** Sesión restaurada vía cookie httpOnly + GET /auth/me (sin token en memoria). */
-  setUserFromSession: (user: NonNullable<ScoutState["user"]>) => void;
   clearAuth: () => void;
 
   filterPanelOpen: boolean;
@@ -120,9 +118,6 @@ export const useScoutStore = create<ScoutState>()(
       setAuth: (token, user) => {
         set({ token, user, shortlistIds: [], shortlistFetched: false });
       },
-      setUserFromSession: (user) => {
-        set({ user, token: null, shortlistIds: [], shortlistFetched: false });
-      },
       clearAuth: () => {
         set({ token: null, user: null, shortlistIds: [], shortlistFetched: false });
       },
@@ -153,10 +148,18 @@ export const useScoutStore = create<ScoutState>()(
         sidebarExpanded: s.sidebarExpanded,
         compareList: s.compareList,
       }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.warn("[scout-store] persist rehydrate:", error);
+        }
         if (state) {
           state.searchFilters = { ...DEFAULT_FILTERS, ...(state.searchFilters ?? {}) };
           state.setHasHydrated(true);
+        } else {
+          // Error de persist: `state` viene undefined; no usar `useScoutStore` aquí (TDZ si aún no terminó create()).
+          queueMicrotask(() => {
+            useScoutStore.getState().setHasHydrated(true);
+          });
         }
       },
     },

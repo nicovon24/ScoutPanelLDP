@@ -21,11 +21,14 @@ let firstPlayerId: number;
 let secondPlayerId: number;
 
 beforeAll(async () => {
-  const res = await request(app)
+  const regRes = await request(app)
     .post("/api/auth/register")
     .send({ email: testEmail, password: "test1234", name: "Shortlist Tester" });
-  token = res.body.token;
-  userId = res.body.user.id;
+  userId = regRes.body.user.id;
+  const loginRes = await request(app)
+    .post("/api/auth/login")
+    .send({ email: testEmail, password: "test1234" });
+  token = loginRes.body.token;
 
   // Obtener dos jugadores reales del seed para los tests
   const allPlayers = await db.select({ id: players.id }).from(players).limit(2);

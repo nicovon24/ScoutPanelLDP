@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
+import type { StringValue } from "ms";
 import bcrypt from "bcrypt";
 import { z, type ZodError } from "zod";
 import { db } from "../db";
@@ -9,49 +10,62 @@ import { JwtUser } from "../types/express";
 
 const router = Router();
 
-/** Nombre de la cookie httpOnly con el JWT (misma clave que el cliente documenta en README). */
-export const ACCESS_TOKEN_COOKIE = "accessToken";
+/** Cookie httpOnly que transporta el refresh token (ruta restringida a /api/auth). */
+const REFRESH_COOKIE_NAME = "refreshToken";
+const REFRESH_COOKIE_PATH = "/api/auth";
 
-const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-
-// Falla en producción si no hay JWT_SECRET explícito
+// Secrets y duraciones desde variables de entorno
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET env var es obligatorio");
 }
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET_REFRESH) {
+  throw new Error("JWT_SECRET_REFRESH env var es obligatorio");
+}
+
 const JWT_SECRET: string = process.env.JWT_SECRET ?? "scout-panel-secret-dev";
+const JWT_SECRET_REFRESH: string = process.env.JWT_SECRET_REFRESH ?? "scout-panel-refresh-secret-dev";
+const JWT_EXPIRATION_ACCESS = (process.env.JWT_EXPIRATION_ACCESS ?? "15m") as StringValue;
+const JWT_EXPIRATION_REFRESH = (process.env.JWT_EXPIRATION_REFRESH ?? "7d") as StringValue;
 
 const isProd = process.env.NODE_ENV === "production";
 
-function setAccessTokenCookie(res: Response, token: string): void {
-  const isProd = process.env.NODE_ENV === "production";
-  res.cookie(ACCESS_TOKEN_COOKIE, token, {
+/** Convierte strings como "7d", "15m" a milisegundos para maxAge. */
+function parseExpToMs(exp: string): number {
+  const match = exp.match(/^(\d+)([smhd])$/);
+  if (!match) return 7 * 24 * 60 * 60 * 1000; // fallback 7d
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  const multipliers: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
+  return value * multipliers[unit];
+}
+
+function setRefreshCookie(res: Response, token: string): void {
+  res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
-    maxAge: COOKIE_MAX_AGE_MS,
-    path: "/",
+    maxAge: parseExpToMs(JWT_EXPIRATION_REFRESH),
+    path: REFRESH_COOKIE_PATH,
   });
 }
 
-/** Limpia la cookie httpOnly (público, no requiere JWT). */
-export function clearAccessTokenCookie(res: Response): void {
-  const isProd = process.env.NODE_ENV === "production";
-  res.clearCookie(ACCESS_TOKEN_COOKIE, {
-    path: "/",
+function clearRefreshCookie(res: Response): void {
+  res.clearCookie(REFRESH_COOKIE_NAME, {
+    path: REFRESH_COOKIE_PATH,
     httpOnly: true,
     sameSite: isProd ? "none" : "lax",
     secure: isProd,
   });
 }
 
+/** Solo acepta Bearer header; el access token ya no va en cookie. */
 function getJwtFromRequest(req: Request): string | undefined {
   const h = req.headers.authorization;
   if (h?.startsWith("Bearer ")) {
     const t = h.split(/\s+/)[1]?.trim();
     return t || undefined;
   }
-  const c = req.cookies?.[ACCESS_TOKEN_COOKIE];
-  return typeof c === "string" && c.length > 0 ? c : undefined;
+  return undefined;
 }
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
@@ -144,16 +158,9 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
     const passwordHash = await bcrypt.hash(password, 12);
     const [user] = await db.insert(users).values({ email, passwordHash, name }).returning();
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    setAccessTokenCookie(res, token);
-
+    // Sin sesión: el usuario debe iniciar sesión en `/login` (no tokens ni cookies).
     res.status(201).json({
-      token,
+      ok: true,
       user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (error) {
@@ -183,16 +190,14 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const payload = { id: user.id, email: user.email, name: user.name };
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION_ACCESS });
+    const refreshToken = jwt.sign(payload, JWT_SECRET_REFRESH, { expiresIn: JWT_EXPIRATION_REFRESH });
 
-    setAccessTokenCookie(res, token);
+    setRefreshCookie(res, refreshToken);
 
     res.json({
-      token,
+      token: accessToken,
       user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (error) {
@@ -200,13 +205,44 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-// POST /api/auth/logout — público: borra la cookie httpOnly
+// POST /api/auth/refresh — renueva el access token usando el refresh token de la cookie
+router.post("/refresh", async (req: Request, res: Response, next: NextFunction) => {
+  const token = req.cookies?.[REFRESH_COOKIE_NAME];
+  if (!token) {
+    res.status(401).json({ error: "No hay sesión activa" });
+    return;
+  }
+  try {
+    const payload = jwt.verify(token, JWT_SECRET_REFRESH) as unknown as JwtUser;
+
+    // Verificar que el usuario sigue existiendo en DB
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, payload.id),
+      columns: { id: true, email: true, name: true },
+    });
+    if (!user) {
+      clearRefreshCookie(res);
+      res.status(401).json({ error: "Usuario no encontrado" });
+      return;
+    }
+
+    const newPayload = { id: user.id, email: user.email, name: user.name };
+    const accessToken = jwt.sign(newPayload, JWT_SECRET, { expiresIn: JWT_EXPIRATION_ACCESS });
+
+    res.json({ token: accessToken, user: newPayload });
+  } catch {
+    clearRefreshCookie(res);
+    res.status(401).json({ error: "Sesión expirada" });
+  }
+});
+
+// POST /api/auth/logout — borra la cookie httpOnly del refresh token
 router.post("/logout", (_req: Request, res: Response) => {
-  clearAccessTokenCookie(res);
+  clearRefreshCookie(res);
   res.json({ ok: true });
 });
 
-// GET /api/auth/me — Devuelve el usuario logueado (requiere token)
+// GET /api/auth/me — devuelve el usuario logueado (requiere access token)
 router.get("/me", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const payload = req.user!;
