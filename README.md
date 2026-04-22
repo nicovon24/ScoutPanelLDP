@@ -24,7 +24,6 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y compará jugadore
 | Qué | Enlace |
 |-----|--------|
 | **Panel (frontend, Vercel)** | https://scout-panel-ldp.vercel.app |
-| **API (backend, Render)** | Recomendado en Vercel: `NEXT_PUBLIC_API_URL=/api` + `BACKEND_PROXY_URL=https://<tu-backend>` para mantener cookies first-party.
 
 **Usuarios demo** (misma contraseña para todos: **`123456`**):
 
