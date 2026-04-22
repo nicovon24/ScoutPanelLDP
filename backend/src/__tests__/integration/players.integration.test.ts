@@ -19,11 +19,13 @@ let token: string;
 let firstPlayerId: number;
 
 beforeAll(async () => {
-  // Registrar usuario para obtener token
-  const res = await request(app)
+  await request(app)
     .post("/api/auth/register")
     .send({ email: testEmail, password: "test1234", name: "Players Tester" });
-  token = res.body.token;
+  const loginRes = await request(app)
+    .post("/api/auth/login")
+    .send({ email: testEmail, password: "test1234" });
+  token = loginRes.body.token;
 
   // Obtener un ID de jugador real del seed
   const player = await db.query.players.findFirst();

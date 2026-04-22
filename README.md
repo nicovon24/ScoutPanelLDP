@@ -11,7 +11,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y compará jugadore
 | Frontend | Next.js 14 (App Router) · TypeScript · Tailwind CSS · **HeroUI** (anteriormente NextUI) · Zustand · Recharts · React-hot-toast |
 | Backend | Node.js 20 · Express 4 · Drizzle ORM · Zod |
 | Base de datos | PostgreSQL 16 |
-| Auth | JWT + cookies + bcrypt |
+| Auth | JWT dual-token (access 15 min + refresh 7 días) · cookie httpOnly · bcrypt |
 | Tests | Vitest · Supertest · Playwright |
 | Deploy | Docker Compose (local) · Vercel + Render + Supabase (prod) |
 
@@ -213,7 +213,7 @@ La suite combina **tests unitarios en el frontend**, **integración HTTP en el b
 
 | Archivo | Endpoints cubiertos | Casos representativos |
 |---------|--------------------|-----------------------|
-| `auth.integration.test.ts` | `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` | 201 registro · 200 login · 409 duplicado · 400 body inválido · JWT en rutas protegidas |
+| `auth.integration.test.ts` | `POST /api/auth/register` · `POST /api/auth/login` · `POST /api/auth/refresh` · `POST /api/auth/logout` · `GET /api/auth/me` | 201 registro sin token ni cookie · cookie `refreshToken` httpOnly solo en login · 200 refresh con cookie válida · nuevo access token da acceso a rutas protegidas · 401 sin cookie / token adulterado · logout borra cookie (Max-Age=0) · logout idempotente · 409 duplicado · 400 body inválido |
 | `players.integration.test.ts` | `GET /api/players` · `/nationalities` · `/search` · `/compare` · `/:id` | paginación · filtro por posición · búsqueda · 400 ID inválido · 404 no encontrado · protección JWT |
 | `teams.integration.test.ts` | `GET /api/teams` · `GET /api/teams/:id` | array de equipos con campos obligatorios · roster de jugadores · 400 ID inválido · 404 no encontrado · protección JWT |
 | `shortlist.integration.test.ts` | `GET /api/shortlist` · `/ids` · `POST /:playerId` · `DELETE /:playerId` | agregar/quitar favorito · idempotencia (sin duplicados) · 400 ID inválido · 404 jugador no existe · 404 entrada no encontrada al borrar · protección JWT |
@@ -309,7 +309,7 @@ app/
             └── unit/        # utils · analyticsConfig · playerStats · radarNorm · useScoutStore
 ```
 
-**Flujo resumido:** el navegador habla solo con Next.js; el frontend llama al backend con `Authorization: Bearer <JWT>` (salvo registro/login). Express valida el token en las rutas bajo `/api` que lo requieren.
+**Flujo resumido:** el navegador habla solo con Next.js; el frontend llama al backend con `Authorization: Bearer <accessToken>` en cada request protegido. Si el token expira (15 min), el interceptor de Axios renueva la sesión automáticamente vía `POST /api/auth/refresh` (la cookie `refreshToken` httpOnly viaja sola), reintenta el request original y el usuario no nota la interrupción. Express valida el Bearer en las rutas bajo `/api` que lo requieren. Ver sección **Autenticación** para el flujo completo.
 
 ---
 
@@ -319,8 +319,8 @@ Rutas públicas (sin layout de dashboard):
 
 | Ruta | Vista |
 |------|--------|
-| `/login` | Inicio de sesión; guarda JWT en store + cookie y redirige al panel. |
-| `/register` | Alta de usuario; mismo flujo de token que login. |
+| `/login` | Inicio de sesión; guarda el access token en el store (memoria) y redirige al panel. Si ya hay sesión (token en memoria o cookie de refresh válida), redirige al panel. |
+| `/register` | Alta de usuario; redirige a `/login` sin abrir sesión. Si ya hay sesión, redirige al panel. |
 
 Rutas del panel `(dashboard)` — comparten layout con **sidebar**, **topbar** y protección por token en cliente (si no hay sesión, redirección a `/login`):
 
@@ -360,6 +360,60 @@ Los datos de seed fueron **generados con IA** y no son todos reales la mayoría.
 
 ---
 
+## Autenticación
+
+El sistema usa un esquema de **dos tokens JWT** separados, sin almacenamiento de sesión en base de datos (stateless):
+
+| Token | Dónde vive | Duración | Secret |
+|-------|-----------|----------|--------|
+| **access token** | Memoria (Zustand store) · Header `Authorization: Bearer` | 15 min | `JWT_SECRET` |
+| **refresh token** | Cookie `httpOnly` · `path: /api/auth` · no legible desde JS | 7 días | `JWT_SECRET_REFRESH` |
+
+### Flujo paso a paso
+
+**1. Registro (`POST /api/auth/register`)**
+- Crea el usuario en la base de datos y responde `201` con `{ ok: true, user }` **sin** JWT ni cookie: no hay sesión hasta que el usuario vaya a `/login`.
+
+**2. Login (`POST /api/auth/login`)**
+- El frontend envía email y contraseña.
+- El backend valida credenciales, firma access y refresh con secrets distintos y duraciones distintas.
+- La respuesta JSON incluye `{ token, user }` (access token + datos del usuario).
+- La cookie `refreshToken` se setea con flags `httpOnly`, `secure` (solo prod) y `sameSite: None` (prod) / `Lax` (dev), `path: /api/auth`.
+- El frontend guarda el `accessToken` en el store de Zustand **en memoria** solamente (no `localStorage`, no otra cookie).
+
+**3. Requests protegidos**
+- El interceptor de Axios adjunta `Authorization: Bearer <accessToken>` en cada request.
+- `requireAuth` en el backend solo acepta Bearer; ya no lee cookies para rutas de negocio.
+
+**4. Access token expirado (401 silencioso)**
+- Cuando cualquier request devuelve 401, el interceptor llama a `POST /api/auth/refresh` usando una instancia Axios sin interceptor (`plainApi`) para evitar bucles infinitos.
+- El backend lee la cookie `refreshToken`, la verifica con `JWT_SECRET_REFRESH` y comprueba que el usuario siga existiendo en DB.
+- Si la cookie es válida, devuelve un nuevo `{ token, user }` en JSON.
+- El interceptor guarda el nuevo token en el store y reintenta el request original con el Bearer actualizado. **El usuario no nota la interrupción.**
+- Si múltiples requests fallan a la vez, se encolan y esperan al mismo refresh (patrón `refreshSubscribers`).
+- Si el refresh también falla (cookie expirada o revocada), se limpia el store y se redirige a `/login` con un toast.
+
+**5. Restaurar sesión tras F5 o nueva pestaña**
+- Al montar el dashboard layout, si el store no tiene token (memoria limpia), se llama automáticamente a `POST /api/auth/refresh`.
+- La cookie `refreshToken` viaja con el request (gracias a `withCredentials: true`) y el backend devuelve un nuevo access token.
+- `setAuth(token, user)` carga el token en memoria y el usuario queda autenticado sin pasar por el login.
+
+**6. Logout**
+- El frontend llama a `POST /api/auth/logout`.
+- El backend elimina la cookie con `clearCookie` usando exactamente los mismos flags (`httpOnly`, `secure`, `sameSite`, `path`) que al setearla (necesario para que el borrado funcione cross-origin).
+- El frontend llama a `clearAuth()` y limpia el store.
+
+### Variables de entorno relevantes
+
+```
+JWT_SECRET="..."           # Firma los access tokens
+JWT_SECRET_REFRESH="..."   # Firma los refresh tokens (secret independiente)
+JWT_EXPIRATION_ACCESS="15m"
+JWT_EXPIRATION_REFRESH="7d"
+```
+
+---
+
 ## API REST (rutas principales)
 
 **Base URL:** `http://localhost:4000` — los endpoints de negocio viven bajo **`/api/...`**.
@@ -368,9 +422,11 @@ Los datos de seed fueron **generados con IA** y no son todos reales la mayoría.
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/api/auth/register` | No | Body JSON: email, password, name → crea usuario y devuelve JWT. |
-| POST | `/api/auth/login` | No | Body JSON: email, password → JWT. |
-| GET | `/api/auth/me` | JWT | Perfil del usuario autenticado. |
+| POST | `/api/auth/register` | No | Body JSON: `email`, `password`, `name` → crea usuario y responde `201` con `{ ok: true, user }`. **No** emite tokens ni cookies; el cliente debe ir a login. |
+| POST | `/api/auth/login` | No | Body JSON: `email`, `password` → `{ token, user }` y cookie `refreshToken` (httpOnly, 7d). |
+| POST | `/api/auth/refresh` | Cookie | Lee la cookie `refreshToken` httpOnly, verifica con `JWT_SECRET_REFRESH`, consulta que el usuario siga en DB y devuelve un nuevo `{ token, user }` (access 15 min). Usado por el interceptor Axios y en el bootstrap de sesión tras F5. |
+| POST | `/api/auth/logout` | No | Borra la cookie `refreshToken` (clearCookie con los mismos flags que al setear). |
+| GET | `/api/auth/me` | Bearer | Perfil actualizado del usuario autenticado (requiere access token válido). |
 
 ### Jugadores, equipos y temporadas
 
@@ -419,6 +475,7 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 | Charts | Recharts (vs Chart.js) | Radar nativo, integración React de primera clase. |
 | UI de componentes | **HeroUI** (antes **NextUI**; paquete npm `@nextui-org/react`) | El proyecto sigue el paquete legacy mientras exista migración oficial a `@heroui/*`. Sobre Tailwind: `Input`, `Select`, `Avatar`, modales y estilos coherentes con menos CSS custom; se combina con clases propias (`sharedStyles`, tema oscuro LDP). |
 | Infra local | Docker Compose | Todo el stack levanta con un comando. |
+| Auth | JWT dual-token (access 15 min + refresh 7 días) con secrets separados. Cookie `refreshToken` httpOnly restringida a `path: /api/auth`; access token solo en memoria. Interceptor Axios renueva en silencio en 401 y encola requests simultáneos. | Reduce la ventana de exposición del access token sin forzar re-login frecuente; la cookie httpOnly es inaccesible desde JS (mitiga XSS). |
 | Ratings en DB | JSONB en `player_ratings` | Flexibilidad temporal sin saturar la UI con columnas fijas. |
 | Comparador | `seasonId` explícito por request | Garantiza comparación justa entre jugadores. |
 | Lesiones | Tabla separada `player_injuries` + umbral ≥50% | Permite filtrar por temporada y tipo; mantiene `players` limpia. El marcado rojo en gráficos requiere ≥50% de cobertura del período (mes o año) — lesiones breves no distorsionan la lectura visual. |
@@ -459,7 +516,7 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 - **Rate limiting más granular** — por endpoint y por user ID además de por IP.
 - **Integración con API real** — Transfermarkt / SofaScore (o feed propio) para datos y planteles actualizados.
 - **Notas en shortlist** — `PATCH /api/shortlist/:playerId` + campo en UI (el `note` ya existe en DB).
-- **Auth más robusta** — refresh token o rotación de JWT; cookies `httpOnly` + SameSite; recuperación de contraseña y verificación de email en registro/cambio de credenciales.
+- **Auth más robusta** — recuperación de contraseña y verificación de email en registro/cambio de credenciales; rotación de refresh token en cada uso (refresh token rotation) para detectar reutilización; tabla `refresh_tokens` en DB para revocación server-side al logout.
 - **Accesibilidad** — foco visible, orden de tab, `aria-*` en tablas/filtros, contraste en gráficos, pruebas con axe o Playwright a11y.
 - **Observabilidad** — logs estructurados, `request-id`, Sentry (o similar) en front y back en producción.
 - **Contrato de API** — OpenAPI/Swagger generado a partir de Zod o rutas para documentar y versionar (`/api/v1`).

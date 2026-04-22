@@ -1,19 +1,19 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { Input } from "@nextui-org/react";
 import api from "@/lib/api";
-import { useScoutStore } from "@/store/useScoutStore";
 import AppButton from "@/components/ui/AppButton";
 import { authInputClassNames } from "@/components/ui/sharedStyles";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { setAuth } = useScoutStore();
+  useRedirectIfAuthenticated();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,10 +41,9 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/register", { email, password, name });
-      //setAuth(data.token, data.user);
-      toast.success("¡Cuenta creada! Bienvenido.");
-      router.replace("/");
+      await api.post("/auth/register", { email, password, name });
+      toast.success("¡Cuenta creada! Iniciá sesión con tu email y contraseña.");
+      router.replace("/login");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
         ?? "Error al registrarse, intentá de nuevo";

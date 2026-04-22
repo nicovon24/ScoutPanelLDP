@@ -8,7 +8,7 @@ import Topbar from "@/components/layout/Topbar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { token, user, sidebarExpanded, _hasHydrated, setUserFromSession } = useScoutStore();
+  const { token, user, sidebarExpanded, _hasHydrated, setAuth } = useScoutStore();
   const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
@@ -20,17 +20,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
 
     api
-      .get("/auth/me")
+      .post("/auth/refresh")
       .then(({ data }) => {
-        setUserFromSession(data);
+        setAuth(data.token, data.user);
       })
       .catch(() => {
-        /* sin cookie / token inválido */
+        /* sin cookie de refresh válida */
       })
       .finally(() => {
         setSessionChecked(true);
       });
-  }, [_hasHydrated, token, user, setUserFromSession]);
+  }, [_hasHydrated, token, user, setAuth]);
 
   useEffect(() => {
     if (!_hasHydrated || !sessionChecked) return;

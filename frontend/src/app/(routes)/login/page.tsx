@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -14,6 +15,7 @@ import { authInputClassNames } from "@/components/ui/sharedStyles";
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useScoutStore();
+  useRedirectIfAuthenticated();
   const [email, setEmail] = useState("demo@gmail.com");
   const [password, setPassword] = useState("123456");
   const [showPwd, setShowPwd] = useState(false);
