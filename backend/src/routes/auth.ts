@@ -23,12 +23,11 @@ const JWT_SECRET: string = process.env.JWT_SECRET ?? "scout-panel-secret-dev";
 const isProd = process.env.NODE_ENV === "production";
 
 function setAccessTokenCookie(res: Response, token: string): void {
+  const isProd = process.env.NODE_ENV === "production";
   res.cookie(ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: isProd,
-    // "none" es necesario en producción para que el browser envíe la cookie
-    // en requests cross-origin (fetch/axios withCredentials). Requiere secure:true.
-    sameSite: isProd ? "none" : "lax",
+    sameSite: "none",
     maxAge: COOKIE_MAX_AGE_MS,
     path: "/",
   });
@@ -36,10 +35,11 @@ function setAccessTokenCookie(res: Response, token: string): void {
 
 /** Limpia la cookie httpOnly (público, no requiere JWT). */
 export function clearAccessTokenCookie(res: Response): void {
+  const isProd = process.env.NODE_ENV === "production";
   res.clearCookie(ACCESS_TOKEN_COOKIE, {
     path: "/",
     httpOnly: true,
-    sameSite: isProd ? "none" : "lax",
+    sameSite: "none",
     secure: isProd,
   });
 }

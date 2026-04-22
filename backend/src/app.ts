@@ -19,7 +19,7 @@ export const app = express();
 //   ALLOWED_ORIGIN_PATTERNS=https://.*\.vercel\.app,https://scout-panel-.*\.vercel\.app
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
-  : ["http://localhost:3000"];
+  : ["http://localhost:3000", "http://localhost:3001"];
 
 const allowedOriginPatterns = process.env.ALLOWED_ORIGIN_PATTERNS
   ? process.env.ALLOWED_ORIGIN_PATTERNS.split(",").map((p) => new RegExp(p.trim()))
