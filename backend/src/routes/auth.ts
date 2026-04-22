@@ -20,12 +20,14 @@ if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
 }
 const JWT_SECRET: string = process.env.JWT_SECRET ?? "scout-panel-secret-dev";
 
+const isProd = process.env.NODE_ENV === "production";
+
 function setAccessTokenCookie(res: Response, token: string): void {
   const isProd = process.env.NODE_ENV === "production";
   res.cookie(ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    sameSite: "none",
     maxAge: COOKIE_MAX_AGE_MS,
     path: "/",
   });
@@ -37,7 +39,7 @@ export function clearAccessTokenCookie(res: Response): void {
   res.clearCookie(ACCESS_TOKEN_COOKIE, {
     path: "/",
     httpOnly: true,
-    sameSite: isProd ? "none" : "lax",
+    sameSite: "none",
     secure: isProd,
   });
 }
