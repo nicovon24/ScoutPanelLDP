@@ -12,6 +12,10 @@ import { errorHandler } from "./middleware/errorHandler";
 
 export const app = express();
 
+// Render (y la mayoría de plataformas cloud) pone la app detrás de un proxy/balanceador.
+// Sin esto, Express ve la conexión como HTTP aunque sea HTTPS, y las cookies Secure pueden fallar.
+app.set("trust proxy", 1);
+
 // ALLOWED_ORIGINS: lista de orígenes exactos separados por coma.
 // ALLOWED_ORIGIN_PATTERNS: lista de patrones regex separados por coma (para Vercel preview branches, etc.)
 // Ejemplos:
