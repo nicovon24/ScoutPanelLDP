@@ -24,7 +24,7 @@ Plataforma fullstack para scouts de fútbol. Buscá, filtrá y compará jugadore
 | Qué | Enlace |
 |-----|--------|
 | **Panel (frontend, Vercel)** | https://scout-panel-ldp.vercel.app |
-| **API (backend, Render)** | La URL exacta va en `NEXT_PUBLIC_API_URL` del proyecto en Vercel (debe terminar en `/api`).
+| **API (backend, Render)** | Recomendado en Vercel: `NEXT_PUBLIC_API_URL=/api` + `BACKEND_PROXY_URL=https://<tu-backend>` para mantener cookies first-party.
 
 **Usuarios demo** (misma contraseña para todos: **`123456`**):
 
@@ -410,6 +410,9 @@ JWT_SECRET="..."           # Firma los access tokens
 JWT_SECRET_REFRESH="..."   # Firma los refresh tokens (secret independiente)
 JWT_EXPIRATION_ACCESS="15m"
 JWT_EXPIRATION_REFRESH="7d"
+NEXT_PUBLIC_API_URL="/api" # Recomendado en prod para calls same-origin
+BACKEND_PROXY_URL="https://tu-backend.onrender.com" # Rewrite server-side en Next.js
+NEXT_PUBLIC_ALLOW_CROSS_ORIGIN_API="false" # Solo "true" en casos excepcionales
 ```
 
 ---

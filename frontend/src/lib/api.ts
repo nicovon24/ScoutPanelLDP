@@ -1,8 +1,9 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import toast from "react-hot-toast";
 import { useScoutStore } from "@/store/useScoutStore";
+import { resolveApiBaseUrl } from "@/lib/apiBaseUrl";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const BASE_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 /** Evita múltiples refresh en paralelo; las demás esperan el mismo resultado. */
 let isRefreshing = false;
