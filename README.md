@@ -512,8 +512,7 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 - **Roles y permisos** — distinción scout vs admin (lectura vs gestión de seeds/usuarios) si el producto crece.
 - **Internacionalización** — opción para inglés o español si el panel deja de ser solo mercado local.
 - **Perfil de jugador enriquecido y filtrable** — vista de “ficha extendida” con secciones colapsables o tabs, y filtros dentro del perfil (por temporada, rival, competición) sin salir de la ficha.
-- **CI/CD en GitHub Actions** — lint + tests (unit + integration) + build en cada PR; E2E opcional con servicios en Docker; migraciones como gate antes de deploy.
-- **Rate limiting más granular** — por endpoint y por user ID además de por IP.
+- **Rate limiting**
 - **Integración con API real** — Transfermarkt / SofaScore (o feed propio) para datos y planteles actualizados.
 - **Notas en shortlist** — `PATCH /api/shortlist/:playerId` + campo en UI (el `note` ya existe en DB).
 - **Auth más robusta** — recuperación de contraseña y verificación de email en registro/cambio de credenciales; rotación de refresh token en cada uso (refresh token rotation) para detectar reutilización; tabla `refresh_tokens` en DB para revocación server-side al logout.
@@ -522,8 +521,6 @@ Requieren **JWT**. Parámetros concretos (métricas, `seasonId`, límites): ver 
 - **Contrato de API** — OpenAPI/Swagger generado a partir de Zod o rutas para documentar y versionar (`/api/v1`).
 - **Búsqueda avanzada** — índices full-text en Postgres (`pg_trgm` / `tsvector`) para nombres y clubes; mejoraría el autocomplete en búsquedas largas y con errores tipográficos.
 - **Evolución de valor de mercado mensual real** — el gráfico mensual usa una oscilación sintética (`Math.sin`) como aproximación visual porque el modelo no almacena el valor mes a mes, solo por temporada. Requeriría una tabla `player_market_values` con granularidad mensual o una fuente externa.
-- **Chart de rating anual respeta temporada seleccionada** — en modo anual el gráfico muestra todas las temporadas del jugador independientemente del selector de temporada (comportamiento intencional como vista de carrera, pero inconsistente con el modo mensual que sí filtra).
-- **Invalidación de shortlist al cambiar sesión** — si dos usuarios inician sesión en la misma pestaña sin F5, los IDs de shortlist de la sesión anterior podrían quedar activos brevemente hasta que se resuelva el nuevo fetch. Requeriría atar el fetch al `user.id` y abortar si cambia.
 
 ---
 
